@@ -24,7 +24,6 @@ export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; on
   const links: { label: string; onClick: () => void }[] = [
     { label: '프로젝트 탐색', onClick: goToProjects },
     { label: '크루', onClick: () => navigate('/crews') },
-    { label: '가이드', onClick: () => navigate('/') },
   ];
 
   useEffect(() => {

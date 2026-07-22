@@ -9,7 +9,38 @@ export function GithubLogo({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
+/**
+ * meeTeam 로고 — 두 사람(원)이 겹쳐 하나의 팀이 되는 형태.
+ * 겹치는 영역이 밝게 빛나 "만나서 팀이 된다"는 의미를 담았습니다.
+ */
 export function LogoMark({ className = 'w-8 h-8' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" fill="none">
+      <defs>
+        <linearGradient id="mt-logo-a" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#7db4ff" />
+          <stop offset="100%" stopColor="#3182F6" />
+        </linearGradient>
+        <linearGradient id="mt-logo-b" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#A4F4FD" />
+          <stop offset="100%" stopColor="#00d2ff" />
+        </linearGradient>
+      </defs>
+      {/* 왼쪽 원 */}
+      <circle cx="12" cy="16" r="8" fill="url(#mt-logo-a)" opacity="0.9" />
+      {/* 오른쪽 원 */}
+      <circle cx="20" cy="16" r="8" fill="url(#mt-logo-b)" opacity="0.75" />
+      {/* 겹치는 부분을 밝게 — 두 사람이 만나는 지점 */}
+      <path
+        d="M16 9.06A7.98 7.98 0 0 1 19.06 16 7.98 7.98 0 0 1 16 22.94 7.98 7.98 0 0 1 12.94 16 7.98 7.98 0 0 1 16 9.06Z"
+        fill="#fff"
+        opacity="0.92"
+      />
+    </svg>
+  );
+}
+
+export function LogoMarkLegacy({ className = 'w-8 h-8' }: { className?: string }) {
   return (
     <svg viewBox="0 0 256 256" fill="#fff" className={className} aria-hidden="true">
       <path d="M 0 128 C 70.692 128 128 185.308 128 256 L 64 256 C 64 220.654 35.346 192 0 192 Z M 256 192 C 220.654 192 192 220.654 192 256 L 128 256 C 128 185.308 185.308 128 256 128 Z M 128 0 C 128 70.692 70.692 128 0 128 L 0 64 C 35.346 64 64 35.346 64 0 Z M 192 0 C 192 35.346 220.654 64 256 64 L 256 128 C 185.308 128 128 70.692 128 0 Z" />
@@ -135,6 +166,20 @@ export function CoverFill({ cover, fade = true }: { cover: string | null; fade?:
         }`}
       />
     </div>
+  );
+}
+
+/** 좌상단 로고 — 누르면 홈으로 */
+export function HomeLogo({ className = '' }: { className?: string }) {
+  return (
+    <a
+      href="/"
+      className={`flex items-center gap-2.5 hover:opacity-80 transition-opacity ${className}`}
+      aria-label="meeTeam 홈으로"
+    >
+      <LogoMark className="w-7 h-7" />
+      <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
+    </a>
   );
 }
 

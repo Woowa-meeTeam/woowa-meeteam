@@ -86,10 +86,10 @@ body {
 }
 
 .c3-watermark-main {
-  font-size: 9rem;
+  font-size: 4rem;
   font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.05em;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
   filter: url(#c3-noise-watermark);
   display: flex;
   flex-direction: column;
@@ -159,8 +159,8 @@ body {
 }
 
 .c3-tier-large {
-  font-size: 2.8rem;
-  font-weight: 500;
+  font-size: 1.75rem;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: #fff;
   margin-top: 8px;
@@ -267,7 +267,7 @@ body {
 
 @media (max-width: 1024px) {
   .c3-watermark-main {
-    font-size: 3.5rem;
+    font-size: 2.25rem;
     filter: none;
   }
 

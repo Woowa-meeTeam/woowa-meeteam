@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Users, X } from 'lucide-react';
-import { Avatar, LogoMark, SectionEyebrow } from './primitives';
+import { Avatar, HomeLogo, SectionEyebrow } from './primitives';
 import { api } from '../api';
 import type { User } from '../api';
 
@@ -28,10 +28,7 @@ export default function Crews() {
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </button>
+        <HomeLogo />
         <button
           onClick={() => navigate('/')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -118,12 +115,14 @@ export default function Crews() {
         {crews && filtered.length > 0 && (
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((c, i) => (
-              <motion.div
+              <motion.button
                 key={c.id}
+                type="button"
+                onClick={() => navigate(`/crews/${c.id}`)}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: (i % 6) * 0.05, ease: easeOut }}
-                className="liquid-glass rounded-2xl p-5"
+                className="liquid-glass rounded-2xl p-5 text-left transition-transform hover:-translate-y-1 active:scale-[0.99]"
               >
                 <div className="flex items-center gap-3">
                   <Avatar
@@ -134,14 +133,7 @@ export default function Crews() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-base font-semibold text-white truncate">{c.crewName}</div>
-                    <a
-                      href={`https://github.com/${c.githubLogin}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-white/40 hover:text-[#7db4ff] transition-colors"
-                    >
-                      @{c.githubLogin}
-                    </a>
+                    <span className="text-xs text-white/40">@{c.githubLogin}</span>
                   </div>
                 </div>
 
@@ -177,7 +169,7 @@ export default function Crews() {
                     )}
                   </div>
                 )}
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         )}

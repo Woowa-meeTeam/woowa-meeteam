@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Users, X } from 'lucide-react';
-import { LogoMark } from './primitives';
+import { HomeLogo } from './primitives';
 import { api, ApiError } from '../api';
 import type { Application, Project } from '../api';
 
@@ -71,10 +71,7 @@ export default function ApplicantManage() {
     <div className="relative z-20 min-h-screen flex flex-col">
       {/* top bar */}
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </div>
+        <HomeLogo />
         <button
           onClick={() => navigate('/my')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -126,7 +123,7 @@ export default function ApplicantManage() {
                 </span>
               ) : (
                 <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10">
-                  ● 모집중 · {project.dday}
+                  ● 모집중
                 </span>
               )}
             </div>

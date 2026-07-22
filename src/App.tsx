@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
 import FeatureMatch from './components/FeatureMatch';
 import SkillCloud from './components/SkillCloud';
-import Testimonials from './components/Testimonials';
 import Steps from './components/Steps';
 import FinalCTA from './components/FinalCTA';
 import Onboarding from './components/Onboarding';
 import ProjectForm from './components/ProjectForm';
 import ProfileEdit from './components/ProfileEdit';
 import Crews from './components/Crews';
+import CrewDetail from './components/CrewDetail';
+import Admin from './components/Admin';
+import FeedbackWidget from './components/FeedbackWidget';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
 import ApplicantManage from './components/ApplicantManage';
@@ -60,6 +62,14 @@ function AuthCallback() {
 
 function Landing() {
   const navigate = useNavigate();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    api
+      .me()
+      .then(() => setLoggedIn(true))
+      .catch(() => setLoggedIn(false));
+  }, []);
 
   // GitHub OAuth 로 이동 (리다이렉트). 이미 로그인 상태면 바로 분기.
   const handleStart = async () => {
@@ -71,19 +81,22 @@ function Landing() {
     }
   };
 
+  const explore = () =>
+    document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   return (
     <>
       <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
-      <Hero onStart={handleStart} />
+      <Hero onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
       <ProjectsShowcase
         onRegister={() => navigate('/projects/new')}
         onSelect={(id) => navigate(`/projects/${id}`)}
       />
       <FeatureMatch />
       <SkillCloud />
-      <Testimonials />
       <Steps />
-      <FinalCTA onStart={handleStart} />
+      <FinalCTA onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
+      <FeedbackWidget />
     </>
   );
 }
@@ -126,6 +139,8 @@ export default function App() {
         <Route path="/projects/:id/edit" element={<ProjectForm />} />
         <Route path="/profile/edit" element={<ProfileEdit />} />
         <Route path="/crews" element={<Crews />} />
+        <Route path="/crews/:id" element={<CrewDetail />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />

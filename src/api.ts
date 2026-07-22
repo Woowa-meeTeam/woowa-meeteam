@@ -18,6 +18,7 @@ export type User = {
   avatarGradient: string;
   avatarUrl?: string | null;
   bio?: string | null;
+  isAdmin?: boolean;
   onboarded: boolean;
 };
 
@@ -69,6 +70,33 @@ export const FIELD_SHORT: Record<string, string> = {
   디자인: '디자인',
 };
 
+export type FeedbackKind = 'BUG' | 'IMPROVEMENT' | 'FEATURE' | 'ETC';
+
+export const FEEDBACK_KIND_LABEL: Record<FeedbackKind, string> = {
+  BUG: '버그 제보',
+  IMPROVEMENT: '개선 제안',
+  FEATURE: '기능 요청',
+  ETC: '기타',
+};
+
+export type Feedback = {
+  id: string;
+  kind: FeedbackKind;
+  message: string;
+  status: 'OPEN' | 'DONE';
+  createdAt: string;
+  author: { id: string; name: string; avatarUrl: string | null; avatarGradient: string } | null;
+};
+
+type FeedbackRow = {
+  id: string;
+  kind: FeedbackKind;
+  message: string;
+  status: 'OPEN' | 'DONE';
+  created_at: string;
+  author: { id: string; crew_name: string | null; avatar_url: string | null } | null;
+};
+
 /** 프로젝트 등록/수정 공용 입력 */
 export type ProjectInput = {
   title: string;
@@ -106,6 +134,27 @@ function toApiError(error: { message: string; code?: string } | null, fallback: 
 const toStatus = (s: string): ApplicationStatus =>
   s.toLowerCase() as ApplicationStatus;
 
+/** 카드 미리보기용 — 마크다운 기호를 걷어내고 평문만 남깁니다 */
+export function stripMarkdown(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/^\s*[-*_]{3,}\s*$/gm, ' ')
+    .replace(/\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function ddayFrom(deadline: string | null): string {
   if (!deadline) return 'D-14';
   const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86_400_000);
@@ -122,6 +171,7 @@ type CrewRow = {
   skills: string[] | null;
   avatar_url: string | null;
   bio: string | null;
+  is_admin?: boolean;
   onboarded: boolean;
 };
 
@@ -133,6 +183,7 @@ const toUser = (c: CrewRow): User => ({
   skills: c.skills ?? [],
   avatarUrl: c.avatar_url,
   bio: c.bio,
+  isAdmin: c.is_admin ?? false,
   avatarGradient: gradientFor(c.id),
   onboarded: c.onboarded,
 });
@@ -184,7 +235,7 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
   return {
     id: row.id,
     title: row.title,
-    desc: paragraphs[0]?.slice(0, 60) ?? '',
+    desc: stripMarkdown(row.description).slice(0, 90),
     longDesc: paragraphs,
     prototype: row.prototype_url,
     coverImage: row.cover_image,
@@ -281,6 +332,87 @@ export const api = {
       .single();
     if (error) throw toApiError(error, '프로필 저장에 실패했어요');
     return toUser(data as CrewRow);
+  },
+
+  /** 크루 한 명 상세 */
+  async crew(id: string): Promise<User> {
+    const { data, error } = await supabase.from('crews').select('*').eq('id', id).single();
+    if (error || !data) throw new ApiError(404, '크루를 찾을 수 없어요');
+    return toUser(data as CrewRow);
+  },
+
+  /** 특정 크루가 등록한 프로젝트 */
+  async projectsByOwner(ownerId: string): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(PROJECT_SELECT)
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
+    return hydrate((data ?? []) as unknown as ProjectRow[]);
+  },
+
+  /* ── 제보 ─────────────────────────────────────────────── */
+
+  /** 불편사항 · 개선 · 기능 제안 보내기 */
+  async sendFeedback(body: { kind: FeedbackKind; message: string }): Promise<void> {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const { error } = await supabase.from('feedbacks').insert({
+      author_id: auth.user.id,
+      kind: body.kind,
+      message: body.message.trim(),
+    });
+    if (error) throw toApiError(error, '제보 전송에 실패했어요');
+  },
+
+  /** 제보 목록 — 본인 것 + (관리자면) 전체. RLS 가 범위를 결정합니다 */
+  async feedbacks(): Promise<Feedback[]> {
+    const { data, error } = await supabase
+      .from('feedbacks')
+      .select('id, kind, message, status, created_at, author:crews(id, crew_name, avatar_url)')
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '제보를 불러오지 못했어요');
+    return (data ?? []).map((r) => {
+      const row = r as unknown as FeedbackRow;
+      return {
+        id: row.id,
+        kind: row.kind,
+        message: row.message,
+        status: row.status,
+        createdAt: row.created_at,
+        author: row.author
+          ? {
+              id: row.author.id,
+              name: row.author.crew_name ?? '크루',
+              avatarUrl: row.author.avatar_url,
+              avatarGradient: gradientFor(row.author.id),
+            }
+          : null,
+      };
+    });
+  },
+
+  /** 제보 처리 상태 변경 (관리자 전용 — RLS 강제) */
+  async setFeedbackStatus(id: string, status: 'OPEN' | 'DONE'): Promise<void> {
+    const { error } = await supabase.from('feedbacks').update({ status }).eq('id', id);
+    if (error) throw toApiError(error, '상태 변경에 실패했어요');
+  },
+
+  /** 관리자 대시보드용 간단 집계 */
+  async adminStats(): Promise<{ crews: number; projects: number; recruiting: number; feedbacks: number }> {
+    const [c, p, f] = await Promise.all([
+      supabase.from('crews').select('id', { count: 'exact', head: true }).eq('onboarded', true),
+      supabase.from('projects').select('id,status', { count: 'exact' }),
+      supabase.from('feedbacks').select('id', { count: 'exact', head: true }),
+    ]);
+    const projects = (p.data ?? []) as { status: string }[];
+    return {
+      crews: c.count ?? 0,
+      projects: p.count ?? 0,
+      recruiting: projects.filter((x) => x.status === 'RECRUITING').length,
+      feedbacks: f.count ?? 0,
+    };
   },
 
   /** 온보딩을 마친 크루 목록 (네비게이션 → 크루) */

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Check, ImagePlus, Link as LinkIcon, Minus, Plus, Trash2, X } from 'lucide-react';
-import { CoverFill, COVER_PRESETS, LogoMark } from './primitives';
+import { COVER_PRESETS, CoverFill, HomeLogo } from './primitives';
 import { api, ApiError } from '../api';
 import type { Project } from '../api';
 
@@ -22,8 +22,6 @@ const FIELD_SKILLS: Record<string, string[]> = {
 
 type Recruit = { field: string; capacity: number; skills: string[] };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const defaultDeadline = () => new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
 
 export default function ProjectForm() {
   const { id } = useParams();
@@ -33,8 +31,6 @@ export default function ProjectForm() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [prototype, setPrototype] = useState('');
-  const [schedule, setSchedule] = useState('');
-  const [deadline, setDeadline] = useState(defaultDeadline());
   const [cover, setCover] = useState<string>('gradient:aurora');
   const [recruits, setRecruits] = useState<Recruit[]>([
     { field: '프론트엔드', capacity: 1, skills: [] },
@@ -59,8 +55,6 @@ export default function ProjectForm() {
         setTitle(p.title);
         setDesc(p.longDesc.join('\n'));
         setPrototype(p.prototype ?? '');
-        setSchedule(p.schedule === '일정 미정' ? '' : p.schedule);
-        setDeadline(p.deadline ?? defaultDeadline());
         setCover(p.coverImage ?? 'gradient:aurora');
         setRecruits(
           p.slots.map((s) => ({ field: s.field, capacity: s.capacity, skills: s.skills })),
@@ -103,8 +97,6 @@ export default function ProjectForm() {
       desc: desc.trim(),
       prototype: prototype.trim() || undefined,
       coverImage: cover,
-      schedule: schedule.trim() || undefined,
-      deadline,
       slots: recruits,
     };
     try {
@@ -173,10 +165,7 @@ export default function ProjectForm() {
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </div>
+        <HomeLogo />
         <button
           onClick={() => navigate(isEdit ? `/projects/${id}` : '/')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -299,30 +288,6 @@ export default function ProjectForm() {
             </div>
           </label>
 
-          {/* 일정 · 마감일 */}
-          <div className="mt-6 grid sm:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="text-sm font-medium text-white/80">
-                모임 일정 <span className="text-white/35 font-normal">(선택)</span>
-              </span>
-              <input
-                value={schedule}
-                onChange={(e) => setSchedule(e.target.value)}
-                placeholder="매주 화 · 목 저녁"
-                className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] transition-colors"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-white/80">모집 마감일</span>
-              <input
-                type="date"
-                value={deadline}
-                min={todayISO()}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white outline-none focus:border-[#3182F6] transition-colors [color-scheme:dark]"
-              />
-            </label>
-          </div>
 
           {/* 모집 분야 · 인원 · 스킬 */}
           <div className="mt-6">

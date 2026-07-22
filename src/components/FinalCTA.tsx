@@ -2,7 +2,15 @@ import { motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import { GithubButton } from './primitives';
 
-export default function FinalCTA({ onStart }: { onStart?: () => void }) {
+export default function FinalCTA({
+  onStart,
+  loggedIn = false,
+  onExplore,
+}: {
+  onStart?: () => void;
+  loggedIn?: boolean;
+  onExplore?: () => void;
+}) {
   return (
     <section className="relative z-20 max-w-6xl mx-auto px-6 py-20 md:py-28">
       <motion.div
@@ -26,12 +34,19 @@ export default function FinalCTA({ onStart }: { onStart?: () => void }) {
             오늘 팀이 됩니다.
           </h2>
           <p className="mt-6 text-white/60 max-w-md mx-auto text-sm leading-[1.6]">
-            지금 모집 중인 프로젝트 8개가 함께할 크루를 기다리고 있어요. GitHub 계정만 있으면 3분 만에
-            시작할 수 있습니다.
+            함께할 크루들이 기다리고 있어요.
+            {!loggedIn && ' GitHub 계정만 있으면 3분 만에 시작할 수 있습니다.'}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <GithubButton onClick={onStart} />
-            <button className="group inline-flex items-center gap-2 rounded-full border border-white/15 text-white text-sm font-medium px-5 py-3 hover:bg-white/5 transition-colors">
+            {!loggedIn && <GithubButton onClick={onStart} />}
+            <button
+              onClick={onExplore}
+              className={`group inline-flex items-center gap-2 rounded-full text-sm font-medium px-5 py-3 transition-colors ${
+                loggedIn
+                  ? 'bg-white text-black hover:bg-white/90'
+                  : 'border border-white/15 text-white hover:bg-white/5'
+              }`}
+            >
               프로젝트 둘러보기
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-[1px]" />
             </button>

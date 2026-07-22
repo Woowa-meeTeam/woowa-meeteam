@@ -85,7 +85,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
               {/* 대표 이미지 — 아래로 갈수록 배경에 녹아들도록 fade */}
               <div className="relative h-36">
                 <CoverFill cover={p.coverImage} />
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <div className="absolute top-3 left-3 right-3 flex items-center">
                   <span
                     className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
                       p.closed
@@ -94,13 +94,6 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
                     }`}
                   >
                     {p.closed ? '모집 마감' : '● 모집중'}
-                  </span>
-                  <span
-                    className={`text-[11px] font-semibold tabular-nums px-2 py-1 rounded-full backdrop-blur-md bg-black/30 ${
-                      p.closed ? 'text-white/50' : 'text-[#A4F4FD]'
-                    }`}
-                  >
-                    {p.closed ? '마감' : p.dday}
                   </span>
                 </div>
               </div>

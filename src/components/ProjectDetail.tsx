@@ -3,16 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   ArrowLeft,
-  CalendarDays,
   Check,
-  Clock3,
   ExternalLink,
   Link as LinkIcon,
   Pencil,
   Users,
   X,
 } from 'lucide-react';
-import { Avatar, CoverFill, LogoMark } from './primitives';
+import { Avatar, CoverFill, HomeLogo } from './primitives';
 import Markdown from './Markdown';
 import { api, ApiError } from '../api';
 import type { Application, Project, User } from '../api';
@@ -113,10 +111,7 @@ export default function ProjectDetail() {
     <div className="relative z-20 min-h-screen flex flex-col">
       {/* top bar */}
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </div>
+        <HomeLogo />
         <button
           onClick={() => navigate('/')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -155,12 +150,6 @@ export default function ProjectDetail() {
               >
                 {project.closed ? '모집 마감' : '● 모집중'}
               </span>
-              {!project.closed && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#A4F4FD] tabular-nums px-2.5 py-1 rounded-full backdrop-blur-md bg-black/30">
-                  <Clock3 className="w-3 h-3" />
-                  마감까지 {project.dday}
-                </span>
-              )}
             </div>
           </div>
 
@@ -187,14 +176,7 @@ export default function ProjectDetail() {
           </div>
 
           {/* 일정 · 프로토타입 */}
-          <div className="mt-8 grid sm:grid-cols-2 gap-3">
-            <div className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3">
-              <CalendarDays className="w-4 h-4 text-white/40 flex-shrink-0" />
-              <div>
-                <div className="text-[11px] text-white/40">모임 일정</div>
-                <div className="text-sm text-white/80 mt-0.5">{project.schedule}</div>
-              </div>
-            </div>
+          <div className="mt-8">
             {project.prototype ? (
               <a
                 href={/^https?:\/\//.test(project.prototype) ? project.prototype : `https://${project.prototype}`}

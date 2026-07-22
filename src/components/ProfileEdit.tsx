@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Plus, Search, X } from 'lucide-react';
-import { Avatar, LogoMark } from './primitives';
+import { Avatar, HomeLogo } from './primitives';
 import { api, ApiError } from '../api';
 import type { User } from '../api';
 
@@ -92,10 +92,7 @@ export default function ProfileEdit() {
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </div>
+        <HomeLogo />
         <button
           onClick={() => navigate('/my')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"

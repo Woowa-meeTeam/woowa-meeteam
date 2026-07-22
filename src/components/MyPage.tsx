@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Pencil, X } from 'lucide-react';
-import { Avatar, LogoMark } from './primitives';
+import { ArrowRight, Pencil, ShieldCheck, X } from 'lucide-react';
+import { Avatar, HomeLogo } from './primitives';
 import { api } from '../api';
 import type { Application, Project, User } from '../api';
 
@@ -41,10 +41,7 @@ export default function MyPage() {
     <div className="relative z-20 min-h-screen flex flex-col">
       {/* top bar */}
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LogoMark className="w-7 h-7" />
-          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-        </div>
+        <HomeLogo />
         <button
           onClick={() => navigate('/')}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -79,6 +76,15 @@ export default function MyPage() {
                 <span className="text-white/35">github.com/{user.githubLogin}</span>
               </div>
             </div>
+            {user.isAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#7db4ff] border border-[#3182F6]/40 bg-[#3182F6]/10 rounded-full px-3.5 py-2 hover:bg-[#3182F6]/20 transition-colors"
+              >
+                <ShieldCheck className="w-3 h-3" />
+                관리자
+              </button>
+            )}
             <button
               onClick={() => navigate('/profile/edit')}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 border border-white/15 rounded-full px-3.5 py-2 hover:bg-white/5 hover:text-white transition-colors"
@@ -142,7 +148,6 @@ export default function MyPage() {
                   >
                     {p.closed ? '✓ 팀 구성 완료' : '● 모집중'}
                   </span>
-                  <span className="text-xs text-[#A4F4FD] tabular-nums">{p.closed ? '마감' : p.dday}</span>
                 </div>
                 <h3 className="mt-3 text-base font-semibold text-white">{p.title}</h3>
                 <p className="mt-1.5 text-sm text-white/50 leading-[1.5]">{p.desc}</p>

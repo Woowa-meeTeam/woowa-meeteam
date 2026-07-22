@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 type Step = {
   label: string;
@@ -6,6 +7,8 @@ type Step = {
   desc: string;
   features: string[];
   highlight?: boolean;
+  /** '자세히 보기' 목적지 — 'explore' 는 쇼케이스로 스크롤 */
+  action: { label: string; to: string };
 };
 
 const steps: Step[] = [
@@ -20,6 +23,7 @@ const steps: Step[] = [
       '마크다운 설명 지원',
       '등록 즉시 탐색 피드에 노출',
     ],
+    action: { label: '프로젝트 등록하기', to: '/projects/new' },
   },
   {
     label: 'STEP 2',
@@ -32,6 +36,7 @@ const steps: Step[] = [
       '확정 전까지 지원 취소 가능',
       '지원 상태 실시간 확인',
     ],
+    action: { label: '프로젝트 둘러보기', to: 'explore' },
   },
   {
     label: 'STEP 3',
@@ -45,10 +50,21 @@ const steps: Step[] = [
       '팀 구성 완료 알림',
     ],
     highlight: true,
+    action: { label: '내 프로젝트 보기', to: '/my' },
   },
 ];
 
 export default function Steps() {
+  const navigate = useNavigate();
+
+  const go = (to: string) => {
+    if (to === 'explore') {
+      document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    navigate(to);
+  };
+
   return (
     <section className="c3-pricing-section relative z-20">
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -85,7 +101,9 @@ export default function Steps() {
                 </li>
               ))}
             </ul>
-            <button className="c3-btn">자세히 보기</button>
+            <button className="c3-btn" onClick={() => go(step.action.to)}>
+              {step.action.label}
+            </button>
           </div>
         ))}
       </div>
