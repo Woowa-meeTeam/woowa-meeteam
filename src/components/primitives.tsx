@@ -1,0 +1,136 @@
+import { ChevronRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
+
+export function GithubLogo({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+export function LogoMark({ className = 'w-8 h-8' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 256 256" fill="#fff" className={className} aria-hidden="true">
+      <path d="M 0 128 C 70.692 128 128 185.308 128 256 L 64 256 C 64 220.654 35.346 192 0 192 Z M 256 192 C 220.654 192 192 220.654 192 256 L 128 256 C 128 185.308 185.308 128 256 128 Z M 128 0 C 128 70.692 70.692 128 0 128 L 0 64 C 35.346 64 64 35.346 64 0 Z M 192 0 C 192 35.346 220.654 64 256 64 L 256 128 C 185.308 128 128 70.692 128 0 Z" />
+    </svg>
+  );
+}
+
+export function GithubButton({
+  label = 'GitHub으로 시작하기',
+  full = false,
+  onClick,
+}: {
+  label?: string;
+  full?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-medium text-sm px-5 py-3 transition-all hover:bg-white/90 active:scale-[0.98] ${
+        full ? 'w-full' : ''
+      }`}
+    >
+      <GithubLogo className="w-4 h-4" />
+      <span>{label}</span>
+      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-[1px]" />
+    </button>
+  );
+}
+
+export function SectionEyebrow({ label, tag }: { label: string; tag?: string }) {
+  return (
+    <div className="inline-flex items-center gap-2 text-sm text-white/70">
+      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+      <span>{label}</span>
+      {tag && (
+        <span className="px-2 py-0.5 rounded-full border border-white/10 text-white/50 text-xs">{tag}</span>
+      )}
+    </div>
+  );
+}
+
+export const gradientStyle: CSSProperties = {
+  backgroundImage:
+    'linear-gradient(to right, #091020 0%, #0B2551 12.5%, #A4F4FD 32.5%, #3182F6 50%, #0B2551 67.5%, #091020 87.5%, #091020 100%)',
+  backgroundSize: '200% auto',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  color: 'transparent',
+  WebkitTextFillColor: 'transparent',
+  filter: 'url(#c3-noise)',
+};
+
+/* ---------- Avatar (GitHub 사진 or 그라데이션 이니셜 폴백) ---------- */
+export function Avatar({
+  name,
+  avatarUrl,
+  gradient,
+  className = 'w-9 h-9 text-xs',
+}: {
+  name?: string | null;
+  avatarUrl?: string | null;
+  gradient?: string;
+  className?: string;
+}) {
+  const base = `rounded-full overflow-hidden flex items-center justify-center font-semibold text-white flex-shrink-0 ${className}`;
+  if (avatarUrl) {
+    return (
+      <span className={base}>
+        <img src={avatarUrl} alt={name ?? ''} className="w-full h-full object-cover" />
+      </span>
+    );
+  }
+  return <span className={`${base} bg-gradient-to-br ${gradient ?? 'from-[#3182F6] to-[#00d2ff]'}`}>{name?.slice(0, 1)}</span>;
+}
+
+/* ---------- 프로젝트 커버 이미지 ---------- */
+export const COVER_GRADIENTS: Record<string, string> = {
+  aurora: 'linear-gradient(135deg, #0B2551 0%, #3182F6 55%, #00d2ff 100%)',
+  mint: 'linear-gradient(135deg, #052e2b 0%, #00C471 60%, #A4F4FD 100%)',
+  ember: 'linear-gradient(135deg, #2d1200 0%, #FF8A00 55%, #be123c 100%)',
+  dusk: 'linear-gradient(135deg, #17092e 0%, #6d28d9 55%, #0e7490 100%)',
+  slate: 'linear-gradient(135deg, #0b1220 0%, #334155 60%, #94a3b8 100%)',
+  ocean: 'linear-gradient(135deg, #041b2d 0%, #0e7490 55%, #67e8f9 100%)',
+};
+
+export const COVER_PRESETS = Object.keys(COVER_GRADIENTS);
+
+/**
+ * 커버를 부모 컨테이너에 채웁니다. `fade`가 있으면 아래쪽을 투명하게 마스킹해
+ * 시네마틱 배경(고정 비디오)에 자연스럽게 녹아들게 합니다.
+ */
+export function CoverFill({ cover, fade = true }: { cover: string | null; fade?: boolean }) {
+  if (!cover) return null;
+  const maskStyle: CSSProperties = fade
+    ? {
+        WebkitMaskImage: 'linear-gradient(to bottom, #000 42%, transparent 100%)',
+        maskImage: 'linear-gradient(to bottom, #000 42%, transparent 100%)',
+      }
+    : {};
+  const isGradient = cover.startsWith('gradient:');
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={maskStyle} aria-hidden="true">
+      {isGradient ? (
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: COVER_GRADIENTS[cover.slice(9)] ?? COVER_GRADIENTS.aurora }}
+        />
+      ) : (
+        <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      {/* 이미지가 배경 톤과 어울리도록 위·아래 살짝 어둡게 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-[#0c0c0c]/70" />
+    </div>
+  );
+}
+
+export function GuideLine({ side }: { side: 'left' | 'right' }) {
+  const cls =
+    side === 'left'
+      ? 'hidden md:block pointer-events-none fixed inset-y-0 left-1/2 -translate-x-[calc(50%+36rem)] w-px bg-white/10 z-[5]'
+      : 'hidden md:block pointer-events-none fixed inset-y-0 left-1/2 translate-x-[calc(-50%+36rem)] w-px bg-white/10 z-[5]';
+  return <div className={cls} />;
+}
