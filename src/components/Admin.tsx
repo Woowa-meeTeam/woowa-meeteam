@@ -23,11 +23,13 @@ export default function Admin() {
     api
       .me()
       .then(async (me) => {
-        setUser(me);
+        // 관리자가 아니면 페이지의 존재조차 드러내지 않고 홈으로 돌려보냅니다.
+        // (실제 데이터 보호는 RLS 가 담당 — UI 를 조작해도 조회되지 않습니다)
         if (!me.isAdmin) {
-          setReady(true);
+          navigate('/', { replace: true });
           return;
         }
+        setUser(me);
         const [s, f] = await Promise.all([api.adminStats(), api.feedbacks()]);
         setStats(s);
         setFeedbacks(f);
@@ -47,23 +49,11 @@ export default function Admin() {
     }
   };
 
-  if (!ready) {
+  // 관리자 확인 전 · 비관리자(리다이렉트 중)에는 아무것도 렌더하지 않습니다
+  if (!ready || !user?.isAdmin) {
     return (
       <div className="relative z-20 min-h-screen grid place-items-center">
         <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-      </div>
-    );
-  }
-
-  // 관리자가 아니면 접근 차단 (실제 데이터 보호는 RLS 가 담당)
-  if (!user?.isAdmin) {
-    return (
-      <div className="relative z-20 min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <ShieldCheck className="w-10 h-10 text-white/25" />
-        <p className="text-lg font-semibold text-white">관리자만 볼 수 있는 페이지예요</p>
-        <button onClick={() => navigate('/')} className="text-sm text-[#7db4ff] hover:underline">
-          홈으로 돌아가기
-        </button>
       </div>
     );
   }
