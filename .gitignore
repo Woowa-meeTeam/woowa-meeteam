@@ -1,6 +1,14 @@
 node_modules
 dist
+
+# 환경변수
 .env
 .env.local
-.DS_Store
+
+# 빌드 산출물 (tsc -b)
 *.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# OS
+.DS_Store
