@@ -17,10 +17,11 @@ export type User = {
   skills: string[];
   avatarGradient: string;
   avatarUrl?: string | null;
+  bio?: string | null;
   onboarded: boolean;
 };
 
-export type Slot = { field: string; capacity: number; confirmed: number };
+export type Slot = { field: string; capacity: number; confirmed: number; skills: string[] };
 export type Member = { name: string; field: string; avatarGradient: string; avatarUrl?: string | null };
 
 export type Project = {
@@ -31,6 +32,7 @@ export type Project = {
   prototype: string | null;
   coverImage: string | null;
   schedule: string;
+  deadline: string | null;
   dday: string;
   closed: boolean;
   slots: Slot[];
@@ -65,6 +67,17 @@ export const FIELD_SHORT: Record<string, string> = {
   iOS: 'iOS',
   기획: '기획',
   디자인: '디자인',
+};
+
+/** 프로젝트 등록/수정 공용 입력 */
+export type ProjectInput = {
+  title: string;
+  desc: string;
+  prototype?: string;
+  coverImage?: string;
+  schedule?: string;
+  deadline?: string | null; // YYYY-MM-DD
+  slots: { field: string; capacity: number; skills: string[] }[];
 };
 
 export class ApiError extends Error {
@@ -108,6 +121,7 @@ type CrewRow = {
   fields: string[] | null;
   skills: string[] | null;
   avatar_url: string | null;
+  bio: string | null;
   onboarded: boolean;
 };
 
@@ -118,6 +132,7 @@ const toUser = (c: CrewRow): User => ({
   fields: c.fields ?? [],
   skills: c.skills ?? [],
   avatarUrl: c.avatar_url,
+  bio: c.bio,
   avatarGradient: gradientFor(c.id),
   onboarded: c.onboarded,
 });
@@ -139,7 +154,13 @@ type ProjectRow = {
   owner: { id: string; crew_name: string | null; fields: string[] | null; avatar_url: string | null } | null;
 };
 
-type SlotRow = { project_id: string; field: string; capacity: number; confirmed: number };
+type SlotRow = {
+  project_id: string;
+  field: string;
+  capacity: number;
+  confirmed: number;
+  skills: string[] | null;
+};
 type MemberRow = {
   project_id: string;
   crew_id: string;
@@ -151,7 +172,12 @@ type MemberRow = {
 function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Project {
   const mySlots = slots
     .filter((s) => s.project_id === row.id)
-    .map((s) => ({ field: s.field, capacity: s.capacity, confirmed: s.confirmed }));
+    .map((s) => ({
+      field: s.field,
+      capacity: s.capacity,
+      confirmed: s.confirmed,
+      skills: s.skills ?? [],
+    }));
   const allFull = mySlots.length > 0 && mySlots.every((s) => s.confirmed >= s.capacity);
   const paragraphs = row.description.split('\n').filter(Boolean);
 
@@ -163,6 +189,7 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     prototype: row.prototype_url,
     coverImage: row.cover_image,
     schedule: row.schedule,
+    deadline: row.deadline,
     dday: ddayFrom(row.deadline),
     closed: row.status === 'CLOSED' || allFull,
     slots: mySlots,
@@ -228,23 +255,43 @@ export const api = {
     return toUser(data as CrewRow);
   },
 
-  /** 온보딩 저장 (FR-ONB) */
-  async updateMe(body: { crewName: string; fields: string[]; skills: string[] }): Promise<User> {
+  /** 프로필 저장 — 온보딩/부분 수정 공용. 준 필드만 갱신합니다 (FR-ONB, FR-MY-01) */
+  async updateMe(body: {
+    crewName?: string;
+    fields?: string[];
+    skills?: string[];
+    bio?: string | null;
+    onboarded?: boolean;
+  }): Promise<User> {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+
+    const patch: Record<string, unknown> = {};
+    if (body.crewName !== undefined) patch.crew_name = body.crewName.trim();
+    if (body.fields !== undefined) patch.fields = body.fields;
+    if (body.skills !== undefined) patch.skills = body.skills;
+    if (body.bio !== undefined) patch.bio = body.bio?.trim() || null;
+    if (body.onboarded !== undefined) patch.onboarded = body.onboarded;
+
     const { data, error } = await supabase
       .from('crews')
-      .update({
-        crew_name: body.crewName.trim(),
-        fields: body.fields,
-        skills: body.skills,
-        onboarded: true,
-      })
+      .update(patch)
       .eq('id', auth.user.id)
       .select()
       .single();
     if (error) throw toApiError(error, '프로필 저장에 실패했어요');
     return toUser(data as CrewRow);
+  },
+
+  /** 온보딩을 마친 크루 목록 (네비게이션 → 크루) */
+  async crews(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('crews')
+      .select('*')
+      .eq('onboarded', true)
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '크루를 불러오지 못했어요');
+    return (data ?? []).map((c) => toUser(c as CrewRow));
   },
 
   async projects(): Promise<Project[]> {
@@ -293,24 +340,41 @@ export const api = {
   },
 
   /** 프로젝트 + 슬롯을 한 트랜잭션으로 생성 (FR-PRJ-01) */
-  async createProject(body: {
-    title: string;
-    desc: string;
-    prototype?: string;
-    coverImage?: string;
-    schedule?: string;
-    slots: { field: string; capacity: number }[];
-  }): Promise<Project> {
+  async createProject(body: ProjectInput): Promise<Project> {
     const { data, error } = await supabase.rpc('create_project', {
       p_title: body.title.trim(),
       p_description: body.desc.trim(),
       p_cover_image: body.coverImage ?? '',
       p_prototype: body.prototype ?? '',
       p_schedule: body.schedule ?? '',
+      p_deadline: body.deadline || null,
       p_slots: body.slots,
     });
     if (error) throw toApiError(error, '등록에 실패했어요');
     return api.project((data as { id: string }).id);
+  },
+
+  /** 오너가 등록한 프로젝트 수정 (FR-PRJ-06) — 확정 인원 훼손은 DB가 거부 */
+  async updateProject(id: string, body: ProjectInput): Promise<Project> {
+    const { error } = await supabase.rpc('update_project', {
+      p_id: id,
+      p_title: body.title.trim(),
+      p_description: body.desc.trim(),
+      p_cover_image: body.coverImage ?? '',
+      p_prototype: body.prototype ?? '',
+      p_schedule: body.schedule ?? '',
+      p_deadline: body.deadline || null,
+      p_slots: body.slots,
+    });
+    if (error) throw toApiError(error, '수정에 실패했어요');
+    return api.project(id);
+  },
+
+  /** 프로젝트 삭제 (FR-PRJ-06) — RLS 로 오너만. 슬롯·지원서는 cascade */
+  async deleteProject(id: string) {
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) throw toApiError(error, '삭제에 실패했어요');
+    return { ok: true as const };
   },
 
   /** 지원 (FR-APP) — 중복/본인/마감 차단은 DB가 담당 */

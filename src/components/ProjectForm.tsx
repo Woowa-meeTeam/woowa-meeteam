@@ -1,0 +1,575 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { Check, ImagePlus, Link as LinkIcon, Minus, Plus, Trash2, X } from 'lucide-react';
+import { CoverFill, COVER_PRESETS, LogoMark } from './primitives';
+import { api, ApiError } from '../api';
+import type { Project } from '../api';
+
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
+const ALL_FIELDS = ['프론트엔드', '백엔드', '안드로이드', 'iOS', '기획', '디자인'];
+
+/** 분야별로 자주 쓰는 스택을 먼저 제안하고, 직접 추가도 가능하게 */
+const FIELD_SKILLS: Record<string, string[]> = {
+  프론트엔드: ['React', 'TypeScript', 'Next.js', 'JavaScript', 'Vue', 'Tailwind'],
+  백엔드: ['Spring', 'Java', 'Kotlin', 'Node.js', 'JPA', 'MySQL', 'AWS'],
+  안드로이드: ['Kotlin', 'Jetpack Compose', 'Android', 'Retrofit'],
+  iOS: ['Swift', 'SwiftUI', 'UIKit', 'Combine'],
+  기획: ['Notion', 'Jira', 'User Research', 'Figma'],
+  디자인: ['Figma', 'Prototyping', 'Design System', 'Illustrator'],
+};
+
+type Recruit = { field: string; capacity: number; skills: string[] };
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const defaultDeadline = () => new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+
+export default function ProjectForm() {
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+  const navigate = useNavigate();
+
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [prototype, setPrototype] = useState('');
+  const [schedule, setSchedule] = useState('');
+  const [deadline, setDeadline] = useState(defaultDeadline());
+  const [cover, setCover] = useState<string>('gradient:aurora');
+  const [recruits, setRecruits] = useState<Recruit[]>([
+    { field: '프론트엔드', capacity: 1, skills: [] },
+  ]);
+
+  const [created, setCreated] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(isEdit);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [skillOpen, setSkillOpen] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // 수정 모드: 기존 값 불러오기
+  useEffect(() => {
+    if (!id) return;
+    api
+      .project(id)
+      .then((p) => {
+        setTitle(p.title);
+        setDesc(p.longDesc.join('\n'));
+        setPrototype(p.prototype ?? '');
+        setSchedule(p.schedule === '일정 미정' ? '' : p.schedule);
+        setDeadline(p.deadline ?? defaultDeadline());
+        setCover(p.coverImage ?? 'gradient:aurora');
+        setRecruits(
+          p.slots.map((s) => ({ field: s.field, capacity: s.capacity, skills: s.skills })),
+        );
+        setLoading(false);
+      })
+      .catch((e) => {
+        setServerError(e.message);
+        setLoading(false);
+      });
+  }, [id]);
+
+  const onPickFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setServerError('이미지는 5MB 이하로 올려 주세요');
+      return;
+    }
+    setUploading(true);
+    setServerError(null);
+    try {
+      setCover(await api.uploadCover(file));
+    } catch (e) {
+      setServerError(e instanceof ApiError ? e.message : '이미지 업로드에 실패했어요');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const titleValid = title.trim().length >= 2 && title.trim().length <= 40;
+  const descValid = desc.trim().length > 0;
+  const canSubmit = titleValid && descValid && recruits.length > 0 && !saving;
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setSaving(true);
+    setServerError(null);
+    const payload = {
+      title: title.trim(),
+      desc: desc.trim(),
+      prototype: prototype.trim() || undefined,
+      coverImage: cover,
+      schedule: schedule.trim() || undefined,
+      deadline,
+      slots: recruits,
+    };
+    try {
+      const project = isEdit
+        ? await api.updateProject(id!, payload)
+        : await api.createProject(payload);
+      if (isEdit) navigate(`/projects/${project.id}`);
+      else setCreated(project);
+    } catch (e) {
+      setServerError(e instanceof ApiError ? e.message : '저장에 실패했어요');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!id) return;
+    setDeleting(true);
+    setServerError(null);
+    try {
+      await api.deleteProject(id);
+      navigate('/my');
+    } catch (e) {
+      setServerError(e instanceof ApiError ? e.message : '삭제에 실패했어요');
+      setDeleting(false);
+    }
+  };
+
+  const remainingFields = ALL_FIELDS.filter((f) => !recruits.some((r) => r.field === f));
+  const addField = (field: string) =>
+    setRecruits((prev) =>
+      prev.some((r) => r.field === field) ? prev : [...prev, { field, capacity: 1, skills: [] }],
+    );
+  const removeField = (field: string) =>
+    setRecruits((prev) => prev.filter((r) => r.field !== field));
+  const changeCapacity = (field: string, delta: number) =>
+    setRecruits((prev) =>
+      prev.map((r) =>
+        r.field === field ? { ...r, capacity: Math.min(9, Math.max(1, r.capacity + delta)) } : r,
+      ),
+    );
+  const toggleSkill = (field: string, skill: string) =>
+    setRecruits((prev) =>
+      prev.map((r) =>
+        r.field === field
+          ? {
+              ...r,
+              skills: r.skills.includes(skill)
+                ? r.skills.filter((s) => s !== skill)
+                : [...r.skills, skill],
+            }
+          : r,
+      ),
+    );
+
+  const totalSlots = recruits.reduce((sum, r) => sum + r.capacity, 0);
+
+  if (loading) {
+    return (
+      <div className="relative z-20 min-h-screen grid place-items-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative z-20 min-h-screen flex flex-col">
+      <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <LogoMark className="w-7 h-7" />
+          <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
+        </div>
+        <button
+          onClick={() => navigate(isEdit ? `/projects/${id}` : '/')}
+          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="닫기"
+        >
+          <X className="w-[18px] h-[18px]" />
+        </button>
+      </div>
+
+      {!created ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: easeOut }}
+          className="flex-1 flex flex-col max-w-lg w-full mx-auto px-6 pb-16"
+        >
+          <h1 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.25]">
+            {isEdit ? (
+              '프로젝트 수정'
+            ) : (
+              <>
+                어떤 프로젝트를
+                <br />
+                함께 만들까요?
+              </>
+            )}
+          </h1>
+          <p className="mt-3 text-sm text-white/50">
+            {isEdit ? '바꾸고 싶은 항목만 고치면 돼요' : '등록하면 바로 탐색 피드에 노출돼요'}
+          </p>
+
+          {/* 대표 이미지 */}
+          <div className="mt-8">
+            <span className="text-sm font-medium text-white/80">대표 이미지</span>
+            <div className="relative mt-2.5 h-44 rounded-2xl overflow-hidden border border-white/10">
+              <CoverFill cover={cover} fade={false} />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 text-xs font-semibold text-black bg-white/90 hover:bg-white rounded-full px-3.5 py-2 backdrop-blur transition-colors"
+              >
+                <ImagePlus className="w-3.5 h-3.5" />
+                {uploading ? '올리는 중…' : '이미지 업로드'}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onPickFile(e.target.files?.[0])}
+              />
+            </div>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {COVER_PRESETS.map((key) => {
+                const value = `gradient:${key}`;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCover(value)}
+                    className={`relative h-9 w-14 rounded-lg overflow-hidden border transition-all ${
+                      cover === value
+                        ? 'border-white ring-2 ring-white/30'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}
+                    aria-label={`${key} 커버`}
+                  >
+                    <CoverFill cover={value} fade={false} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 프로젝트명 */}
+          <label className="mt-8 block">
+            <span className="text-sm font-medium text-white/80">프로젝트명</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="예) 여행 기록 지도 서비스"
+              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+            />
+            <div className="mt-2 flex justify-between text-xs">
+              <span className={title && !titleValid ? 'text-[#F04452]' : 'text-white/30'}>
+                {title && !titleValid ? '2~40자로 입력해 주세요' : '한눈에 들어오는 이름이 좋아요'}
+              </span>
+              <span className="text-white/30 tabular-nums">{title.trim().length}/40</span>
+            </div>
+          </label>
+
+          {/* 설명 (마크다운) */}
+          <label className="mt-6 block">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-white/80">설명</span>
+              <span className="text-[11px] text-white/35">마크다운 지원 · **굵게** ## 제목 - 목록</span>
+            </div>
+            <textarea
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder={'## 어떤 서비스인가요\n다녀온 여행지를 지도에 기록하는 웹앱이에요.\n\n- 매주 화/목 저녁 모임\n- **완성**에 초점을 둡니다'}
+              rows={8}
+              className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-y leading-[1.7] font-mono"
+            />
+          </label>
+
+          {/* 프로토타입 */}
+          <label className="mt-6 block">
+            <span className="text-sm font-medium text-white/80">
+              프로토타입 링크 <span className="text-white/35 font-normal">(선택)</span>
+            </span>
+            <div className="relative mt-2.5">
+              <LinkIcon className="w-4 h-4 text-white/30 absolute left-5 top-1/2 -translate-y-1/2" />
+              <input
+                value={prototype}
+                onChange={(e) => setPrototype(e.target.value)}
+                placeholder="https://figma.com/..."
+                className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+              />
+            </div>
+          </label>
+
+          {/* 일정 · 마감일 */}
+          <div className="mt-6 grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm font-medium text-white/80">
+                모임 일정 <span className="text-white/35 font-normal">(선택)</span>
+              </span>
+              <input
+                value={schedule}
+                onChange={(e) => setSchedule(e.target.value)}
+                placeholder="매주 화 · 목 저녁"
+                className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] transition-colors"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-white/80">모집 마감일</span>
+              <input
+                type="date"
+                value={deadline}
+                min={todayISO()}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white outline-none focus:border-[#3182F6] transition-colors [color-scheme:dark]"
+              />
+            </label>
+          </div>
+
+          {/* 모집 분야 · 인원 · 스킬 */}
+          <div className="mt-6">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-white/80">모집 분야 · 인원</span>
+              <span className="text-xs text-white/40 tabular-nums">총 {totalSlots}명 모집</span>
+            </div>
+
+            <div className="mt-2.5 space-y-2.5">
+              {recruits.map((r) => {
+                const suggestions = FIELD_SKILLS[r.field] ?? [];
+                const open = skillOpen === r.field;
+                return (
+                  <div key={r.field} className="liquid-glass rounded-2xl px-5 py-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-white">{r.field}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => changeCapacity(r.field, -1)}
+                            disabled={r.capacity <= 1}
+                            className="w-8 h-8 rounded-lg bg-white/[0.06] text-white/70 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition-colors"
+                            aria-label={`${r.field} 인원 줄이기`}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-6 text-center text-base font-semibold tabular-nums">
+                            {r.capacity}
+                          </span>
+                          <button
+                            onClick={() => changeCapacity(r.field, 1)}
+                            disabled={r.capacity >= 9}
+                            className="w-8 h-8 rounded-lg bg-white/[0.06] text-white/70 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition-colors"
+                            aria-label={`${r.field} 인원 늘리기`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => removeField(r.field)}
+                          className="ml-1 w-8 h-8 rounded-lg text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                          aria-label={`${r.field} 분야 제거`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 선택된 스킬 + 토글 */}
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      {r.skills.map((s) => (
+                        <span
+                          key={s}
+                          className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                      <button
+                        onClick={() => setSkillOpen(open ? null : r.field)}
+                        className="text-[11px] text-white/45 hover:text-white px-2 py-1 rounded-full border border-dashed border-white/20 hover:border-white/40 transition-colors"
+                      >
+                        {r.skills.length === 0 ? '＋ 원하는 기술 스택 (선택)' : open ? '닫기' : '수정'}
+                      </button>
+                    </div>
+
+                    {open && (
+                      <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-1.5">
+                        {suggestions.map((s) => {
+                          const on = r.skills.includes(s);
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => toggleSkill(r.field, s)}
+                              className={`text-[11px] font-medium px-2.5 py-1.5 rounded-full border transition-all ${
+                                on
+                                  ? 'bg-white text-black border-white'
+                                  : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/30 hover:text-white'
+                              }`}
+                            >
+                              {on && <Check className="w-3 h-3 inline mr-1 -mt-0.5" strokeWidth={3} />}
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {remainingFields.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {remainingFields.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => addField(f)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-dashed border-white/25 text-sm text-white/60 hover:border-[#3182F6]/60 hover:text-[#7db4ff] transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
+            {recruits.length === 0 && (
+              <p className="mt-3 text-xs text-[#F04452]">모집 분야를 1개 이상 추가해 주세요</p>
+            )}
+          </div>
+
+          {serverError && <p className="mt-6 text-xs text-[#F04452]">{serverError}</p>}
+
+          <button
+            onClick={submit}
+            disabled={!canSubmit}
+            className={`mt-8 h-12 rounded-full text-sm font-semibold transition-all ${
+              canSubmit
+                ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
+                : 'bg-white/10 text-white/30 cursor-not-allowed'
+            }`}
+          >
+            {saving ? '저장하는 중…' : isEdit ? '수정 완료' : '등록하기'}
+          </button>
+
+          {/* 삭제 (수정 모드 전용) */}
+          {isEdit && (
+            <div className="mt-10 pt-6 border-t border-white/10">
+              {!confirmDelete ? (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-[#F04452] transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  프로젝트 삭제
+                </button>
+              ) : (
+                <div className="liquid-glass rounded-2xl p-5">
+                  <p className="text-sm font-semibold text-white">정말 삭제할까요?</p>
+                  <p className="mt-1.5 text-xs text-white/50 leading-[1.6]">
+                    프로젝트와 지원 내역이 모두 사라지고 되돌릴 수 없어요.
+                  </p>
+                  <div className="mt-4 flex gap-2.5">
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="flex-1 h-11 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={remove}
+                      disabled={deleting}
+                      className="flex-1 h-11 rounded-full bg-[#F04452] text-white text-sm font-semibold hover:bg-[#d93b48] disabled:opacity-50 transition-colors"
+                    >
+                      {deleting ? '삭제 중…' : '삭제할게요'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        /* 등록 완료 */
+        <div className="flex-1 flex flex-col items-center justify-center max-w-lg w-full mx-auto px-6 pb-16 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: easeOut }}
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-[#3182F6] to-[#00d2ff] flex items-center justify-center"
+          >
+            <Check className="w-7 h-7 text-white" strokeWidth={3} />
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: easeOut }}
+            className="mt-8 text-3xl md:text-4xl font-semibold tracking-tight"
+          >
+            등록 완료!
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25, ease: easeOut }}
+            className="mt-3 text-sm text-white/50"
+          >
+            탐색 피드에 올라갔어요. 곧 크루들의 지원이 도착할 거예요.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35, ease: easeOut }}
+            className="liquid-glass rounded-2xl overflow-hidden mt-8 w-full text-left"
+          >
+            <div className="relative h-32">
+              <CoverFill cover={created.coverImage} />
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25">
+                  ● 모집중
+                </span>
+                <span className="text-[11px] font-semibold px-2 py-1 rounded-full backdrop-blur-md bg-black/30 text-[#A4F4FD]">
+                  {created.dday}
+                </span>
+              </div>
+            </div>
+            <div className="p-5 pt-3">
+              <h3 className="text-base font-semibold text-white">{created.title}</h3>
+              <p className="mt-1.5 text-sm text-white/50 leading-[1.5] line-clamp-2">
+                {created.desc}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {created.slots.map((s) => (
+                  <span
+                    key={s.field}
+                    className="text-[11px] px-2.5 py-1 rounded-full border border-white/15 text-white/75 bg-white/[0.04] tabular-nums"
+                  >
+                    {s.field} {s.confirmed}/{s.capacity}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.45, ease: easeOut }}
+            className="mt-8 w-full flex flex-col gap-2.5"
+          >
+            <button
+              onClick={() => navigate(`/projects/${created.id}`)}
+              className="w-full h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
+            >
+              프로젝트 보러 가기
+            </button>
+            <button
+              onClick={() => navigate('/my')}
+              className="w-full h-12 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
+            >
+              마이페이지
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}

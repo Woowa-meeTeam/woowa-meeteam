@@ -104,13 +104,18 @@ export const COVER_PRESETS = Object.keys(COVER_GRADIENTS);
  */
 export function CoverFill({ cover, fade = true }: { cover: string | null; fade?: boolean }) {
   if (!cover) return null;
-  const maskStyle: CSSProperties = fade
-    ? {
-        WebkitMaskImage: 'linear-gradient(to bottom, #000 42%, transparent 100%)',
-        maskImage: 'linear-gradient(to bottom, #000 42%, transparent 100%)',
-      }
-    : {};
   const isGradient = cover.startsWith('gradient:');
+
+  // 사진은 선명하게 보여야 하므로 아래쪽 끝에서만 살짝 흐려지게 합니다.
+  // (그라데이션 프리셋은 원래 장식이라 조금 더 일찍 fade 해도 자연스러움)
+  const maskStyle: CSSProperties = fade
+    ? (() => {
+        const start = isGradient ? '55%' : '78%';
+        const g = `linear-gradient(to bottom, #000 ${start}, transparent 100%)`;
+        return { WebkitMaskImage: g, maskImage: g };
+      })()
+    : {};
+
   return (
     <div className="absolute inset-0 overflow-hidden" style={maskStyle} aria-hidden="true">
       {isGradient ? (
@@ -121,8 +126,14 @@ export function CoverFill({ cover, fade = true }: { cover: string | null; fade?:
       ) : (
         <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
       )}
-      {/* 이미지가 배경 톤과 어울리도록 위·아래 살짝 어둡게 */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-[#0c0c0c]/70" />
+      {/* 뱃지 가독성을 위한 상단 그늘만 최소한으로. 사진 본체는 덮지 않습니다. */}
+      <div
+        className={`absolute inset-0 ${
+          isGradient
+            ? 'bg-gradient-to-b from-black/20 via-transparent to-[#0c0c0c]/60'
+            : 'bg-gradient-to-b from-black/35 via-transparent to-[#0c0c0c]/25'
+        }`}
+      />
     </div>
   );
 }

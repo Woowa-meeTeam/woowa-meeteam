@@ -9,7 +9,9 @@ import Testimonials from './components/Testimonials';
 import Steps from './components/Steps';
 import FinalCTA from './components/FinalCTA';
 import Onboarding from './components/Onboarding';
-import ProjectRegister from './components/ProjectRegister';
+import ProjectForm from './components/ProjectForm';
+import ProfileEdit from './components/ProfileEdit';
+import Crews from './components/Crews';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
 import ApplicantManage from './components/ApplicantManage';
@@ -120,7 +122,10 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/projects/new" element={<ProjectRegister />} />
+        <Route path="/projects/new" element={<ProjectForm />} />
+        <Route path="/projects/:id/edit" element={<ProjectForm />} />
+        <Route path="/profile/edit" element={<ProfileEdit />} />
+        <Route path="/crews" element={<Crews />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />

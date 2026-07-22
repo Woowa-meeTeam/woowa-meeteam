@@ -25,7 +25,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
   const recruiting = projects?.filter((p) => !p.closed).length ?? 0;
 
   return (
-    <section className="relative z-20 max-w-6xl mx-auto px-6 py-16 md:py-24">
+    <section id="projects" className="relative z-20 max-w-6xl mx-auto px-6 py-16 md:py-24 scroll-mt-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -83,7 +83,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
               }`}
             >
               {/* 대표 이미지 — 아래로 갈수록 배경에 녹아들도록 fade */}
-              <div className="relative h-24">
+              <div className="relative h-36">
                 <CoverFill cover={p.coverImage} />
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
                   <span

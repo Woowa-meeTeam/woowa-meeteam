@@ -6,11 +6,14 @@ import {
   CalendarDays,
   Check,
   Clock3,
+  ExternalLink,
   Link as LinkIcon,
+  Pencil,
   Users,
   X,
 } from 'lucide-react';
 import { Avatar, CoverFill, LogoMark } from './primitives';
+import Markdown from './Markdown';
 import { api, ApiError } from '../api';
 import type { Application, Project, User } from '../api';
 
@@ -140,7 +143,7 @@ export default function ProjectDetail() {
           </button>
 
           {/* 대표 이미지 히어로 — 아래로 배경에 녹아듦 */}
-          <div className="relative mt-5 h-48 md:h-56 rounded-3xl overflow-hidden">
+          <div className="relative mt-5 h-56 md:h-72 rounded-3xl overflow-hidden">
             <CoverFill cover={project.coverImage} />
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <span
@@ -178,11 +181,9 @@ export default function ProjectDetail() {
             </div>
           </div>
 
-          {/* 설명 */}
-          <div className="mt-8 space-y-4 text-[15px] text-white/70 leading-[1.7]">
-            {project.longDesc.map((p) => (
-              <p key={p.slice(0, 20)}>{p}</p>
-            ))}
+          {/* 설명 (마크다운) */}
+          <div className="mt-8">
+            <Markdown>{project.longDesc.join('\n')}</Markdown>
           </div>
 
           {/* 일정 · 프로토타입 */}
@@ -195,13 +196,21 @@ export default function ProjectDetail() {
               </div>
             </div>
             {project.prototype ? (
-              <div className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3">
+              <a
+                href={/^https?:\/\//.test(project.prototype) ? project.prototype : `https://${project.prototype}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3 group hover:-translate-y-0.5 transition-transform"
+              >
                 <LinkIcon className="w-4 h-4 text-white/40 flex-shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-[11px] text-white/40">프로토타입</div>
-                  <div className="text-sm text-[#7db4ff] mt-0.5 truncate">{project.prototype}</div>
+                  <div className="text-sm text-[#7db4ff] mt-0.5 truncate group-hover:text-[#A4F4FD] transition-colors">
+                    {project.prototype}
+                  </div>
                 </div>
-              </div>
+                <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+              </a>
             ) : (
               <div className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3 opacity-60">
                 <LinkIcon className="w-4 h-4 text-white/40 flex-shrink-0" />
@@ -239,6 +248,18 @@ export default function ProjectDetail() {
                         style={{ width: `${ratio}%` }}
                       />
                     </div>
+                    {s.skills.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {s.skills.map((sk) => (
+                          <span
+                            key={sk}
+                            className="text-[11px] text-white/60 px-2 py-0.5 rounded-full border border-white/10 bg-white/[0.03]"
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -273,12 +294,21 @@ export default function ProjectDetail() {
           {/* CTA */}
           <div className="mt-12">
             {isOwner ? (
-              <button
-                onClick={() => navigate(`/projects/${project.id}/applicants`)}
-                className="w-full h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
-              >
-                지원자 관리
-              </button>
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => navigate(`/projects/${project.id}/edit`)}
+                  className="h-12 px-5 rounded-full border border-white/15 text-white/80 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  수정
+                </button>
+                <button
+                  onClick={() => navigate(`/projects/${project.id}/applicants`)}
+                  className="flex-1 h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
+                >
+                  지원자 관리
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => canApply && setMode('apply')}

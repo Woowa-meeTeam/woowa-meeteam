@@ -72,7 +72,7 @@ export default function Onboarding() {
     setSaving(true);
     setServerError(null);
     try {
-      await api.updateMe({ crewName: crewName.trim(), fields, skills });
+      await api.updateMe({ crewName: crewName.trim(), fields, skills, onboarded: true });
       go(3);
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : '프로필 저장에 실패했어요');

@@ -80,13 +80,16 @@ export default function MyPage() {
               </div>
             </div>
             <button
-              onClick={() => navigate('/onboarding')}
+              onClick={() => navigate('/profile/edit')}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 border border-white/15 rounded-full px-3.5 py-2 hover:bg-white/5 hover:text-white transition-colors"
             >
               <Pencil className="w-3 h-3" />
               프로필 수정
             </button>
           </div>
+          {user.bio && (
+            <p className="mt-4 text-sm text-white/60 leading-[1.6] whitespace-pre-line">{user.bio}</p>
+          )}
           <div className="mt-4 flex flex-wrap gap-1.5">
             {user.skills.map((s) => (
               <span
@@ -147,13 +150,22 @@ export default function MyPage() {
                   <span className="text-xs text-white/50 tabular-nums">
                     {p.slots.map((s) => `${s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
                   </span>
-                  <button
-                    onClick={() => navigate(`/projects/${p.id}/applicants`)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold px-4 py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
-                  >
-                    지원자 관리
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/projects/${p.id}/edit`)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 text-white/70 text-xs font-medium px-3.5 py-2.5 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      수정
+                    </button>
+                    <button
+                      onClick={() => navigate(`/projects/${p.id}/applicants`)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold px-4 py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
+                    >
+                      지원자 관리
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

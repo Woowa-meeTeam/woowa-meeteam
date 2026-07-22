@@ -1,14 +1,31 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Menu } from 'lucide-react';
 import { Avatar, GithubButton, LogoMark } from './primitives';
 import { api } from '../api';
 import type { User } from '../api';
 
-const links = ['프로젝트 탐색', '크루', '가이드', '블로그'];
-
 export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; onMyPage?: () => void }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+
+  /** 홈이면 쇼케이스로 스크롤, 다른 페이지면 홈으로 이동 후 스크롤 */
+  const goToProjects = () => {
+    const scroll = () =>
+      document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.location.pathname === '/') scroll();
+    else {
+      navigate('/');
+      setTimeout(scroll, 100);
+    }
+  };
+
+  const links: { label: string; onClick: () => void }[] = [
+    { label: '프로젝트 탐색', onClick: goToProjects },
+    { label: '크루', onClick: () => navigate('/crews') },
+    { label: '가이드', onClick: () => navigate('/') },
+  ];
 
   useEffect(() => {
     api.me().then(setUser).catch(() => setUser(null));
@@ -43,16 +60,17 @@ export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; on
 
       <div className="hidden md:flex gap-8">
         {links.map((link, i) => (
-          <motion.a
-            key={link}
-            href="#"
+          <motion.button
+            key={link.label}
+            type="button"
+            onClick={link.onClick}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 + i * 0.05, ease: 'easeOut' }}
             className="text-white/70 text-sm font-medium hover:text-white transition-colors"
           >
-            {link}
-          </motion.a>
+            {link.label}
+          </motion.button>
         ))}
       </div>
 
