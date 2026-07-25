@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Menu, ShieldCheck, X } from 'lucide-react';
 import { Avatar, GithubButton, LogoMark } from './primitives';
 import { api } from '../api';
 import type { User } from '../api';
@@ -9,26 +9,21 @@ import type { User } from '../api';
 export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; onMyPage?: () => void }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-
-  /** 홈이면 쇼케이스로 스크롤, 다른 페이지면 홈으로 이동 후 스크롤 */
-  const goToProjects = () => {
-    const scroll = () =>
-      document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (window.location.pathname === '/') scroll();
-    else {
-      navigate('/');
-      setTimeout(scroll, 100);
-    }
-  };
-
-  const links: { label: string; onClick: () => void }[] = [
-    { label: '프로젝트 탐색', onClick: goToProjects },
-    { label: '크루', onClick: () => navigate('/crews') },
-  ];
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     api.me().then(setUser).catch(() => setUser(null));
   }, []);
+
+  const links: { label: string; onClick: () => void }[] = [
+    { label: '프로젝트 탐색', onClick: () => navigate('/projects') },
+    { label: '크루', onClick: () => navigate('/crews') },
+  ];
+
+  const go = (fn: () => void) => {
+    setMenuOpen(false);
+    fn();
+  };
 
   const avatarBtn = (
     <button
@@ -50,12 +45,12 @@ export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; on
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="relative z-20 max-w-6xl mx-auto px-6 py-5 flex items-center justify-between"
+      className="relative z-30 max-w-6xl mx-auto px-6 py-5 flex items-center justify-between"
     >
-      <div className="flex items-center gap-2.5">
+      <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" aria-label="홈으로">
         <LogoMark className="w-7 h-7" />
         <span className="text-[17px] font-bold tracking-tight">meeTeam</span>
-      </div>
+      </a>
 
       <div className="hidden md:flex gap-8">
         {links.map((link, i) => (
@@ -77,6 +72,7 @@ export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; on
         {user ? avatarBtn : <GithubButton onClick={onStart} />}
       </div>
 
+      {/* 모바일 */}
       <div className="md:hidden flex items-center gap-2.5">
         {user ? (
           avatarBtn
@@ -90,12 +86,57 @@ export default function Navbar({ onStart, onMyPage }: { onStart?: () => void; on
           </button>
         )}
         <button
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center"
-          aria-label="메뉴 열기"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white active:scale-[0.96] transition-all"
+          aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'}
+          aria-expanded={menuOpen}
         >
-          <Menu className="w-5 h-5" />
+          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
+
+      {/* 모바일 드롭다운 */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden absolute top-full right-6 mt-2 w-52 rounded-2xl bg-[#12151a] border border-white/10 shadow-2xl overflow-hidden py-2"
+          >
+            {links.map((link) => (
+              <button
+                key={link.label}
+                onClick={() => go(link.onClick)}
+                className="w-full text-left px-5 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+              >
+                {link.label}
+              </button>
+            ))}
+            {user && (
+              <>
+                <div className="my-1.5 h-px bg-white/10" />
+                <button
+                  onClick={() => go(() => onMyPage?.())}
+                  className="w-full text-left px-5 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  마이페이지
+                </button>
+                {user.isAdmin && (
+                  <button
+                    onClick={() => go(() => navigate('/admin'))}
+                    className="w-full text-left px-5 py-3 text-sm text-[#7db4ff] hover:bg-white/5 transition-colors inline-flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    관리자
+                  </button>
+                )}
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

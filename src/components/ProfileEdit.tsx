@@ -56,7 +56,7 @@ export default function ProfileEdit() {
     setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
 
   const nameValid = crewName.trim().length >= 2 && crewName.trim().length <= 20;
-  const bioValid = bio.length <= 200;
+  const bioValid = bio.length <= 500;
   const dirty =
     user != null &&
     (crewName.trim() !== (user.crewName ?? '') ||
@@ -157,15 +157,15 @@ export default function ProfileEdit() {
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            rows={3}
+            rows={5}
             placeholder="어떤 걸 좋아하고, 어떤 팀을 찾고 있는지 자유롭게 적어주세요"
             className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-none leading-[1.6]"
           />
           <div className="mt-2 flex justify-between text-xs">
             <span className={!bioValid ? 'text-[#F04452]' : 'text-white/30'}>
-              {!bioValid ? '200자 이내로 적어 주세요' : '크루 목록과 지원할 때 함께 보여요'}
+              {!bioValid ? '500자 이내로 적어 주세요' : '크루 목록과 지원할 때 함께 보여요'}
             </span>
-            <span className="text-white/30 tabular-nums">{bio.length}/200</span>
+            <span className="text-white/30 tabular-nums">{bio.length}/500</span>
           </div>
         </label>
 

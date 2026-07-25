@@ -11,6 +11,7 @@ import Onboarding from './components/Onboarding';
 import ProjectForm from './components/ProjectForm';
 import ProfileEdit from './components/ProfileEdit';
 import Crews from './components/Crews';
+import AllProjects from './components/AllProjects';
 import CrewDetail from './components/CrewDetail';
 import Admin from './components/Admin';
 import FeedbackWidget from './components/FeedbackWidget';
@@ -138,6 +139,7 @@ export default function App() {
         <Route path="/projects/new" element={<ProjectForm />} />
         <Route path="/projects/:id/edit" element={<ProjectForm />} />
         <Route path="/profile/edit" element={<ProfileEdit />} />
+        <Route path="/projects" element={<AllProjects />} />
         <Route path="/crews" element={<Crews />} />
         <Route path="/crews/:id" element={<CrewDetail />} />
         <Route path="/admin" element={<Admin />} />

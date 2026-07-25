@@ -44,13 +44,21 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
             먼저 둘러보세요.
           </h2>
         </div>
-        <button
-          onClick={onRegister}
-          className="group inline-flex items-center gap-2 rounded-full bg-white text-black text-sm font-semibold px-5 py-3 hover:bg-white/90 active:scale-[0.98] transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          프로젝트 등록
-        </button>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/projects"
+            className="text-sm font-medium text-white/60 hover:text-white transition-colors px-2"
+          >
+            전체 보기
+          </a>
+          <button
+            onClick={onRegister}
+            className="group inline-flex items-center gap-2 rounded-full bg-white text-black text-sm font-semibold px-5 py-3 hover:bg-white/90 active:scale-[0.98] transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            프로젝트 등록
+          </button>
+        </div>
       </motion.div>
 
       {error && (

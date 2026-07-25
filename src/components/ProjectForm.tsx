@@ -29,6 +29,7 @@ export default function ProjectForm() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
   const [desc, setDesc] = useState('');
   const [prototype, setPrototype] = useState('');
   const [cover, setCover] = useState<string>('gradient:aurora');
@@ -41,10 +42,36 @@ export default function ProjectForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [insertingImage, setInsertingImage] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skillOpen, setSkillOpen] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
+  const descRef = useRef<HTMLTextAreaElement>(null);
+
+  // 설명에 사진 첨부 — Storage 에 올리고 커서 위치에 ![](url) 삽입
+  const onInsertImage = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setServerError('이미지는 5MB 이하로 올려 주세요');
+      return;
+    }
+    setInsertingImage(true);
+    setServerError(null);
+    try {
+      const url = await api.uploadImage(file);
+      const md = `\n![이미지](${url})\n`;
+      const el = descRef.current;
+      const at = el?.selectionStart ?? desc.length;
+      setDesc((prev) => prev.slice(0, at) + md + prev.slice(at));
+    } catch (e) {
+      setServerError(e instanceof ApiError ? e.message : '이미지 업로드에 실패했어요');
+    } finally {
+      setInsertingImage(false);
+      if (imageRef.current) imageRef.current.value = '';
+    }
+  };
 
   // 수정 모드: 기존 값 불러오기
   useEffect(() => {
@@ -53,6 +80,7 @@ export default function ProjectForm() {
       .project(id)
       .then((p) => {
         setTitle(p.title);
+        setSummary(p.summary ?? '');
         setDesc(p.longDesc.join('\n'));
         setPrototype(p.prototype ?? '');
         setCover(p.coverImage ?? 'gradient:aurora');
@@ -94,6 +122,7 @@ export default function ProjectForm() {
     setServerError(null);
     const payload = {
       title: title.trim(),
+      summary: summary.trim() || undefined,
       desc: desc.trim(),
       prototype: prototype.trim() || undefined,
       coverImage: cover,
@@ -257,19 +286,54 @@ export default function ProjectForm() {
             </div>
           </label>
 
+          {/* 짧은 소개 */}
+          <label className="mt-6 block">
+            <span className="text-sm font-medium text-white/80">
+              짧은 소개 <span className="text-white/35 font-normal">(선택)</span>
+            </span>
+            <input
+              value={summary}
+              onChange={(e) => setSummary(e.target.value.slice(0, 80))}
+              placeholder="예) 다녀온 여행을 지도에 기록하는 웹앱"
+              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+            />
+            <div className="mt-2 flex justify-between text-xs">
+              <span className="text-white/30">카드에 보이는 한 줄 요약이에요</span>
+              <span className="text-white/30 tabular-nums">{summary.length}/80</span>
+            </div>
+          </label>
+
           {/* 설명 (마크다운) */}
           <label className="mt-6 block">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-medium text-white/80">설명</span>
-              <span className="text-[11px] text-white/35">마크다운 지원 · **굵게** ## 제목 - 목록</span>
+              <button
+                type="button"
+                onClick={() => imageRef.current?.click()}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#7db4ff] hover:text-[#A4F4FD] transition-colors"
+              >
+                <ImagePlus className="w-3 h-3" />
+                {insertingImage ? '올리는 중…' : '사진 첨부'}
+              </button>
+              <input
+                ref={imageRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onInsertImage(e.target.files?.[0])}
+              />
             </div>
             <textarea
+              ref={descRef}
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              placeholder={'## 어떤 서비스인가요\n다녀온 여행지를 지도에 기록하는 웹앱이에요.\n\n- 매주 화/목 저녁 모임\n- **완성**에 초점을 둡니다'}
+              placeholder={'## 어떤 서비스인가요\n다녀온 여행지를 지도에 기록하는 웹앱이에요.\n\n- 매주 화/목 저녁 모임\n- **완성**에 초점을 둡니다\n\n(사진 첨부 버튼으로 이미지를 넣을 수 있어요)'}
               rows={8}
               className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-y leading-[1.7] font-mono"
             />
+            <span className="mt-1.5 block text-[11px] text-white/30">
+              마크다운 지원 · **굵게** · ## 제목 · - 목록 · ![](이미지)
+            </span>
           </label>
 
           {/* 프로토타입 */}

@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   ArrowLeft,
+  Bookmark,
   Check,
   ExternalLink,
+  Heart,
   Link as LinkIcon,
   Pencil,
   Users,
@@ -17,7 +19,7 @@ import type { Application, Project, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-type Mode = 'view' | 'apply' | 'done';
+type Mode = 'view' | 'apply';
 
 export default function ProjectDetail() {
   const { id = '' } = useParams();
@@ -45,9 +47,35 @@ export default function ProjectDetail() {
         setUser(u);
         const mine = apps.find((a) => a.projectId === p.id && a.status !== 'canceled') ?? null;
         setMyApplication(mine);
-        if (mine) setMode('done');
+        // 지원 여부와 무관하게 항상 상세(view)를 볼 수 있게 둡니다.
       })
       .catch((e) => setLoadError(e.message));
+
+  const toggleReaction = async (kind: 'LIKE' | 'BOOKMARK') => {
+    if (!project) return;
+    const on = kind === 'LIKE' ? project.myLike : project.myBookmark;
+    // 낙관적 업데이트
+    setProject((prev) =>
+      prev
+        ? kind === 'LIKE'
+          ? { ...prev, myLike: !on, likes: prev.likes + (on ? -1 : 1) }
+          : { ...prev, myBookmark: !on, bookmarks: prev.bookmarks + (on ? -1 : 1) }
+        : prev,
+    );
+    try {
+      await api.toggleReaction(project.id, kind, !on);
+    } catch (e) {
+      // 실패 시 롤백
+      setProject((prev) =>
+        prev
+          ? kind === 'LIKE'
+            ? { ...prev, myLike: on, likes: prev.likes + (on ? 1 : -1) }
+            : { ...prev, myBookmark: on, bookmarks: prev.bookmarks + (on ? 1 : -1) }
+          : prev,
+      );
+      if (e instanceof ApiError && e.status === 401) setSubmitError('로그인이 필요해요');
+    }
+  };
 
   useEffect(() => {
     load();
@@ -85,7 +113,8 @@ export default function ProjectDetail() {
     try {
       const application = await api.apply(project.id, { field: applyField, message: message.trim() });
       setMyApplication(application);
-      setMode('done');
+      setMode('view');
+      load(); // 지원자 수 등 최신화
     } catch (e) {
       setSubmitError(e instanceof ApiError ? e.message : '지원에 실패했어요');
     } finally {
@@ -157,7 +186,46 @@ export default function ProjectDetail() {
             {project.title}
           </h1>
 
-          <div className="mt-5 flex items-center gap-3">
+          {project.summary && (
+            <p className="mt-3 text-[15px] text-white/60 leading-[1.6]">{project.summary}</p>
+          )}
+
+          {/* 지원자 수 · 좋아요 · 북마크 */}
+          <div className="mt-5 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs text-white/55 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10">
+              <Users className="w-3.5 h-3.5" />
+              지원 {project.applicants}명
+            </span>
+            <button
+              onClick={() => toggleReaction('LIKE')}
+              className={`inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full border transition-all active:scale-[0.96] ${
+                project.myLike
+                  ? 'border-[#F04452]/40 text-[#ff8a94] bg-[#F04452]/10'
+                  : 'border-white/10 text-white/55 bg-white/[0.04] hover:text-white'
+              }`}
+              aria-pressed={project.myLike}
+            >
+              <Heart className="w-3.5 h-3.5" fill={project.myLike ? 'currentColor' : 'none'} />
+              {project.likes}
+            </button>
+            <button
+              onClick={() => toggleReaction('BOOKMARK')}
+              className={`inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full border transition-all active:scale-[0.96] ${
+                project.myBookmark
+                  ? 'border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10'
+                  : 'border-white/10 text-white/55 bg-white/[0.04] hover:text-white'
+              }`}
+              aria-pressed={project.myBookmark}
+            >
+              <Bookmark className="w-3.5 h-3.5" fill={project.myBookmark ? 'currentColor' : 'none'} />
+              {project.bookmarks}
+            </button>
+          </div>
+
+          <button
+            onClick={() => project.owner && navigate(`/crews/${project.owner.id}`)}
+            className="mt-5 flex items-center gap-3 text-left group"
+          >
             <Avatar
               name={project.owner?.name}
               avatarUrl={project.owner?.avatarUrl}
@@ -165,10 +233,12 @@ export default function ProjectDetail() {
               className="w-9 h-9 text-xs"
             />
             <div>
-              <div className="text-sm font-semibold text-white">{project.owner?.name}</div>
+              <div className="text-sm font-semibold text-white group-hover:text-[#7db4ff] transition-colors">
+                {project.owner?.name}
+              </div>
               <div className="text-xs text-white/50">{project.owner?.field} · 프로젝트 오너</div>
             </div>
-          </div>
+          </button>
 
           {/* 설명 (마크다운) */}
           <div className="mt-8">
@@ -259,11 +329,12 @@ export default function ProjectDetail() {
                   key={`${m.name}-${m.field}`}
                   className="liquid-glass rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2.5"
                 >
-                  <span
-                    className={`w-7 h-7 rounded-full bg-gradient-to-br ${m.avatarGradient} flex items-center justify-center text-[11px] font-semibold text-white`}
-                  >
-                    {m.name.slice(0, 1)}
-                  </span>
+                  <Avatar
+                    name={m.name}
+                    avatarUrl={m.avatarUrl}
+                    gradient={m.avatarGradient}
+                    className="w-7 h-7 text-[11px]"
+                  />
                   <span className="text-xs">
                     <span className="text-white font-medium">{m.name}</span>
                     <span className="text-white/40 ml-1.5">{m.field}</span>
@@ -291,24 +362,60 @@ export default function ProjectDetail() {
                   지원자 관리
                 </button>
               </div>
+            ) : myApplication ? (
+              /* 이미 지원함 — 상태 배너 + 취소 */
+              <div className="liquid-glass rounded-2xl p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white">
+                    {myApplication.field} 지원
+                  </span>
+                  {myApplication.status === 'accepted' ? (
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
+                      ✓ 수락됨
+                    </span>
+                  ) : myApplication.status === 'rejected' ? (
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/40">
+                      거절됨
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
+                      대기중
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2.5 text-sm text-white/70 leading-[1.6] bg-white/[0.04] rounded-xl px-4 py-3">
+                  “{myApplication.message}”
+                </p>
+                {myApplication.status === 'pending' && (
+                  <button
+                    onClick={cancelApplication}
+                    className="mt-3 w-full h-11 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    지원 취소하기
+                  </button>
+                )}
+              </div>
             ) : (
-              <button
-                onClick={() => canApply && setMode('apply')}
-                disabled={!canApply}
-                className={`w-full h-12 rounded-full text-sm font-semibold transition-all ${
-                  canApply
-                    ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                    : 'bg-white/10 text-white/30 cursor-not-allowed'
-                }`}
-              >
-                {project.closed ? '모집이 마감된 프로젝트예요' : '지원하기'}
-              </button>
+              <>
+                <button
+                  onClick={() => canApply && setMode('apply')}
+                  disabled={!canApply}
+                  className={`w-full h-12 rounded-full text-sm font-semibold transition-all ${
+                    canApply
+                      ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+                >
+                  {project.closed ? '모집이 마감된 프로젝트예요' : '지원하기'}
+                </button>
+                {canApply && (
+                  <p className="mt-3 text-center text-xs text-white/40">
+                    지원하면 내 분야 · 스킬 프로필이 오너에게 공유돼요
+                  </p>
+                )}
+              </>
             )}
-            {canApply && (
-              <p className="mt-3 text-center text-xs text-white/40">
-                지원하면 내 분야 · 스킬 프로필이 오너에게 공유돼요
-              </p>
-            )}
+            {submitError && <p className="mt-3 text-center text-xs text-[#F04452]">{submitError}</p>}
           </div>
         </motion.div>
       )}
@@ -424,92 +531,6 @@ export default function ProjectDetail() {
         </motion.div>
       )}
 
-      {/* ---------------- DONE ---------------- */}
-      {mode === 'done' && myApplication && (
-        <div className="flex-1 flex flex-col items-center justify-center max-w-lg w-full mx-auto px-6 pb-16 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: easeOut }}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-[#3182F6] to-[#00d2ff] flex items-center justify-center"
-          >
-            <Check className="w-7 h-7 text-white" strokeWidth={3} />
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: easeOut }}
-            className="mt-8 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.25]"
-          >
-            {myApplication.status === 'accepted' ? '팀 합류 확정!' : '지원 완료!'}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25, ease: easeOut }}
-            className="mt-3 text-sm text-white/50"
-          >
-            {myApplication.status === 'accepted'
-              ? `${project.owner?.name}님이 수락했어요. 팀에서 만나요!`
-              : `${project.owner?.name}님이 확인하면 결과를 알려드릴게요.`}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35, ease: easeOut }}
-            className="liquid-glass rounded-2xl p-5 mt-8 w-full text-left"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">{project.title}</span>
-              {myApplication.status === 'accepted' ? (
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
-                  ✓ 수락됨
-                </span>
-              ) : myApplication.status === 'rejected' ? (
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/40">
-                  거절됨
-                </span>
-              ) : (
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
-                  대기중
-                </span>
-              )}
-            </div>
-            <div className="mt-3 text-xs text-white/50">
-              {myApplication.field} 지원 · {user?.crewName}
-            </div>
-            <p className="mt-2.5 text-sm text-white/70 leading-[1.6] bg-white/[0.04] rounded-xl px-4 py-3">
-              “{myApplication.message}”
-            </p>
-          </motion.div>
-
-          {submitError && <p className="mt-4 text-xs text-[#F04452]">{submitError}</p>}
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.45, ease: easeOut }}
-            className="mt-8 w-full flex flex-col gap-2.5"
-          >
-            <button
-              onClick={() => navigate('/')}
-              className="w-full h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
-            >
-              다른 프로젝트 둘러보기
-            </button>
-            {myApplication.status === 'pending' && (
-              <button
-                onClick={cancelApplication}
-                className="w-full h-12 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
-              >
-                지원 취소하기
-              </button>
-            )}
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

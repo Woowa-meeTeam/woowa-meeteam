@@ -32,10 +32,16 @@ export type Project = {
   longDesc: string[];
   prototype: string | null;
   coverImage: string | null;
-  schedule: string;
+  summary: string | null;
   deadline: string | null;
   dday: string;
   closed: boolean;
+  applicants: number;   // 대기 + 확정
+  pending: number;      // 대기중
+  likes: number;
+  bookmarks: number;
+  myLike: boolean;
+  myBookmark: boolean;
   slots: Slot[];
   owner: { id: string; name: string; field: string; avatarGradient: string; avatarUrl?: string | null } | null;
   members: Member[];
@@ -100,11 +106,10 @@ type FeedbackRow = {
 /** 프로젝트 등록/수정 공용 입력 */
 export type ProjectInput = {
   title: string;
+  summary?: string;
   desc: string;
   prototype?: string;
   coverImage?: string;
-  schedule?: string;
-  deadline?: string | null; // YYYY-MM-DD
   slots: { field: string; capacity: number; skills: string[] }[];
 };
 
@@ -189,17 +194,17 @@ const toUser = (c: CrewRow): User => ({
 });
 
 const PROJECT_SELECT = `
-  id, title, description, cover_image, prototype_url, schedule, deadline, status,
+  id, title, summary, description, cover_image, prototype_url, deadline, status,
   owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url )
 `;
 
 type ProjectRow = {
   id: string;
   title: string;
+  summary: string | null;
   description: string;
   cover_image: string | null;
   prototype_url: string | null;
-  schedule: string;
   deadline: string | null;
   status: string;
   owner: { id: string; crew_name: string | null; fields: string[] | null; avatar_url: string | null } | null;
@@ -235,14 +240,20 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
   return {
     id: row.id,
     title: row.title,
-    desc: stripMarkdown(row.description).slice(0, 90),
+    desc: row.summary?.trim() || stripMarkdown(row.description).slice(0, 90),
     longDesc: paragraphs,
     prototype: row.prototype_url,
     coverImage: row.cover_image,
-    schedule: row.schedule,
+    summary: row.summary,
     deadline: row.deadline,
     dday: ddayFrom(row.deadline),
     closed: row.status === 'CLOSED' || allFull,
+    applicants: 0,
+    pending: 0,
+    likes: 0,
+    bookmarks: 0,
+    myLike: false,
+    myBookmark: false,
     slots: mySlots,
     owner: row.owner
       ? {
@@ -264,17 +275,53 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
   };
 }
 
-/** 여러 프로젝트의 슬롯/멤버를 한 번에 가져와 N+1 을 피합니다. */
+/** 여러 프로젝트의 슬롯/멤버/집계를 한 번에 가져와 N+1 을 피합니다. */
 async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const [slotsRes, membersRes] = await Promise.all([
+  const { data: auth } = await supabase.auth.getUser();
+  const myId = auth.user?.id;
+
+  const [slotsRes, membersRes, applicantRes, reactionRes, myReactRes] = await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
     supabase.from('project_members').select('*').in('project_id', ids),
+    supabase.from('project_applicant_counts').select('*').in('project_id', ids),
+    supabase.from('project_reaction_counts').select('*').in('project_id', ids),
+    myId
+      ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
+      : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
   ]);
+
   const slots = (slotsRes.data ?? []) as SlotRow[];
   const members = (membersRes.data ?? []) as MemberRow[];
-  return rows.map((r) => toProject(r, slots, members));
+  const applicants = new Map(
+    ((applicantRes.data ?? []) as { project_id: string; pending: number; applicants: number }[]).map(
+      (a) => [a.project_id, a],
+    ),
+  );
+  const reactions = new Map(
+    ((reactionRes.data ?? []) as { project_id: string; likes: number; bookmarks: number }[]).map(
+      (r) => [r.project_id, r],
+    ),
+  );
+  const mine = new Set(
+    ((myReactRes.data ?? []) as { project_id: string; kind: string }[]).map(
+      (r) => `${r.project_id}:${r.kind}`,
+    ),
+  );
+
+  return rows.map((r) => {
+    const p = toProject(r, slots, members);
+    const a = applicants.get(r.id);
+    const rc = reactions.get(r.id);
+    p.pending = a?.pending ?? 0;
+    p.applicants = a?.applicants ?? 0;
+    p.likes = rc?.likes ?? 0;
+    p.bookmarks = rc?.bookmarks ?? 0;
+    p.myLike = mine.has(`${r.id}:LIKE`);
+    p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
+    return p;
+  });
 }
 
 /* ── API ───────────────────────────────────────────────────── */
@@ -475,11 +522,10 @@ export const api = {
   async createProject(body: ProjectInput): Promise<Project> {
     const { data, error } = await supabase.rpc('create_project', {
       p_title: body.title.trim(),
+      p_summary: body.summary ?? '',
       p_description: body.desc.trim(),
       p_cover_image: body.coverImage ?? '',
       p_prototype: body.prototype ?? '',
-      p_schedule: body.schedule ?? '',
-      p_deadline: body.deadline || null,
       p_slots: body.slots,
     });
     if (error) throw toApiError(error, '등록에 실패했어요');
@@ -491,15 +537,37 @@ export const api = {
     const { error } = await supabase.rpc('update_project', {
       p_id: id,
       p_title: body.title.trim(),
+      p_summary: body.summary ?? '',
       p_description: body.desc.trim(),
       p_cover_image: body.coverImage ?? '',
       p_prototype: body.prototype ?? '',
-      p_schedule: body.schedule ?? '',
-      p_deadline: body.deadline || null,
       p_slots: body.slots,
     });
     if (error) throw toApiError(error, '수정에 실패했어요');
     return api.project(id);
+  },
+
+  /** 좋아요 · 북마크 토글 (익명 카운트) */
+  async toggleReaction(projectId: string, kind: 'LIKE' | 'BOOKMARK', on: boolean) {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    if (on) {
+      const { error } = await supabase
+        .from('project_reactions')
+        .insert({ project_id: projectId, crew_id: auth.user.id, kind });
+      if (error && error.code !== '23505') throw toApiError(error, '처리에 실패했어요');
+    } else {
+      const { error } = await supabase
+        .from('project_reactions')
+        .delete()
+        .match({ project_id: projectId, crew_id: auth.user.id, kind });
+      if (error) throw toApiError(error, '처리에 실패했어요');
+    }
+  },
+
+  /** 마크다운 본문용 이미지 업로드 → 공개 URL */
+  async uploadImage(file: File): Promise<string> {
+    return api.uploadCover(file);
   },
 
   /** 프로젝트 삭제 (FR-PRJ-06) — RLS 로 오너만. 슬롯·지원서는 cascade */
