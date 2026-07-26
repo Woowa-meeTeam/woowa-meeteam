@@ -13,17 +13,26 @@ const ALL_FIELDS = ['프론트엔드', '백엔드', '안드로이드', 'iOS', '�
 export default function Crews() {
   const navigate = useNavigate();
   const [crews, setCrews] = useState<User[] | null>(null);
+  const [lookingIds, setLookingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [field, setField] = useState<string | null>(null);
+  const [lookingOnly, setLookingOnly] = useState(false);
 
   useEffect(() => {
-    api
-      .crews()
-      .then(setCrews)
+    Promise.all([api.crews(), api.crewsLookingForTeam().catch(() => [] as User[])])
+      .then(([all, looking]) => {
+        setCrews(all);
+        setLookingIds(new Set(looking.map((c) => c.id)));
+      })
       .catch((e) => setError(e.message));
   }, []);
 
-  const filtered = crews?.filter((c) => !field || c.fields.includes(field)) ?? [];
+  const filtered =
+    crews?.filter(
+      (c) =>
+        (!field || c.fields.includes(field)) && (!lookingOnly || lookingIds.has(c.id)),
+    ) ?? [];
+  const lookingCount = crews?.filter((c) => lookingIds.has(c.id)).length ?? 0;
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -78,7 +87,7 @@ export default function Crews() {
           {ALL_FIELDS.map((f) => (
             <button
               key={f}
-              onClick={() => setField(f)}
+              onClick={() => setField(field === f ? null : f)}
               className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
                 field === f
                   ? 'bg-white text-black border-white'
@@ -88,6 +97,17 @@ export default function Crews() {
               {f}
             </button>
           ))}
+          <span className="mx-1 w-px h-6 self-center bg-white/10" />
+          <button
+            onClick={() => setLookingOnly((v) => !v)}
+            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+              lookingOnly
+                ? 'border-[#FFB020]/50 text-[#ffd27d] bg-[#FFB020]/10'
+                : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
+            }`}
+          >
+            팀 찾는 중 {lookingCount > 0 && <span className="opacity-70">{lookingCount}</span>}
+          </button>
         </div>
 
         {error && (
@@ -135,6 +155,11 @@ export default function Crews() {
                     <div className="text-base font-semibold text-white truncate">{c.crewName}</div>
                     <span className="text-xs text-white/40">@{c.githubLogin}</span>
                   </div>
+                  {lookingIds.has(c.id) && (
+                    <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
+                      팀 찾는 중
+                    </span>
+                  )}
                 </div>
 
                 {c.bio && (

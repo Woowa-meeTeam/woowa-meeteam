@@ -172,12 +172,24 @@ export default function ProjectDetail() {
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <span
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
-                  project.closed
-                    ? 'border-white/15 text-white/70 bg-black/30'
-                    : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
+                  project.confirmed
+                    ? 'border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/20'
+                    : project.status === 'PENDING'
+                      ? 'border-[#FFB020]/40 text-[#ffd27d] bg-black/30'
+                      : project.closed
+                        ? 'border-white/15 text-white/70 bg-black/30'
+                        : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
                 }`}
               >
-                {project.closed ? '모집 마감' : '● 모집중'}
+                {project.confirmed
+                  ? '✓ 팀 확정'
+                  : project.status === 'PENDING'
+                    ? '승인 대기'
+                    : project.status === 'REJECTED'
+                      ? '반려됨'
+                      : project.closed
+                        ? '모집 마감'
+                        : '● 모집중'}
               </span>
             </div>
           </div>
@@ -406,7 +418,13 @@ export default function ProjectDetail() {
                       : 'bg-white/10 text-white/30 cursor-not-allowed'
                   }`}
                 >
-                  {project.closed ? '모집이 마감된 프로젝트예요' : '지원하기'}
+                  {project.confirmed
+                    ? '팀이 확정된 프로젝트예요'
+                    : project.status === 'PENDING'
+                      ? '코치 승인 대기 중인 프로젝트예요'
+                      : project.closed
+                        ? '모집이 마감된 프로젝트예요'
+                        : '지원하기'}
                 </button>
                 {canApply && (
                   <p className="mt-3 text-center text-xs text-white/40">

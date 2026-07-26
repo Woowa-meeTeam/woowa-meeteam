@@ -532,7 +532,7 @@ export default function ProjectForm() {
             transition={{ duration: 0.6, delay: 0.15, ease: easeOut }}
             className="mt-8 text-3xl md:text-4xl font-semibold tracking-tight"
           >
-            등록 완료!
+            {isEdit ? '수정 완료!' : '등록 완료!'}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -540,7 +540,9 @@ export default function ProjectForm() {
             transition={{ duration: 0.6, delay: 0.25, ease: easeOut }}
             className="mt-3 text-sm text-white/50"
           >
-            탐색 피드에 올라갔어요. 곧 크루들의 지원이 도착할 거예요.
+            {isEdit
+              ? '변경사항이 저장됐어요.'
+              : '코치 승인을 받으면 탐색 피드에 게시돼요. 승인 현황은 마이페이지에서 볼 수 있어요.'}
           </motion.p>
 
           <motion.div
@@ -552,11 +554,14 @@ export default function ProjectForm() {
             <div className="relative h-32">
               <CoverFill cover={created.coverImage} />
               <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25">
-                  ● 모집중
-                </span>
-                <span className="text-[11px] font-semibold px-2 py-1 rounded-full backdrop-blur-md bg-black/30 text-[#A4F4FD]">
-                  {created.dday}
+                <span
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
+                    created.status === 'PENDING'
+                      ? 'border-[#FFB020]/40 text-[#ffd27d] bg-black/30'
+                      : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
+                  }`}
+                >
+                  {created.status === 'PENDING' ? '승인 대기' : '● 모집중'}
                 </span>
               </div>
             </div>

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Pencil, ShieldCheck, X } from 'lucide-react';
-import { Avatar, HomeLogo } from './primitives';
-import { api } from '../api';
-import type { Application, Project, User } from '../api';
+import { ArrowRight, Pencil, ShieldCheck, Users, X } from 'lucide-react';
+import { Avatar, CoverFill, HomeLogo } from './primitives';
+import { api, FIELD_SHORT } from '../api';
+import type { Application, Project, ProjectStatus, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-type Tab = 'owned' | 'applied';
+type Tab = 'owned' | 'applied' | 'teams';
+
+const STATUS_BADGE: Record<ProjectStatus, { label: string; cls: string }> = {
+  PENDING: { label: '승인 대기', cls: 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10' },
+  REJECTED: { label: '반려됨', cls: 'border-white/10 text-white/40' },
+  RECRUITING: { label: '● 모집중', cls: 'border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10' },
+  CLOSED: { label: '모집 마감', cls: 'border-white/15 text-white/60' },
+  CONFIRMED: { label: '✓ 팀 확정', cls: 'border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10' },
+};
 
 export default function MyPage() {
   const navigate = useNavigate();
@@ -16,14 +24,16 @@ export default function MyPage() {
   const [user, setUser] = useState<User | null>(null);
   const [ownedProjects, setOwnedProjects] = useState<Project[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [teams, setTeams] = useState<Project[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.me(), api.myProjects(), api.myApplications()])
-      .then(([me, owned, apps]) => {
+    Promise.all([api.me(), api.myProjects(), api.myApplications(), api.myTeams()])
+      .then(([me, owned, apps, myTeams]) => {
         setUser(me);
         setOwnedProjects(owned);
         setApplications(apps);
+        setTeams(myTeams);
         setLoaded(true);
       })
       .catch(() => navigate('/', { replace: true })); // 미로그인 → 랜딩으로
@@ -126,6 +136,14 @@ export default function MyPage() {
           >
             지원한 프로젝트 <span className="opacity-50">{applications.length}</span>
           </button>
+          <button
+            onClick={() => setTab('teams')}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === 'teams' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
+            }`}
+          >
+            나의 팀 <span className="opacity-50">{teams.length}</span>
+          </button>
         </div>
 
         {/* 등록한 프로젝트 */}
@@ -140,14 +158,13 @@ export default function MyPage() {
               <div key={p.id} className="liquid-glass rounded-2xl p-5">
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
-                      p.closed
-                        ? 'border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10'
-                        : 'border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10'
-                    }`}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_BADGE[p.status].cls}`}
                   >
-                    {p.closed ? '✓ 팀 구성 완료' : '● 모집중'}
+                    {STATUS_BADGE[p.status].label}
                   </span>
+                  {p.status === 'PENDING' && (
+                    <span className="text-[11px] text-white/40">코치 승인을 기다리고 있어요</span>
+                  )}
                 </div>
                 <h3 className="mt-3 text-base font-semibold text-white">{p.title}</h3>
                 <p className="mt-1.5 text-sm text-white/50 leading-[1.5]">{p.desc}</p>
@@ -219,6 +236,61 @@ export default function MyPage() {
                 수락되면 팀 멤버로 확정되고, 대기 중에는 지원을 취소할 수 있어요
               </p>
             )}
+          </div>
+        )}
+
+        {/* 나의 팀 (확정된 팀) */}
+        {tab === 'teams' && (
+          <div className="mt-5 space-y-3">
+            {teams.length === 0 && (
+              <p className="text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+                아직 확정된 팀이 없어요.
+                <br />
+                <span className="text-white/30 text-xs">
+                  프로젝트에 지원하거나 직접 팀을 꾸려보세요.
+                </span>
+              </p>
+            )}
+            {teams.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => navigate(`/projects/${p.id}`)}
+                className="w-full text-left liquid-glass rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-transform"
+              >
+                <div className="relative h-24">
+                  <CoverFill cover={p.coverImage} />
+                  <span className="absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
+                    ✓ 팀 확정
+                  </span>
+                  {p.owner?.id === user.id && (
+                    <span className="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md bg-black/30 text-white/70">
+                      내 프로젝트
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 pt-3">
+                  <h3 className="text-base font-semibold text-white">{p.title}</h3>
+                  <div className="mt-3 flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-white/40" />
+                    <div className="flex -space-x-1.5">
+                      {p.members.slice(0, 6).map((m, i) => (
+                        <Avatar
+                          key={i}
+                          name={m.name}
+                          avatarUrl={m.avatarUrl}
+                          gradient={m.avatarGradient}
+                          className="w-6 h-6 text-[9px] ring-2 ring-[#0c0c0c]"
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-white/50 ml-1">{p.members.length}명</span>
+                    <span className="ml-auto text-[11px] text-white/40 tabular-nums">
+                      {p.slots.map((s) => FIELD_SHORT[s.field] ?? s.field).join(' · ')}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </motion.div>

@@ -27,6 +27,8 @@ export default function ApplicantManage() {
       .catch((e) => setError(e.message));
   }, [id]);
 
+  const [working, setWorking] = useState(false);
+
   const setStatus = async (appId: string, status: 'accepted' | 'rejected' | 'pending') => {
     setActionError(null);
     try {
@@ -36,6 +38,38 @@ export default function ApplicantManage() {
       setProject(updated);
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : '처리에 실패했어요');
+    }
+  };
+
+  const reload = () =>
+    api.projectApplications(id).then(({ project, applications }) => {
+      setProject(project);
+      setApplications(applications);
+    });
+
+  const confirmTeam = async () => {
+    setActionError(null);
+    setWorking(true);
+    try {
+      await api.confirmTeam(id);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : '팀 확정에 실패했어요');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const unconfirmTeam = async () => {
+    setActionError(null);
+    setWorking(true);
+    try {
+      await api.unconfirmTeam(id);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : '되돌리기에 실패했어요');
+    } finally {
+      setWorking(false);
     }
   };
 
@@ -117,9 +151,13 @@ export default function ApplicantManage() {
               );
             })}
             <div className="ml-auto self-center">
-              {allFull ? (
+              {project.confirmed ? (
                 <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
-                  ✓ 팀 구성 완료 · 모집 자동 마감
+                  ✓ 팀 확정됨
+                </span>
+              ) : allFull ? (
+                <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
+                  정원 완료 · 확정 대기
                 </span>
               ) : (
                 <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10">
@@ -127,6 +165,43 @@ export default function ApplicantManage() {
                 </span>
               )}
             </div>
+          </div>
+
+          {/* 팀 확정 / 되돌리기 */}
+          <div className="mt-5 pt-5 border-t border-white/10">
+            {project.confirmed ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-white/50 leading-[1.6]">
+                  팀이 확정됐어요. 구성원들은 이제 다른 팀에 지원할 수 없어요.
+                </p>
+                <button
+                  onClick={unconfirmTeam}
+                  disabled={working}
+                  className="flex-shrink-0 h-10 px-4 rounded-full border border-white/15 text-white/70 text-xs font-medium hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  확정 되돌리기
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-white/50 leading-[1.6]">
+                  {allFull
+                    ? '정원이 다 찼어요. 확정하면 미선택 지원자는 자동으로 마감돼요.'
+                    : '모든 분야 정원이 차면 팀을 확정할 수 있어요.'}
+                </p>
+                <button
+                  onClick={confirmTeam}
+                  disabled={!allFull || working}
+                  className={`flex-shrink-0 h-10 px-5 rounded-full text-xs font-semibold transition-all ${
+                    allFull && !working
+                      ? 'bg-[#00C471] text-white hover:bg-[#00b368] active:scale-[0.98]'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+                >
+                  {working ? '처리 중…' : '팀 확정하기'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -174,24 +249,27 @@ export default function ApplicantManage() {
                   “{a.message}”
                 </p>
 
-                <div className="mt-4 flex items-center gap-2.5">
-                  <button
-                    onClick={() => setStatus(a.id, 'rejected')}
-                    className="flex-1 h-11 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
-                  >
-                    거절
-                  </button>
+                {/* 수락을 주 액션으로, 사양은 조용한 보조 액션으로 */}
+                <div className="mt-4">
                   <button
                     onClick={() => !full && setStatus(a.id, 'accepted')}
                     disabled={full}
-                    className={`flex-[1.6] h-11 rounded-full text-sm font-semibold transition-all ${
+                    className={`w-full h-11 rounded-full text-sm font-semibold transition-all ${
                       full
                         ? 'bg-white/10 text-white/30 cursor-not-allowed'
                         : 'bg-[#00C471] text-white hover:bg-[#00b368] active:scale-[0.99]'
                     }`}
                   >
-                    {full ? `${a.field} 정원 마감` : '수락'}
+                    {full ? `${a.field} 정원이 찼어요` : '팀에 합류시키기'}
                   </button>
+                  <div className="mt-2 text-center">
+                    <button
+                      onClick={() => setStatus(a.id, 'rejected')}
+                      className="text-xs text-white/35 hover:text-white/70 transition-colors"
+                    >
+                      이번엔 함께하지 않기
+                    </button>
+                  </div>
                 </div>
               </div>
             );

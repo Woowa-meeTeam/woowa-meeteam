@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, RotateCcw, ShieldCheck, X } from 'lucide-react';
-import { Avatar, HomeLogo } from './primitives';
+import { Avatar, CoverFill, HomeLogo } from './primitives';
 import { api, ApiError, FEEDBACK_KIND_LABEL } from '../api';
-import type { Feedback, User } from '../api';
+import type { Feedback, Project, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-type Stats = { crews: number; projects: number; recruiting: number; feedbacks: number };
+type Stats = { crews: number; projects: number; recruiting: number; pending: number; feedbacks: number };
 
 export default function Admin() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [pending, setPending] = useState<Project[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [filter, setFilter] = useState<'OPEN' | 'ALL'>('OPEN');
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +31,28 @@ export default function Admin() {
           return;
         }
         setUser(me);
-        const [s, f] = await Promise.all([api.adminStats(), api.feedbacks()]);
+        const [s, p, f] = await Promise.all([
+          api.adminStats(),
+          api.pendingProjects(),
+          api.feedbacks(),
+        ]);
         setStats(s);
+        setPending(p);
         setFeedbacks(f);
         setReady(true);
       })
       .catch(() => navigate('/', { replace: true }));
   }, [navigate]);
+
+  const review = async (project: Project, approve: boolean) => {
+    setError(null);
+    try {
+      await api.approveProject(project.id, approve);
+      setPending((prev) => prev.filter((p) => p.id !== project.id));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : '처리에 실패했어요');
+    }
+  };
 
   const toggleStatus = async (f: Feedback) => {
     const next = f.status === 'OPEN' ? 'DONE' : 'OPEN';
@@ -95,20 +111,88 @@ export default function Admin() {
 
         {/* 집계 */}
         {stats && (
-          <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="mt-7 grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { label: '크루', value: stats.crews },
               { label: '전체 프로젝트', value: stats.projects },
+              { label: '승인 대기', value: stats.pending, hot: stats.pending > 0 },
               { label: '모집중', value: stats.recruiting },
               { label: '받은 의견', value: stats.feedbacks },
             ].map((s) => (
               <div key={s.label} className="liquid-glass rounded-2xl px-5 py-4">
                 <div className="text-xs text-white/40">{s.label}</div>
-                <div className="mt-1.5 text-2xl font-bold text-white tabular-nums">{s.value}</div>
+                <div
+                  className={`mt-1.5 text-2xl font-bold tabular-nums ${
+                    s.hot ? 'text-[#ffd27d]' : 'text-white'
+                  }`}
+                >
+                  {s.value}
+                </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* 승인 대기 프로젝트 */}
+        <h2 className="mt-10 text-sm font-semibold text-white/80">
+          승인 대기 프로젝트 <span className="text-white/40 font-normal">{pending.length}건</span>
+        </h2>
+        <div className="mt-4 space-y-3">
+          {pending.length === 0 && (
+            <p className="text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+              승인 대기 중인 프로젝트가 없어요
+            </p>
+          )}
+          {pending.map((p) => (
+            <div key={p.id} className="liquid-glass rounded-2xl overflow-hidden">
+              <div className="flex gap-4 p-4">
+                <div className="relative w-28 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                  <CoverFill cover={p.coverImage} fade={false} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                      className="text-sm font-semibold text-white hover:text-[#7db4ff] transition-colors truncate"
+                    >
+                      {p.title}
+                    </button>
+                    {p.status === 'REJECTED' && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10 text-white/40">
+                        반려됨
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-white/50 leading-[1.5] line-clamp-2">{p.desc}</p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <Avatar
+                      name={p.owner?.name}
+                      avatarUrl={p.owner?.avatarUrl}
+                      gradient={p.owner?.avatarGradient}
+                      className="w-4 h-4 text-[8px]"
+                    />
+                    <span className="text-[11px] text-white/40">{p.owner?.name}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex border-t border-white/10">
+                <button
+                  onClick={() => review(p, false)}
+                  className="flex-1 py-3 text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  반려
+                </button>
+                <div className="w-px bg-white/10" />
+                <button
+                  onClick={() => review(p, true)}
+                  className="flex-[2] py-3 text-xs font-semibold text-[#7ee8b2] hover:bg-[#00C471]/10 transition-colors"
+                >
+                  승인하고 게시
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* 제보 목록 */}
         <div className="mt-10 flex items-center justify-between">

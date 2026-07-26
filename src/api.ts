@@ -22,6 +22,8 @@ export type User = {
   onboarded: boolean;
 };
 
+export type ProjectStatus = 'PENDING' | 'RECRUITING' | 'CLOSED' | 'CONFIRMED' | 'REJECTED';
+
 export type Slot = { field: string; capacity: number; confirmed: number; skills: string[] };
 export type Member = { name: string; field: string; avatarGradient: string; avatarUrl?: string | null };
 
@@ -35,7 +37,9 @@ export type Project = {
   summary: string | null;
   deadline: string | null;
   dday: string;
-  closed: boolean;
+  status: ProjectStatus;
+  closed: boolean;      // 모집중이 아님(마감/확정/승인대기)
+  confirmed: boolean;   // 팀 확정됨
   applicants: number;   // 대기 + 확정
   pending: number;      // 대기중
   likes: number;
@@ -234,7 +238,6 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
       confirmed: s.confirmed,
       skills: s.skills ?? [],
     }));
-  const allFull = mySlots.length > 0 && mySlots.every((s) => s.confirmed >= s.capacity);
   const paragraphs = row.description.split('\n').filter(Boolean);
 
   return {
@@ -247,7 +250,9 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     summary: row.summary,
     deadline: row.deadline,
     dday: ddayFrom(row.deadline),
-    closed: row.status === 'CLOSED' || allFull,
+    status: row.status as ProjectStatus,
+    closed: row.status !== 'RECRUITING',
+    confirmed: row.status === 'CONFIRMED',
     applicants: 0,
     pending: 0,
     likes: 0,
@@ -447,7 +452,13 @@ export const api = {
   },
 
   /** 관리자 대시보드용 간단 집계 */
-  async adminStats(): Promise<{ crews: number; projects: number; recruiting: number; feedbacks: number }> {
+  async adminStats(): Promise<{
+    crews: number;
+    projects: number;
+    recruiting: number;
+    pending: number;
+    feedbacks: number;
+  }> {
     const [c, p, f] = await Promise.all([
       supabase.from('crews').select('id', { count: 'exact', head: true }).eq('onboarded', true),
       supabase.from('projects').select('id,status', { count: 'exact' }),
@@ -458,6 +469,7 @@ export const api = {
       crews: c.count ?? 0,
       projects: p.count ?? 0,
       recruiting: projects.filter((x) => x.status === 'RECRUITING').length,
+      pending: projects.filter((x) => x.status === 'PENDING').length,
       feedbacks: f.count ?? 0,
     };
   },
@@ -575,6 +587,97 @@ export const api = {
     const { error } = await supabase.from('projects').delete().eq('id', id);
     if (error) throw toApiError(error, '삭제에 실패했어요');
     return { ok: true as const };
+  },
+
+  /* ── 생명주기 ──────────────────────────────────────────── */
+
+  /** 코치(관리자) 승인/반려 — PENDING 프로젝트만 */
+  async approveProject(id: string, approve: boolean): Promise<void> {
+    const { error } = await supabase.rpc('approve_project', { p_id: id, p_approve: approve });
+    if (error) throw toApiError(error, '승인 처리에 실패했어요');
+  },
+
+  /** 팀 확정 (오너, 정원 충족 시) — 1인 1팀을 DB 가 강제 */
+  async confirmTeam(id: string): Promise<Project> {
+    const { error } = await supabase.rpc('confirm_team', { p_id: id });
+    if (error) throw toApiError(error, '팀 확정에 실패했어요');
+    return api.project(id);
+  },
+
+  /** 팀 확정 되돌리기 */
+  async unconfirmTeam(id: string): Promise<Project> {
+    const { error } = await supabase.rpc('unconfirm_team', { p_id: id });
+    if (error) throw toApiError(error, '되돌리기에 실패했어요');
+    return api.project(id);
+  },
+
+  /** 모집 중단/재개 (오너가 다른 팀에 합류하려 할 때 등) */
+  async setRecruiting(id: string, open: boolean): Promise<Project> {
+    const { error } = await supabase.rpc('set_recruiting', { p_id: id, p_open: open });
+    if (error) throw toApiError(error, '상태 변경에 실패했어요');
+    return api.project(id);
+  },
+
+  /** 승인 대기 중인 프로젝트 (관리자) */
+  async pendingProjects(): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(PROJECT_SELECT)
+      .in('status', ['PENDING', 'REJECTED'])
+      .order('created_at', { ascending: true });
+    if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
+    return hydrate((data ?? []) as unknown as ProjectRow[]);
+  },
+
+  /** 내가 속한 확정된 팀 (오너이거나 수락된 멤버) */
+  async myTeams(): Promise<Project[]> {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = auth.user.id;
+
+    // 내가 오너인 확정 팀
+    const owned = await supabase
+      .from('projects')
+      .select(PROJECT_SELECT)
+      .eq('owner_id', uid)
+      .eq('status', 'CONFIRMED');
+    // 내가 수락된 확정 팀
+    const memberApps = await supabase
+      .from('applications')
+      .select('project_id')
+      .eq('applicant_id', uid)
+      .eq('status', 'ACCEPTED');
+    const memberIds = ((memberApps.data ?? []) as { project_id: string }[]).map((a) => a.project_id);
+    const member = memberIds.length
+      ? await supabase
+          .from('projects')
+          .select(PROJECT_SELECT)
+          .in('id', memberIds)
+          .eq('status', 'CONFIRMED')
+      : { data: [] as unknown[] };
+
+    const rows = [
+      ...((owned.data ?? []) as unknown[]),
+      ...((member.data ?? []) as unknown[]),
+    ] as ProjectRow[];
+    // 중복 제거
+    const uniq = Array.from(new Map(rows.map((r) => [r.id, r])).values());
+    return hydrate(uniq);
+  },
+
+  /** 아직 확정된 팀이 없는 크루 (도움이 필요한 크루) */
+  async crewsLookingForTeam(): Promise<User[]> {
+    const [crews, status] = await Promise.all([
+      supabase.from('crews').select('*').eq('onboarded', true),
+      supabase.from('crew_team_status').select('*'),
+    ]);
+    if (crews.error) throw toApiError(crews.error, '크루를 불러오지 못했어요');
+    const teamed = new Set(
+      ((status.data ?? []) as { crew_id: string; teamed: boolean }[])
+        .filter((s) => s.teamed)
+        .map((s) => s.crew_id),
+    );
+    return ((crews.data ?? []) as CrewRow[]).map(toUser).filter((c) => !teamed.has(c.id));
   },
 
   /** 지원 (FR-APP) — 중복/본인/마감 차단은 DB가 담당 */
