@@ -64,6 +64,10 @@ export function BoothMapPage() {
           rootRef.current,
           boothEligibleProjects(projects).map(toBoothProject),
           revision.layout,
+          {
+            onToggleReaction: (projectId, kind, nextValue) =>
+              api.toggleReaction(projectId, kind, nextValue),
+          },
         )
         setState("ready")
       } catch (error) {

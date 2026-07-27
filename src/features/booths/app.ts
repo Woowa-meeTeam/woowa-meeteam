@@ -14,10 +14,21 @@ import { type BoothLayout, type FloorId, floorIds, type MapViewState } from "./m
 import { roomsByFloor } from "./room-data"
 import { queryRequired, renderMapPanel, renderShell } from "./view-templates"
 
+type ReactionKind = "LIKE" | "BOOKMARK"
+
+type BoothMapAppOptions = {
+  readonly onToggleReaction?: (
+    projectId: string,
+    kind: ReactionKind,
+    nextValue: boolean,
+  ) => Promise<void>
+}
+
 export class BoothMapApp {
   private readonly root: HTMLDivElement
-  private readonly projects: readonly MeeteamProject[]
+  private projects: MeeteamProject[]
   private readonly layout: BoothLayout
+  private readonly onToggleReaction?: BoothMapAppOptions["onToggleReaction"]
   private selectedFloorId: FloorId = 11
   private selectedBoothId: string | null
   private mapView: MapViewState = { kind: "floor" }
@@ -29,10 +40,12 @@ export class BoothMapApp {
     root: HTMLDivElement,
     projects: readonly MeeteamProject[],
     layout: BoothLayout,
+    options: BoothMapAppOptions = {},
   ) {
     this.root = root
-    this.projects = projects
+    this.projects = [...projects]
     this.layout = layout
+    this.onToggleReaction = options.onToggleReaction
     this.selectedBoothId = layout[11][0]?.id ?? null
     this.renderShell()
     this.bindFloorButtons()
@@ -261,6 +274,72 @@ export class BoothMapApp {
 
     const project = booth ? findMeeteamProject(this.projects, booth.projectId) : undefined
     detail.innerHTML = renderBoothDetail(booth, project)
+    this.bindReactionButtons(detail)
+  }
+
+  private bindReactionButtons(detail: HTMLElement): void {
+    for (const button of detail.querySelectorAll<HTMLButtonElement>("[data-reaction-kind]")) {
+      button.addEventListener("click", () => void this.toggleReaction(button))
+    }
+  }
+
+  private async toggleReaction(button: HTMLButtonElement): Promise<void> {
+    const kind = button.dataset.reactionKind
+    const projectId = button.dataset.reactionProjectId
+    if ((kind !== "LIKE" && kind !== "BOOKMARK") || !projectId) {
+      return
+    }
+
+    const project = findMeeteamProject(this.projects, projectId)
+    if (!project) {
+      return
+    }
+
+    const nextValue = kind === "LIKE" ? !project.myLike : !project.myBookmark
+    const detail = queryRequired<HTMLElement>(this.root, ".booth-detail")
+    const message = detail.querySelector<HTMLElement>("[data-reaction-message]")
+    button.disabled = true
+    if (message) {
+      message.hidden = true
+      message.textContent = ""
+    }
+
+    try {
+      await this.onToggleReaction?.(projectId, kind, nextValue)
+      this.applyReaction(projectId, kind, nextValue)
+      this.renderCurrentFloor()
+      this.updateLiveStatus(
+        `${project.title} ${kind === "LIKE" ? "좋아요" : "북마크"}를 ${nextValue ? "표시했습니다" : "해제했습니다"}.`,
+      )
+    } catch (error) {
+      button.disabled = false
+      const errorMessage = error instanceof Error ? error.message : "처리에 실패했어요."
+      if (message) {
+        message.textContent = errorMessage
+        message.hidden = false
+      }
+      this.updateLiveStatus(errorMessage)
+    }
+  }
+
+  private applyReaction(projectId: string, kind: ReactionKind, nextValue: boolean): void {
+    this.projects = this.projects.map((project) => {
+      if (project.id !== projectId) {
+        return project
+      }
+      if (kind === "LIKE") {
+        return {
+          ...project,
+          myLike: nextValue,
+          likes: Math.max(0, project.likes + (nextValue ? 1 : -1)),
+        }
+      }
+      return {
+        ...project,
+        myBookmark: nextValue,
+        bookmarks: Math.max(0, project.bookmarks + (nextValue ? 1 : -1)),
+      }
+    })
   }
 
   private updateFloorButtonStates(): void {

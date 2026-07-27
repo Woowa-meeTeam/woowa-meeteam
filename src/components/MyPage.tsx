@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Pencil, ShieldCheck, Users, X } from 'lucide-react';
+import { ArrowRight, Bookmark, Heart, Pencil, ShieldCheck, Users, X } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
 import { api, FIELD_SHORT } from '../api';
 import type { Application, Project, ProjectStatus, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-type Tab = 'owned' | 'applied' | 'teams';
+type Tab = 'owned' | 'applied' | 'teams' | 'liked' | 'bookmarked';
 
 const STATUS_BADGE: Record<ProjectStatus, { label: string; cls: string }> = {
   PENDING: { label: '승인 대기', cls: 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10' },
@@ -23,17 +23,19 @@ export default function MyPage() {
   const [tab, setTab] = useState<Tab>('owned');
   const [user, setUser] = useState<User | null>(null);
   const [ownedProjects, setOwnedProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [teams, setTeams] = useState<Project[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.me(), api.myProjects(), api.myApplications(), api.myTeams()])
-      .then(([me, owned, apps, myTeams]) => {
+    Promise.all([api.me(), api.myProjects(), api.myApplications(), api.myTeams(), api.projects()])
+      .then(([me, owned, apps, myTeams, allProjects]) => {
         setUser(me);
         setOwnedProjects(owned);
         setApplications(apps);
         setTeams(myTeams);
+        setProjects(allProjects);
         setLoaded(true);
       })
       .catch(() => navigate('/', { replace: true })); // 미로그인 → 랜딩으로
@@ -46,6 +48,9 @@ export default function MyPage() {
       </div>
     );
   }
+
+  const likedProjects = projects.filter((project) => project.myLike);
+  const bookmarkedProjects = projects.filter((project) => project.myBookmark);
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -119,7 +124,7 @@ export default function MyPage() {
         </div>
 
         {/* 탭 */}
-        <div className="mt-8 flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1 w-fit">
+        <div className="mt-8 flex flex-wrap gap-1 bg-white/[0.04] border border-white/10 rounded-2xl sm:rounded-full p-1 w-fit max-w-full">
           <button
             onClick={() => setTab('owned')}
             className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -143,6 +148,22 @@ export default function MyPage() {
             }`}
           >
             나의 팀 <span className="opacity-50">{teams.length}</span>
+          </button>
+          <button
+            onClick={() => setTab('liked')}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === 'liked' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
+            }`}
+          >
+            좋아요 <span className="opacity-50">{likedProjects.length}</span>
+          </button>
+          <button
+            onClick={() => setTab('bookmarked')}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+              tab === 'bookmarked' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
+            }`}
+          >
+            북마크 <span className="opacity-50">{bookmarkedProjects.length}</span>
           </button>
         </div>
 
@@ -293,7 +314,82 @@ export default function MyPage() {
             ))}
           </div>
         )}
+
+        {tab === 'liked' && (
+          <ReactionProjectList
+            projects={likedProjects}
+            emptyMessage="아직 좋아요한 프로젝트가 없어요"
+            icon="like"
+            navigate={navigate}
+          />
+        )}
+
+        {tab === 'bookmarked' && (
+          <ReactionProjectList
+            projects={bookmarkedProjects}
+            emptyMessage="아직 북마크한 프로젝트가 없어요"
+            icon="bookmark"
+            navigate={navigate}
+          />
+        )}
       </motion.div>
+    </div>
+  );
+}
+
+function ReactionProjectList({
+  projects,
+  emptyMessage,
+  icon,
+  navigate,
+}: {
+  projects: Project[];
+  emptyMessage: string;
+  icon: 'like' | 'bookmark';
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  const Icon = icon === 'like' ? Heart : Bookmark;
+
+  return (
+    <div className="mt-5 space-y-3">
+      {projects.length === 0 && (
+        <p className="text-sm text-white/40 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+          {emptyMessage}
+        </p>
+      )}
+      {projects.map((p) => (
+        <button
+          key={p.id}
+          onClick={() => navigate(`/projects/${p.id}`)}
+          className="w-full text-left liquid-glass rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-transform"
+        >
+          <div className="relative h-24">
+            <CoverFill cover={p.coverImage} />
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-white/10 bg-black/35 text-white/80">
+              <Icon className="w-3 h-3" fill="currentColor" />
+              {icon === 'like' ? '좋아요' : '북마크'}
+            </span>
+            <span className={`absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${STATUS_BADGE[p.status].cls}`}>
+              {STATUS_BADGE[p.status].label}
+            </span>
+          </div>
+          <div className="p-5 pt-3">
+            <h3 className="text-base font-semibold text-white">{p.title}</h3>
+            <p className="mt-1.5 text-sm text-white/50 leading-[1.5] line-clamp-2">{p.desc}</p>
+            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+              <span className="text-xs text-white/50 tabular-nums">
+                {p.slots.map((s) => `${FIELD_SHORT[s.field] ?? s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-white/45">
+                <Heart className="w-3.5 h-3.5" fill={p.myLike ? 'currentColor' : 'none'} />
+                {p.likes}
+                <Bookmark className="w-3.5 h-3.5 ml-1" fill={p.myBookmark ? 'currentColor' : 'none'} />
+                {p.bookmarks}
+              </span>
+            </div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

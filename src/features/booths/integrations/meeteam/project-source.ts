@@ -7,6 +7,10 @@ export type MeeteamProject = {
   readonly ownerAvatarUrl: string | null
   readonly sourceUrl: string
   readonly prototypeUrl: string | null
+  readonly likes: number
+  readonly bookmarks: number
+  readonly myLike: boolean
+  readonly myBookmark: boolean
 }
 
 export interface MeeteamProjectSource {

@@ -24,5 +24,9 @@ export function toBoothProject(project: Project): MeeteamProject {
     ownerAvatarUrl: safeExternalUrl(project.owner?.avatarUrl ?? null),
     sourceUrl: `/projects/${encodeURIComponent(project.id)}`,
     prototypeUrl: safeExternalUrl(project.prototype),
+    likes: project.likes,
+    bookmarks: project.bookmarks,
+    myLike: project.myLike,
+    myBookmark: project.myBookmark,
   }
 }

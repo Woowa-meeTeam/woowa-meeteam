@@ -8,6 +8,38 @@ import {
   renderProjectOwner,
 } from "./project-templates"
 
+function renderReactionButton(
+  project: MeeteamProject,
+  kind: "LIKE" | "BOOKMARK",
+  label: string,
+  count: number,
+  pressed: boolean,
+): string {
+  return `
+    <button
+      class="booth-reaction-button booth-reaction-button--${kind.toLowerCase()}"
+      type="button"
+      aria-pressed="${pressed}"
+      data-reaction-kind="${kind}"
+      data-reaction-project-id="${escapeMarkup(project.id)}"
+    >
+      <span class="booth-reaction-button__icon" aria-hidden="true"></span>
+      <span>${label}</span>
+      <strong>${count}</strong>
+    </button>
+  `
+}
+
+function renderBoothReactions(project: MeeteamProject): string {
+  return `
+    <div class="booth-reactions" aria-label="프로젝트 반응">
+      ${renderReactionButton(project, "LIKE", "좋아요", project.likes, project.myLike)}
+      ${renderReactionButton(project, "BOOKMARK", "북마크", project.bookmarks, project.myBookmark)}
+    </div>
+    <p class="booth-reactions__message" role="alert" data-reaction-message hidden></p>
+  `
+}
+
 export function renderBoothDetail(
   booth: Booth | undefined,
   project: MeeteamProject | undefined,
@@ -46,6 +78,7 @@ export function renderBoothDetail(
       ${renderProjectOwner(project)}
       <h2>${escapeMarkup(project.title)}</h2>
       <p>${escapeMarkup(summarizeProjectDescription(project.description))}</p>
+      ${renderBoothReactions(project)}
       ${renderProjectActions(project)}
     </div>
     <div class="booth-detail__location">

@@ -299,6 +299,25 @@
   font-size: 25px;
 }
 
+.booth-feature .booth-marker__reactions {
+  pointer-events: none;
+}
+
+.booth-feature .booth-marker__reaction path {
+  stroke: rgb(255 255 255 / 78%);
+  stroke-width: 2.2;
+  paint-order: stroke fill;
+  vector-effect: non-scaling-stroke;
+}
+
+.booth-feature .booth-marker__reaction--like path {
+  fill: #f04452;
+}
+
+.booth-feature .booth-marker__reaction--bookmark path {
+  fill: #facc15;
+}
+
 .booth-feature .booth-marker:hover rect,
 .booth-feature .booth-marker:focus-visible rect {
   fill: var(--color-marker-hover);
@@ -422,6 +441,82 @@
   color: var(--color-ink-muted);
   font-size: var(--type-body);
   line-height: 1.7;
+}
+
+.booth-feature .booth-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.booth-feature .booth-reaction-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+  font-size: var(--type-small);
+  font-weight: 650;
+  transition:
+    color var(--duration-state) var(--ease-out),
+    background-color var(--duration-state) var(--ease-out),
+    border-color var(--duration-state) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
+}
+
+.booth-feature .booth-reaction-button:hover {
+  color: var(--color-ink);
+  background: rgb(255 255 255 / 10%);
+}
+
+.booth-feature .booth-reaction-button:active {
+  transform: scale(0.97);
+}
+
+.booth-feature .booth-reaction-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.booth-feature .booth-reaction-button[aria-pressed="true"].booth-reaction-button--like {
+  border-color: rgb(240 68 82 / 42%);
+  background: rgb(240 68 82 / 12%);
+  color: #ff8a94;
+}
+
+.booth-feature .booth-reaction-button[aria-pressed="true"].booth-reaction-button--bookmark {
+  border-color: rgb(250 204 21 / 42%);
+  background: rgb(250 204 21 / 12%);
+  color: #fde047;
+}
+
+.booth-feature .booth-reaction-button__icon {
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+}
+
+.booth-feature .booth-reaction-button--like .booth-reaction-button__icon {
+  clip-path: polygon(50% 88%, 13% 52%, 8% 33%, 17% 18%, 34% 16%, 50% 29%, 66% 16%, 83% 18%, 92% 33%, 87% 52%);
+}
+
+.booth-feature .booth-reaction-button--bookmark .booth-reaction-button__icon {
+  clip-path: polygon(18% 0, 82% 0, 82% 100%, 50% 74%, 18% 100%);
+}
+
+.booth-feature .booth-reaction-button strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.booth-feature .booth-reactions__message {
+  margin-block-start: calc(var(--space-2) * -1);
+  color: var(--color-danger);
+  font-size: var(--type-small);
+  line-height: 1.5;
 }
 
 .booth-feature .booth-detail__location {
