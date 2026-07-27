@@ -5,7 +5,7 @@
 **흩어져 있던 팀 빌딩을 한 곳에서.**
 
 우아한테크코스 크루들이 사이드 프로젝트를 등록하고,
-함께할 팀원을 모집해 팀을 확정하는 웹 서비스입니다.
+코치 승인을 거쳐 게시하고, 함께할 팀원을 모아 팀을 확정하는 웹 서비스입니다.
 
 [**meeteam-eight.vercel.app**](https://meeteam-eight.vercel.app)
 
@@ -13,161 +13,172 @@
 
 ---
 
-## 왜 만들었나
+## 목차
 
-우테코 크루들은 정규 미션 외에 사이드 프로젝트를 하고 싶어 하지만, 팀을 꾸리는 과정이 흩어져 있습니다.
-
-- 모집 글이 **슬랙·디스코드·오프라인 공지**에 흩어져 놓치기 쉽고
-- 어떤 기술을 쓰는지, 누구를 뽑는지 **한눈에 파악하기 어렵고**
-- 지원과 수락이 **개별 DM**으로 오가 관리가 힘들고
-- 지원자의 분야·스킬을 미리 알 수 없어 **팀 구성이 즉흥적**입니다
-
-meeTeam은 이 흐름을 **등록 → 지원 → 확정** 한 줄기로 정리합니다.
-
----
-
-## 핵심 기능
-
-| | 기능 |
-| --- | --- |
-| 🔑 | **GitHub 로그인** — 계정 하나로 시작. 프로필 사진도 GitHub에서 그대로 |
-| 👤 | **온보딩** — 크루명 · 분야 · 스킬을 3스텝으로 등록 |
-| 📋 | **프로젝트 등록** — 대표 이미지, 마크다운 설명, 분야별 모집 인원과 원하는 기술 스택 |
-| 🔍 | **탐색** — 모집 현황(`FE 1/2`)과 커버 이미지가 보이는 카드 피드 |
-| ✋ | **지원** — 한 줄 각오와 함께. 내 분야·스킬 프로필이 오너에게 전달 |
-| ✅ | **구성원 확정** — 오너가 지원자를 보고 수락·거절. 정원이 차면 자동 마감 |
-| 🧑‍🤝‍🧑 | **크루 탐색** — 어떤 분야·스킬의 크루가 있는지 둘러보고 상세 프로필 확인 |
-| 💬 | **의견 보내기** — 불편했던 점·바라는 기능을 제보 |
+- [서비스 흐름](#서비스-흐름)
+- [기능 상세](#기능-상세)
+- [화면 · 라우트](#화면--라우트)
+- [기술 스택](#기술-스택)
+- [데이터 모델](#데이터-모델)
+- [정합성 · 보안 규칙](#정합성--보안-규칙)
+- [로컬 실행 · 배포](#로컬-실행--배포)
+- [운영](#운영)
 
 ---
 
-## 화면
+## 서비스 흐름
 
-| 경로 | 화면 |
-| --- | --- |
-| `/` | 랜딩 + 프로젝트 피드 |
-| `/onboarding` | 온보딩 (크루명 · 분야 · 스킬) |
-| `/projects/new` · `/projects/:id/edit` | 프로젝트 등록 · 수정 |
-| `/projects/:id` | 프로젝트 상세 · 지원 |
-| `/projects/:id/applicants` | 지원자 관리 (오너) |
-| `/crews` · `/crews/:id` | 크루 목록 · 크루 상세 |
-| `/my` · `/profile/edit` | 마이페이지 · 프로필 수정 |
-| `/admin` | 관리자 (지정 계정만) |
+```
+[크루]  GitHub 로그인 → 온보딩(크루명·분야·스킬)
+          │
+          ├─ 프로젝트 등록 ─▶ (PENDING) ─ 코치 승인 ─▶ (RECRUITING) 게시
+          │                                              │
+          │                                        지원자 모집
+          ▼                                              ▼
+      프로젝트 탐색 ─ 지원 ─▶ 오너가 수락 ─ 정원 참(CLOSED) ─ 오너가 팀 확정 ─▶ (CONFIRMED)
+                                                                                │
+                                                                          1인 1팀 확정
+```
+
+프로젝트는 **PENDING → RECRUITING → CLOSED → CONFIRMED** 상태를 거칩니다. (코치 반려 시 REJECTED)
+
+---
+
+## 기능 상세
+
+### 인증 · 프로필
+- **GitHub OAuth 로그인** — GitHub 계정으로 가입/로그인. 프로필 사진은 GitHub 아바타를 그대로 사용.
+- **온보딩** — 크루명(2~20자, 중복 불가) · 분야(복수) · 스킬(검색 + 직접 추가) 3스텝.
+- **프로필 수정** — 온보딩을 다시 밟지 않고 필요한 항목만 수정. 자기소개(bio) 최대 500자.
+
+### 프로젝트
+- **등록** — 제목, 짧은 소개(카드용 한 줄), 마크다운 설명(**사진 첨부 지원**), 대표 이미지(업로드 또는 프리셋 그라데이션), 프로토타입 링크, 분야별 모집 인원 + 분야별 원하는 기술 스택.
+- **코치 승인** — 등록 시 `PENDING`. 관리자(코치)가 승인해야 목록에 게시됨. 승인 전에는 오너·코치에게만 보임.
+- **수정 · 삭제** — 오너만. 확정 인원이 있는 분야 삭제나 정원 축소는 거부.
+- **탐색** — 랜딩 쇼케이스 + 전체 목록 페이지(`/projects`, 검색 · 분야 · 모집중 필터).
+- **상세** — 마크다운 설명 렌더, 클릭 가능한 프로토타입 링크, 분야별 모집 현황 게이지, 팀 멤버(GitHub 아바타), 지원자 수, 좋아요 · 북마크.
+
+### 지원 · 팀 확정
+- **지원** — 한 줄 각오 + 지원 분야. 내 분야·스킬 프로필이 오너에게 전달. 1인 1지원(재지원은 취소 후 가능).
+- **지원자 관리(오너)** — "팀에 합류시키기"가 주 액션, 거절은 조용한 보조 액션. 정원이 차면 **팀 확정**, 확정 시 남은 대기자는 자동으로 정중히 마감.
+- **팀 확정 / 되돌리기** — 정원이 다 차면 오너가 팀을 확정(`CONFIRMED`). 되돌리면 다시 `CLOSED`.
+- **모집 중단/재개** — 오너가 확정 없이 모집을 멈출 수 있음(다른 팀에 합류하려 할 때 등).
+- **1인 1팀** — 한 크루는 동시에 하나의 확정 팀에만 속함. 확정 시 다른 프로젝트 지원은 자동 정리되고, 이미 팀이 있으면 지원·수락 불가. (DB가 원자적으로 강제)
+- **나의 팀** — 마이페이지에서 내가 오너·멤버로 속한 확정 팀 모아보기.
+
+### 크루
+- **크루 목록 · 상세** — 분야 필터, 크루별 프로필(자기소개·분야·스킬·등록한 프로젝트).
+- **팀 찾는 중** — 아직 확정 팀이 없는 크루를 배지·필터로 표시(도움이 필요한 크루 발견).
+
+### 좋아요 · 북마크
+- 프로젝트별 **익명 카운트** — 누가 눌렀는지는 공개하지 않고 총 개수만 공개.
+
+### 의견 · 관리자
+- **의견 보내기** — 우하단 위젯. 버그 · 개선 · 기능 · 기타로 제보.
+- **관리자(`/admin`)** — 지정된 관리자만 접근. 서비스 집계, **승인 대기 프로젝트 승인/반려**, 크루 의견 처리.
+
+---
+
+## 화면 · 라우트
+
+| 경로 | 화면 | 접근 |
+| --- | --- | --- |
+| `/` | 랜딩 + 프로젝트 쇼케이스 | 전체 |
+| `/auth/callback` | GitHub OAuth 콜백 | — |
+| `/onboarding` | 온보딩 | 로그인 |
+| `/projects` | 전체 프로젝트 (검색·필터) | 전체 |
+| `/projects/new` · `/projects/:id/edit` | 프로젝트 등록 · 수정 | 오너 |
+| `/projects/:id` | 프로젝트 상세 · 지원 | 전체 |
+| `/projects/:id/applicants` | 지원자 관리 · 팀 확정 | 오너 |
+| `/crews` · `/crews/:id` | 크루 목록 · 상세 | 전체 |
+| `/my` · `/profile/edit` | 마이페이지 · 프로필 수정 | 로그인 |
+| `/admin` | 관리자 | 관리자만 |
 
 ---
 
 ## 기술 스택
 
-**Frontend** React 18 · TypeScript · Vite · Tailwind CSS · motion/react · React Router
-**Backend** Supabase (PostgreSQL · Auth · Storage)
-**Hosting** Vercel (정적 배포)
+| 영역 | 선택 |
+| --- | --- |
+| Frontend | React 18 · TypeScript · Vite · Tailwind CSS · motion/react · React Router |
+| Backend | **Supabase** (PostgreSQL · Auth · Storage) — 별도 서버 없음 |
+| Hosting | **Vercel** (정적 배포) |
 
-### 서버가 없습니다
-
-RLS(Row Level Security)로 권한을 DB에서 강제하기 때문에, 클라이언트가 Supabase와 직접 통신합니다.
-별도 API 서버가 없어 **콜드 스타트도, 서버 관리도 없습니다.**
+**서버가 없습니다.** RLS(Row Level Security)로 권한을 DB에서 강제하므로, 클라이언트가 Supabase와 직접 통신합니다.
 
 ```
-브라우저 ──▶ Supabase (Postgres + RLS)
-   │
-   └──▶ Vercel (정적 파일만)
+브라우저 ──▶ Supabase (Postgres + RLS + RPC + Storage + Auth)
+   └──▶ Vercel (정적 파일만)   ·   배경 영상은 CloudFront
 ```
 
 ---
 
-## 데이터 정합성
+## 데이터 모델
 
-**규칙을 애플리케이션이 아니라 DB가 강제합니다.** 요청을 조작해도 뚫리지 않습니다.
+| 테이블 | 설명 |
+| --- | --- |
+| `crews` | 크루 프로필 (auth.users 확장). 크루명·분야·스킬·자기소개·관리자 여부 |
+| `projects` | 프로젝트. 상태(PENDING/RECRUITING/CLOSED/CONFIRMED/REJECTED)·소개·커버 |
+| `project_slots` | 분야별 모집 정원 + 원하는 스킬 |
+| `applications` | 지원 (PENDING/ACCEPTED/REJECTED/CANCELED) |
+| `project_reactions` | 좋아요 · 북마크 |
+| `feedbacks` | 사용자 제보 |
+
+**공개 집계 뷰** (개별 행은 비공개, 집계만 공개): `project_slot_status`(분야별 확정 인원), `project_members`(확정 멤버), `project_applicant_counts`(지원자 수), `project_reaction_counts`(좋아요·북마크), `crew_team_status`(팀 보유 여부).
+
+**핵심 RPC**: `create_project` · `update_project` · `accept_application`(정원 락) · `confirm_team`/`unconfirm_team`(1인 1팀 강제) · `approve_project`(코치) · `set_recruiting`.
+
+마이그레이션은 `supabase/migrations/` 에 `0001`~`0006` 순서로 있습니다.
+
+| 마이그레이션 | 내용 |
+| --- | --- |
+| `0001_init` | 크루·프로젝트·슬롯·지원, RLS, 확정 RPC, Storage |
+| `0002_edit_bio_skills` | 자기소개, 분야별 스킬, 프로젝트 수정 RPC |
+| `0003_feedback_admin` | 의견 보내기, 관리자 플래그 |
+| `0004_lock_admin_flag` | 관리자 권한 자가 부여 차단 |
+| `0005_summary_reactions` | 짧은 소개, 자기소개 500자, 좋아요/북마크, 지원자 수 |
+| `0006_team_lifecycle` | 코치 승인, 팀 확정/되돌리기, 1인 1팀 강제 |
+
+---
+
+## 정합성 · 보안 규칙
+
+**규칙을 앱이 아니라 DB가 강제합니다.** 요청을 조작해도 뚫리지 않습니다.
 
 | 규칙 | 강제 수단 |
 | --- | --- |
-| 프로젝트당 1인 1지원 | `applications_one_active` partial unique index — 취소분은 제외해 재지원 허용 |
-| 내 프로젝트엔 지원 불가 | `applications_insert` RLS 정책 |
-| 마감된 프로젝트 지원 불가 | 같은 정책의 `status = 'RECRUITING'` 조건 |
-| 정원 초과 수락 불가 | `accept_application()` 의 `SELECT … FOR UPDATE` 행 잠금으로 동시 수락 직렬화 |
-| 전 분야 충족 시 자동 마감 | 같은 함수 안에서 원자적으로 처리 |
-| 확정 팀원을 깨는 수정 불가 | `update_project()` 가 분야 삭제·정원 축소를 거부 |
-| 크루명 중복 불가 | `crews.crew_name` UNIQUE |
-| **관리자 권한 자가 부여 불가** | 컬럼 단위 GRANT + 트리거 (아래 참고) |
+| 1인 1지원 | `applications_one_active` partial unique index |
+| 내 프로젝트·마감·미승인 지원 불가 | `applications_insert` RLS |
+| **이미 팀 있는 크루 지원·수락 불가** | RLS `is_teamed()` + `accept_application` 검사 |
+| 정원 초과 수락 불가 | `accept_application` 의 `FOR UPDATE` 행 잠금 |
+| 정원 충족 시에만 팀 확정 | `confirm_team` |
+| **1인 1팀 (중복 확정 차단)** | `confirm_team` 재검증 + 확정 시 타 지원 자동 정리 |
+| 미승인 프로젝트 숨김 | `projects_read` RLS (PENDING/REJECTED 는 오너·코치만) |
+| 개별 지원서 비공개 | `applications` RLS (지원자 본인 + 오너만) |
+| 관리자 권한 자가 부여 불가 | 컬럼 단위 GRANT + 트리거 (SQL Editor 에서만 지정) |
 
-### 공개 범위
-
-개별 지원서(각오 메시지)는 **지원자 본인과 프로젝트 오너만** 볼 수 있습니다.
-반면 카드에 필요한 **모집 현황 집계**와 **확정 멤버**는 `security definer` 뷰로 공개해,
-비로그인 방문자도 모집 상황은 볼 수 있되 남의 지원 내용은 볼 수 없습니다.
-
-### 관리자
-
-`crews.is_admin = true` 인 계정만 `/admin` 에 접근할 수 있고,
-그 외에는 페이지 존재를 드러내지 않고 홈으로 돌려보냅니다.
-
-이 플래그는 **애플리케이션에서 절대 바꿀 수 없습니다.** `authenticated` 역할에서 테이블 전체
-UPDATE 권한을 회수하고 안전한 컬럼(`crew_name`, `fields`, `skills`, `bio`, `onboarded`)만 다시
-부여했으며, 트리거로 한 번 더 막습니다. 지정은 SQL Editor에서만 가능합니다.
-
+관리자 지정:
 ```sql
 update public.crews set is_admin = true where github_login = '<깃허브아이디>';
 ```
 
 ---
 
-## 로컬 실행
+## 로컬 실행 · 배포
 
 ```bash
 npm install
 cp .env.example .env.local     # Supabase URL / anon key 입력
 npm run dev                    # http://localhost:5200
+npm run build                  # 타입체크 + 프로덕션 빌드
 ```
 
-| 스크립트 | 설명 |
-| --- | --- |
-| `npm run dev` | 개발 서버 |
-| `npm run build` | 타입체크 + 프로덕션 빌드 |
-| `npm run preview` | 빌드 결과 미리보기 |
+**초기 세팅**: Supabase 프로젝트 생성 → `supabase/migrations/` 를 번호순 실행 → GitHub OAuth App 등록(callback `https://<프로젝트>.supabase.co/auth/v1/callback`) → Providers·URL Configuration 설정 → Vercel 환경변수(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) → 배포.
+
+> anon key 는 공개용입니다(RLS 가 보호). `service_role` 키는 프론트엔드에 절대 넣지 마세요.
 
 ---
 
-## 초기 세팅
+## 운영
 
-1. **Supabase 프로젝트 생성** 후 SQL Editor에서 `supabase/migrations/` 안의 SQL을 번호 순서대로 실행
-2. **GitHub OAuth App 등록** — Authorization callback URL:
-   `https://<프로젝트>.supabase.co/auth/v1/callback`
-3. **Supabase → Authentication → Providers → GitHub** 에 Client ID/Secret 입력
-4. **Authentication → URL Configuration → Redirect URLs** 에 추가
-   - `http://localhost:5200/auth/callback`
-   - `https://<배포도메인>/auth/callback`
-5. **Vercel 환경변수** 등록 후 배포
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-
-> anon key는 브라우저 번들에 포함되도록 설계된 공개 키입니다. 실제 보호는 RLS가 담당합니다.
-> `service_role` 키는 RLS를 우회하므로 **프론트엔드에 절대 넣지 마세요.**
-
----
-
-## 구조
-
-```
-src/
-├─ lib/supabase.ts    Supabase 클라이언트
-├─ api.ts             데이터 계층 — 화면은 이 시그니처만 알면 됩니다
-├─ App.tsx            라우트 · OAuth 콜백
-└─ components/        화면 + 디자인 프리미티브
-supabase/migrations/  스키마 · RLS · RPC
-```
-
-| 마이그레이션 | 내용 |
-| --- | --- |
-| `0001_init` | 크루 · 프로젝트 · 모집 분야 · 지원, RLS, 확정 RPC, Storage |
-| `0002_edit_bio_skills` | 자기소개, 분야별 기술 스택, 프로젝트 수정 RPC |
-| `0003_feedback_admin` | 의견 보내기, 관리자 플래그 |
-| `0004_lock_admin_flag` | 관리자 권한 자가 부여 차단 |
-
----
-
-## 디자인
-
-다크 · 시네마틱 톤에 배경 영상과 `liquid-glass` 카드를 얹었습니다.
-프로젝트 커버는 아래쪽이 배경으로 자연스럽게 사라지도록 마스킹해, 카드가 배경 위에 떠 있는 느낌을 줍니다.
-
-기획 · 요구사항 문서는 [`../docs`](../docs) 에 있습니다.
+140명 규모 실사용 대비 모니터링·대응·로그 가이드는 [`docs/OPERATIONS.md`](docs/OPERATIONS.md) 를 참고하세요.
