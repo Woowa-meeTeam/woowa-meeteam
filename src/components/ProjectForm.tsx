@@ -2,14 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Check, Eye, ImagePlus, Link as LinkIcon, Minus, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { COVER_PRESETS, CoverFill, HomeLogo } from './primitives';
+import { COVER_PRESETS, CoverFill, HomeLogo, StatusBadge } from './primitives';
 import Markdown from './Markdown';
-import { api, ApiError } from '../api';
+import { api, ApiError, FIELDS } from '../api';
 import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
 /** 분야별로 자주 쓰는 스택을 먼저 제안하고, 직접 추가도 가능하게 */
 const FIELD_SKILLS: Record<string, string[]> = {
@@ -36,7 +35,9 @@ export default function ProjectForm() {
   ]);
 
   const [created, setCreated] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(isEdit);
+  /** 한 크루는 한 시점에 하나만 등록할 수 있어요 — 이미 있으면 폼 대신 안내를 보여줍니다 */
+  const [existing, setExisting] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -74,7 +75,18 @@ export default function ProjectForm() {
 
   // 수정 모드: 기존 값 불러오기
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      // 새 등록 — 이미 들고 있는 프로젝트가 있으면 폼을 채우기 전에 막아줍니다.
+      // (최종 차단은 DB 의 projects_one_per_owner 가 합니다)
+      api
+        .myProjects()
+        .then((list) => {
+          setExisting(list[0] ?? null);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false)); // 미로그인 등은 등록 시도 시 서버가 막아요
+      return;
+    }
     api
       .project(id)
       .then((p) => {
@@ -153,7 +165,7 @@ export default function ProjectForm() {
     }
   };
 
-  const remainingFields = ALL_FIELDS.filter((f) => !recruits.some((r) => r.field === f));
+  const remainingFields = FIELDS.filter((f) => !recruits.some((r) => r.field === f));
   const addField = (field: string) =>
     setRecruits((prev) =>
       prev.some((r) => r.field === field) ? prev : [...prev, { field, capacity: 1, skills: [] }],
@@ -186,6 +198,75 @@ export default function ProjectForm() {
     return (
       <div className="relative z-20 min-h-screen grid place-items-center">
         <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
+  /* 이미 하나 들고 있으면 새로 등록할 수 없어요 — 폐기(삭제)하고 다시 등록하는 흐름으로 안내 */
+  if (!isEdit && existing) {
+    return (
+      <div className="project-focus-page relative z-20 min-h-screen flex flex-col">
+        <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
+          <HomeLogo />
+          <button
+            onClick={() => navigate('/')}
+            className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="닫기"
+          >
+            <X className="w-[18px] h-[18px]" />
+          </button>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: easeOut }}
+          className="project-page-surface project-form-surface max-w-lg w-full mx-auto px-6 pb-16 text-center flex flex-col items-center"
+        >
+          <div className="w-16 h-16 rounded-full border border-[#FFB020]/40 bg-[#FFB020]/10 flex items-center justify-center">
+            <Pencil className="w-6 h-6 text-[#ffd899]" />
+          </div>
+
+          <h1 className="mt-8 text-2xl md:text-3xl font-semibold tracking-tight leading-[1.25]">
+            이미 진행 중인
+            <br />
+            아이디어가 있어요
+          </h1>
+          <p className="mt-3 text-sm text-white/70 leading-[1.7]">
+            한 크루는 한 번에 하나의 아이디어만 들고 있을 수 있어요.
+            <br />팀을 모으지 못했다면 아래 프로젝트를 삭제한 뒤 새로 등록해 주세요.
+          </p>
+
+          <div className="liquid-glass rounded-2xl overflow-hidden mt-8 w-full text-left">
+            <div className="relative h-32">
+              <CoverFill cover={existing.coverImage} />
+              <div className="absolute top-3 left-3">
+                <StatusBadge status={existing.status} />
+              </div>
+            </div>
+            <div className="p-5 pt-3">
+              <h3 className="text-base font-semibold text-white">{existing.title}</h3>
+              <p className="mt-1.5 text-sm text-white/70 leading-[1.5] line-clamp-2">
+                {existing.desc}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 w-full flex flex-col gap-2.5">
+            <button
+              onClick={() => navigate(`/projects/${existing.id}/edit`)}
+              className="w-full h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
+            >
+              기존 프로젝트 수정하기
+            </button>
+            <button
+              onClick={() => navigate('/my')}
+              className="w-full h-12 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
+            >
+              마이페이지에서 관리하기
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }

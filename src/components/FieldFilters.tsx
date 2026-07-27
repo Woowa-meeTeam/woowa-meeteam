@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { FIELDS } from '../api';
 
-export const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
+/** 분야 목록의 원본은 api.ts 한 곳입니다 (과거 분야 필터링과 같은 출처) */
+export const ALL_FIELDS = FIELDS;
 
 export const FIELD_STYLES: Record<
   string,

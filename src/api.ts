@@ -71,6 +71,19 @@ export type Application = {
   } | null;
 };
 
+/** 현재 운영하는 모집 분야. 과거에 있던 기획 · 디자인 · iOS 는 더 이상 쓰지 않습니다. */
+export const FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
+
+const CURRENT_FIELDS = new Set(FIELDS);
+
+/**
+ * 프로필에 남아 있는 과거 분야를 걷어냅니다.
+ * 선택지에서만 빼면 화면엔 안 보여도 값은 그대로 남아, 프로필을 저장할 때 다시 따라 들어옵니다.
+ * DB 정리(마이그레이션)와 별개로 읽는 쪽에서도 한 번 더 막아 둡니다.
+ */
+export const currentFields = (fields: string[] | null | undefined): string[] =>
+  (fields ?? []).filter((f) => CURRENT_FIELDS.has(f));
+
 export const FIELD_SHORT: Record<string, string> = {
   백엔드: 'BE',
   프론트엔드: 'FE',
@@ -126,10 +139,18 @@ export class ApiError extends Error {
 function toApiError(error: { message: string; code?: string } | null, fallback: string): ApiError {
   if (!error) return new ApiError(500, fallback);
   const msg = error.message ?? '';
-  if (error.code === '23505' || msg.includes('applications_one_active'))
+  // 23505(unique 위반)는 제약 이름을 먼저 봐야 합니다.
+  // 코드만 보고 뭉뚱그리면 크루명 중복에도 "이미 지원한 프로젝트예요"가 나가요.
+  if (msg.includes('projects_one_per_owner'))
+    return new ApiError(
+      409,
+      '이미 등록한 프로젝트가 있어요. 하나만 등록할 수 있으니 기존 프로젝트를 삭제한 뒤 다시 등록해 주세요',
+    );
+  if (msg.includes('applications_one_active'))
     return new ApiError(409, '이미 지원한 프로젝트예요');
-  if (error.code === '23505' || msg.includes('crews_crew_name_key'))
+  if (msg.includes('crews_crew_name_key'))
     return new ApiError(409, '이미 사용 중인 크루명이에요');
+  if (error.code === '23505') return new ApiError(409, msg || '이미 등록된 내용이에요');
   if (error.code === '42501' || msg.includes('row-level security'))
     return new ApiError(403, '권한이 없어요. 내 프로젝트에는 지원할 수 없어요');
   if (msg.includes('정원이 찼어요')) return new ApiError(409, msg.replace(/^.*?:\s*/, ''));
@@ -185,7 +206,7 @@ const toUser = (c: CrewRow): User => ({
   id: c.id,
   githubLogin: c.github_login,
   crewName: c.crew_name,
-  fields: c.fields ?? [],
+  fields: currentFields(c.fields),
   skills: c.skills ?? [],
   avatarUrl: c.avatar_url,
   bio: c.bio,
@@ -261,7 +282,7 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
       ? {
           id: row.owner.id,
           name: row.owner.crew_name ?? '크루',
-          field: row.owner.fields?.[0] ?? '',
+          field: currentFields(row.owner.fields)[0] ?? '',
           avatarGradient: gradientFor(row.owner.id),
           avatarUrl: row.owner.avatar_url,
         }
@@ -803,7 +824,7 @@ function mapApplication(r: ApplicationRow): Application {
       ? {
           id: r.applicant.id,
           name: r.applicant.crew_name ?? '크루',
-          fields: r.applicant.fields ?? [],
+          fields: currentFields(r.applicant.fields),
           skills: r.applicant.skills ?? [],
           avatarGradient: gradientFor(r.applicant.id),
           avatarUrl: r.applicant.avatar_url,

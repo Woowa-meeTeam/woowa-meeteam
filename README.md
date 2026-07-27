@@ -52,6 +52,7 @@
 - **프로필 수정** — 온보딩을 다시 밟지 않고 필요한 항목만 수정. 자기소개(bio) 최대 500자.
 
 ### 프로젝트
+- **1인 1프로젝트** — 한 크루는 **한 시점에 하나의 아이디어만** 등록할 수 있습니다. 이미 등록한 프로젝트가 있으면 새로 등록할 수 없고, 기존 프로젝트를 **삭제(폐기)한 뒤에야** 다시 등록됩니다. 아이디어 자체는 몇 번이든 낼 수 있어요 — 팀을 모으지 못하면 폐기하고 다른 아이디어로 재도전하는 흐름입니다.
 - **등록** — 제목, 짧은 소개(카드용 한 줄), 마크다운 설명(**사진 첨부 지원**), 대표 이미지(업로드 또는 프리셋 그라데이션), 프로토타입 링크, 분야별 모집 인원 + 분야별 원하는 기술 스택.
 - **코치 승인** — 등록 시 `PENDING`. 관리자(코치)가 승인해야 목록에 게시됨. 승인 전에는 오너·코치에게만 보임.
 - **수정 · 삭제** — 오너만. 확정 인원이 있는 분야 삭제나 정원 축소는 거부.
@@ -138,7 +139,7 @@
 
 **핵심 RPC**: `create_project` · `update_project` · `accept_application`(정원 락) · `confirm_team`/`unconfirm_team`(1인 1팀 강제) · `approve_project`(코치) · `set_recruiting`.
 
-마이그레이션은 `supabase/migrations/` 에 `0001`~`0007` 순서로 있습니다.
+마이그레이션은 `supabase/migrations/` 에 파일명 순서로 있습니다. (`0001`~`0007` 이후로는 타임스탬프 접두사를 씁니다)
 
 | 마이그레이션 | 내용 |
 | --- | --- |
@@ -149,6 +150,8 @@
 | `0005_summary_reactions` | 짧은 소개, 자기소개 500자, 좋아요/북마크, 지원자 수 |
 | `0006_team_lifecycle` | 코치 승인, 팀 확정/되돌리기, 1인 1팀 강제 |
 | `0007_add_booth_map` | 부스 지도 초안·게시 테이블, RLS, 원자적 저장·게시 RPC |
+| `20260727112402_fix_booth_layout_draft_update_scope` | 부스 배치 초안 저장 RPC 의 UPDATE 범위 보정 |
+| `20260728035323_one_project_per_owner` | **1인 1프로젝트** — `projects_one_per_owner` unique index + `create_project` 사전 검사 |
 
 ---
 
@@ -158,6 +161,7 @@
 
 | 규칙 | 강제 수단 |
 | --- | --- |
+| **1인 1프로젝트 (한 시점에 아이디어 하나)** | `projects_one_per_owner` unique index + `create_project` 사전 검사 |
 | 1인 1지원 | `applications_one_active` partial unique index |
 | 내 프로젝트·마감·미승인 지원 불가 | `applications_insert` RLS |
 | **이미 팀 있는 크루 지원·수락 불가** | RLS `is_teamed()` + `accept_application` 검사 |

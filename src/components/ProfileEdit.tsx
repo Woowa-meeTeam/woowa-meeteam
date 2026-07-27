@@ -3,12 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Plus, Search, X } from 'lucide-react';
 import { Avatar, HomeLogo } from './primitives';
-import { api, ApiError } from '../api';
+import { api, ApiError, FIELDS } from '../api';
 import type { User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 const SKILLS = [
   'React', 'TypeScript', 'Next.js', 'JavaScript', 'Spring', 'Kotlin', 'Java', 'JPA',
   'MySQL', 'Node.js', 'AWS', 'Android', 'Swift', 'SwiftUI', 'Figma', 'Docker',
@@ -173,7 +172,7 @@ export default function ProfileEdit() {
         <div className="mt-6">
           <span className="text-sm font-medium text-white/80">분야</span>
           <div className="mt-2.5 grid grid-cols-2 gap-3">
-            {ALL_FIELDS.map((f) => {
+            {FIELDS.map((f) => {
               const on = fields.includes(f);
               return (
                 <button

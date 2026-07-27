@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Plus, Search, X } from 'lucide-react';
 import { HomeLogo } from './primitives';
-import { api, ApiError } from '../api';
+import { api, ApiError, FIELDS } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
 const SKILLS = [
   'React',
