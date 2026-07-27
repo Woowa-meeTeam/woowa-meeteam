@@ -72,12 +72,9 @@ export type Application = {
 };
 
 export const FIELD_SHORT: Record<string, string> = {
-  프론트엔드: 'FE',
   백엔드: 'BE',
+  프론트엔드: 'FE',
   안드로이드: 'AOS',
-  iOS: 'iOS',
-  기획: '기획',
-  디자인: '디자인',
 };
 
 export type FeedbackKind = 'BUG' | 'IMPROVEMENT' | 'FEATURE' | 'ETC';

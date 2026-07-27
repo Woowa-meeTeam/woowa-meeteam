@@ -3,8 +3,6 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
-import FeatureMatch from './components/FeatureMatch';
-import SkillCloud from './components/SkillCloud';
 import Steps from './components/Steps';
 import FinalCTA from './components/FinalCTA';
 import Onboarding from './components/Onboarding';
@@ -99,8 +97,6 @@ function Landing() {
         onRegister={() => navigate('/projects/new')}
         onSelect={(id) => navigate(`/projects/${id}`)}
       />
-      <FeatureMatch />
-      <SkillCloud />
       <Steps />
       <FinalCTA onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
       <FeedbackWidget />

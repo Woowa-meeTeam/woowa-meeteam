@@ -299,25 +299,6 @@
   font-size: 25px;
 }
 
-.booth-feature .booth-marker__reactions {
-  pointer-events: none;
-}
-
-.booth-feature .booth-marker__reaction path {
-  stroke: rgb(255 255 255 / 78%);
-  stroke-width: 2.2;
-  paint-order: stroke fill;
-  vector-effect: non-scaling-stroke;
-}
-
-.booth-feature .booth-marker__reaction--like path {
-  fill: #f04452;
-}
-
-.booth-feature .booth-marker__reaction--bookmark path {
-  fill: #facc15;
-}
-
 .booth-feature .booth-marker:hover rect,
 .booth-feature .booth-marker:focus-visible rect {
   fill: var(--color-marker-hover);

@@ -10,13 +10,14 @@ import {
   viewportForWidth,
 } from "./map-readability"
 import { animateMapCamera, syncMapBackgroundLabelOrientation } from "./map-view-transition"
-import { type BoothLayout, type FloorId, floorIds, type MapViewState } from "./model"
+import { type Booth, type BoothLayout, type FloorId, floorIds, type MapViewState } from "./model"
 import { roomsByFloor } from "./room-data"
 import { queryRequired, renderMapPanel, renderShell } from "./view-templates"
 
 type ReactionKind = "LIKE" | "BOOKMARK"
 
 type BoothMapAppOptions = {
+  readonly initialProjectId?: string | null
   readonly onToggleReaction?: (
     projectId: string,
     kind: ReactionKind,
@@ -46,7 +47,12 @@ export class BoothMapApp {
     this.projects = [...projects]
     this.layout = layout
     this.onToggleReaction = options.onToggleReaction
-    this.selectedBoothId = layout[11][0]?.id ?? null
+    const initialLocation = this.findBoothLocation(options.initialProjectId)
+    this.selectedFloorId = initialLocation?.floorId ?? 11
+    this.selectedBoothId = initialLocation?.booth.id ?? layout[this.selectedFloorId][0]?.id ?? null
+    this.mapView = initialLocation
+      ? { kind: "room", roomName: initialLocation.booth.roomName }
+      : { kind: "floor" }
     this.renderShell()
     this.bindFloorButtons()
     const mapPanel = queryRequired<HTMLElement>(this.root, ".map-panel")
@@ -64,6 +70,22 @@ export class BoothMapApp {
     })
     this.resizeObserver.observe(mapPanel)
     this.renderCurrentFloor()
+  }
+
+  private findBoothLocation(projectId: string | null | undefined): {
+    readonly floorId: FloorId
+    readonly booth: Booth
+  } | null {
+    if (!projectId) {
+      return null
+    }
+    for (const floorId of floorIds) {
+      const booth = this.layout[floorId].find((candidate) => candidate.projectId === projectId)
+      if (booth) {
+        return { floorId, booth }
+      }
+    }
+    return null
   }
 
   public destroy(): void {

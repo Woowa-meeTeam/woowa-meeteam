@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Heart,
   Link as LinkIcon,
+  MapPin,
   Pencil,
   Users,
   X,
@@ -233,6 +234,15 @@ export default function ProjectDetail() {
               {project.bookmarks}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate(`/booths?projectId=${encodeURIComponent(project.id)}`)}
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#00d2ff]/25 bg-[#00d2ff]/[0.08] px-3.5 py-2 text-xs font-medium text-[#8eeaff] transition-colors hover:border-[#00d2ff]/50 hover:bg-[#00d2ff]/[0.14]"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            부스에서 보기
+          </button>
 
           <button
             onClick={() => project.owner && navigate(`/crews/${project.owner.id}`)}

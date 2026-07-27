@@ -65,6 +65,7 @@ export function BoothMapPage() {
           boothEligibleProjects(projects).map(toBoothProject),
           revision.layout,
           {
+            initialProjectId: new URLSearchParams(window.location.search).get("projectId"),
             onToggleReaction: (projectId, kind, nextValue) =>
               api.toggleReaction(projectId, kind, nextValue),
           },

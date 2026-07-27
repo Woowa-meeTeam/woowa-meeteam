@@ -8,7 +8,7 @@ import type { User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const ALL_FIELDS = ['프론트엔드', '백엔드', '안드로이드', 'iOS', '기획', '디자인'];
+const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 const SKILLS = [
   'React', 'TypeScript', 'Next.js', 'JavaScript', 'Spring', 'Kotlin', 'Java', 'JPA',
   'MySQL', 'Node.js', 'AWS', 'Android', 'Swift', 'SwiftUI', 'Figma', 'Docker',

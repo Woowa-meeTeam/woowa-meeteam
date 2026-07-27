@@ -72,13 +72,33 @@ export function GithubButton({
   );
 }
 
-export function SectionEyebrow({ label, tag }: { label: string; tag?: string }) {
+export function SectionEyebrow({
+  label,
+  tag,
+  live = false,
+}: {
+  label: string;
+  tag?: string;
+  live?: boolean;
+}) {
   return (
     <div className="inline-flex items-center gap-2 text-sm text-white/70">
-      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          live ? 'bg-[#00C471] shadow-[0_0_8px_rgba(0,196,113,0.9)]' : 'bg-white'
+        }`}
+      />
       <span>{label}</span>
       {tag && (
-        <span className="px-2 py-0.5 rounded-full border border-white/10 text-white/70 text-xs">{tag}</span>
+        <span
+          className={`rounded-full border px-2 py-0.5 text-xs ${
+            live
+              ? 'border-[#00C471]/35 bg-[#00C471]/10 text-[#8ee8b8]'
+              : 'border-white/10 text-white/70'
+          }`}
+        >
+          {tag}
+        </span>
       )}
     </div>
   );

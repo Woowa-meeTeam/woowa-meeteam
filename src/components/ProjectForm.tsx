@@ -8,16 +8,13 @@ import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const ALL_FIELDS = ['프론트엔드', '백엔드', '안드로이드', 'iOS', '기획', '디자인'];
+const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
 /** 분야별로 자주 쓰는 스택을 먼저 제안하고, 직접 추가도 가능하게 */
 const FIELD_SKILLS: Record<string, string[]> = {
   프론트엔드: ['React', 'TypeScript', 'Next.js', 'JavaScript', 'Vue', 'Tailwind'],
   백엔드: ['Spring', 'Java', 'Kotlin', 'Node.js', 'JPA', 'MySQL', 'AWS'],
   안드로이드: ['Kotlin', 'Jetpack Compose', 'Android', 'Retrofit'],
-  iOS: ['Swift', 'SwiftUI', 'UIKit', 'Combine'],
-  기획: ['Notion', 'Jira', 'User Research', 'Figma'],
-  디자인: ['Figma', 'Prototyping', 'Design System', 'Illustrator'],
 };
 
 type Recruit = { field: string; capacity: number; skills: string[] };

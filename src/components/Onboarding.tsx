@@ -8,7 +8,7 @@ import { api, ApiError } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
-const FIELDS = ['프론트엔드', '백엔드', '안드로이드', 'iOS', '기획', '디자인'];
+const FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
 const SKILLS = [
   'React',

@@ -37,6 +37,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
           <SectionEyebrow
             label="지금 모집 중"
             tag={projects ? `${recruiting}개 모집중` : '불러오는 중'}
+            live
           />
           <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.15]">
             어떤 프로젝트가 있는지

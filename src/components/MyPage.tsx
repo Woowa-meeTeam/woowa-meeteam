@@ -351,7 +351,7 @@ function ReactionProjectList({
   const Icon = icon === 'like' ? Heart : Bookmark;
 
   return (
-    <div className="mt-5 space-y-3">
+    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
       {projects.length === 0 && (
         <p className="text-sm text-white/40 py-8 text-center border border-dashed border-white/10 rounded-2xl">
           {emptyMessage}
@@ -361,29 +361,42 @@ function ReactionProjectList({
         <button
           key={p.id}
           onClick={() => navigate(`/projects/${p.id}`)}
-          className="w-full text-left liquid-glass rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-transform"
+          className="group relative aspect-square w-full overflow-hidden rounded-2xl text-left liquid-glass transition-transform hover:-translate-y-0.5"
         >
-          <div className="relative h-24">
+          <div className="absolute inset-0">
             <CoverFill cover={p.coverImage} />
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border border-white/10 bg-black/35 text-white/80">
-              <Icon className="w-3 h-3" fill="currentColor" />
-              {icon === 'like' ? '좋아요' : '북마크'}
-            </span>
-            <span className={`absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${STATUS_BADGE[p.status].cls}`}>
-              {STATUS_BADGE[p.status].label}
-            </span>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/10 to-black/90" />
           </div>
-          <div className="p-5 pt-3">
-            <h3 className="text-base font-semibold text-white">{p.title}</h3>
-            <p className="mt-1.5 text-sm text-white/50 leading-[1.5] line-clamp-2">{p.desc}</p>
-            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-              <span className="text-xs text-white/50 tabular-nums">
+          <span
+            className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border bg-black/35 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md ${
+              icon === 'like'
+                ? 'border-[#f04452]/35 text-[#ff7d88]'
+                : 'border-[#ffd34d]/35 text-[#ffd34d]'
+            }`}
+          >
+            <Icon className="h-3 w-3" fill="currentColor" />
+            {icon === 'like' ? '좋아요' : '북마크'}
+          </span>
+          <span className={`absolute right-3 top-3 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md ${STATUS_BADGE[p.status].cls}`}>
+            {STATUS_BADGE[p.status].label}
+          </span>
+          <div className="absolute inset-x-4 bottom-4">
+            <h3 className="text-base font-semibold text-white drop-shadow-sm">{p.title}</h3>
+            <p className="mt-1.5 line-clamp-2 text-xs leading-[1.5] text-white/70">{p.desc}</p>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/20 pt-3">
+              <span className="truncate text-[11px] text-white/65 tabular-nums">
                 {p.slots.map((s) => `${FIELD_SHORT[s.field] ?? s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-white/45">
-                <Heart className="w-3.5 h-3.5" fill={p.myLike ? 'currentColor' : 'none'} />
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-white/75">
+                <Heart
+                  className={`h-3.5 w-3.5 ${p.myLike ? 'text-[#ff6975]' : 'text-white/45'}`}
+                  fill={p.myLike ? 'currentColor' : 'none'}
+                />
                 {p.likes}
-                <Bookmark className="w-3.5 h-3.5 ml-1" fill={p.myBookmark ? 'currentColor' : 'none'} />
+                <Bookmark
+                  className={`ml-1 h-3.5 w-3.5 ${p.myBookmark ? 'text-[#ffd34d]' : 'text-white/45'}`}
+                  fill={p.myBookmark ? 'currentColor' : 'none'}
+                />
                 {p.bookmarks}
               </span>
             </div>

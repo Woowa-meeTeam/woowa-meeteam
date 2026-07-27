@@ -109,44 +109,9 @@ export function renderBoothMarker(
         <text class="booth-marker__team" x="${centerX}" y="${labels.teamY}" style="font-size: ${labels.teamFontSize}px" ${labelTransform}>
           ${escapeMarkup(displayName)}
         </text>
-        ${renderBoothMarkerReactions(booth, project)}
       </g>
     </g>
   `
-}
-
-function renderBoothMarkerReactions(booth: Booth, project: MeeteamProject | undefined): string {
-  if (!project?.myLike && !project?.myBookmark) {
-    return ""
-  }
-
-  const iconSize = Math.min(18, Math.max(12, Math.min(booth.width, booth.height) * 0.18))
-  const gap = iconSize * 0.24
-  const padding = iconSize * 0.36
-  const count = Number(project.myLike) + Number(project.myBookmark)
-  const totalWidth = count * iconSize + (count - 1) * gap
-  const startX = booth.x + booth.width - padding - totalWidth
-  const startY = booth.y + padding
-  const icons: string[] = []
-  const nextTransform = () =>
-    `translate(${startX + icons.length * (iconSize + gap)} ${startY}) scale(${iconSize / 24})`
-
-  if (project.myLike) {
-    icons.push(`
-      <g class="booth-marker__reaction booth-marker__reaction--like" transform="${nextTransform()}">
-        <path d="M12 21.35 10.55 20.03C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.54L12 21.35Z" />
-      </g>
-    `)
-  }
-  if (project.myBookmark) {
-    icons.push(`
-      <g class="booth-marker__reaction booth-marker__reaction--bookmark" transform="${nextTransform()}">
-        <path d="M6 3.75C6 2.78 6.78 2 7.75 2h8.5C17.22 2 18 2.78 18 3.75V22l-6-3.75L6 22V3.75Z" />
-      </g>
-    `)
-  }
-
-  return `<g class="booth-marker__reactions" aria-hidden="true">${icons.join("")}</g>`
 }
 
 function renderRoomEntry(presentation: RoomPresentation, floorProjectionScale: number): string {
