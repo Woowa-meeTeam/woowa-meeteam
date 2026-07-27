@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1490 952" role="img" aria-labelledby="title desc">
+  <title id="title">12층 행사장 지도</title>
+  <desc id="desc">12층의 방과 통로를 표시한 벡터 지도입니다. 화장실과 공조실은 출입할 수 없습니다.</desc>
+  <rect width="1490" height="952" fill="#fff" />
+
+  <g class="walls" fill="none" stroke="#454545" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 14H1473V934H15Z" />
+
+    <path d="M35 52V136M115 52V136M35 94H115" />
+    <path d="M35 192V276M115 192V276M35 234H115" />
+    <path d="M35 352V436M115 352V436M35 394H115" />
+    <path d="M35 512V596M115 512V596M35 554H115" />
+
+    <path d="M153 334H215V614H153M215 614H417" />
+
+    <path d="M895 14V254" />
+    <path d="M895 154H1055M1095 154H1255" />
+    <path d="M895 254H1055M1095 254H1255" />
+    <path d="M1055 14V36M1055 52V216M1055 232V254" />
+    <path d="M1095 14V36M1095 52V216M1095 232V254" />
+
+    <path d="M1255 14V296M1255 334H1473" />
+    <path d="M1255 334V356M1255 412V556M1255 592V614H1473" />
+
+    <path d="M495 354H777M895 354H1195V594H895M495 354V594H777" />
+
+    <path d="M15 674H437M473 674H497" />
+    <path d="M495 674V934M755 674V934" />
+    <path d="M733 674H897M953 674H1137M1193 674H1255" />
+
+    <path d="M895 674V816M895 852V876M895 892V934" />
+    <path d="M755 874H895" />
+
+    <path d="M1255 614V856M1255 892V934" />
+  </g>
+
+  <g class="structural-guides" fill="none" stroke="#b2b2ba" stroke-width="6" stroke-linecap="round">
+    <path d="M815 14V294H153" />
+  </g>
+
+  <g class="labels" fill="#111" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="32" font-weight="400" text-anchor="middle">
+    <text x="485" y="162">라이브러리</text>
+    <text x="75" y="80" font-size="28">페 7</text>
+    <text x="75" y="120" font-size="28">페 8</text>
+    <text x="75" y="220" font-size="28">페 9</text>
+    <text x="75" y="260" font-size="28">페 10</text>
+    <text x="75" y="380" font-size="28">페 11</text>
+    <text x="75" y="420" font-size="28">페 12</text>
+    <text x="75" y="540" font-size="28">페 13</text>
+    <text x="75" y="580" font-size="28">페 14</text>
+    <text x="285" y="482">코워킹 존</text>
+    <text x="975" y="92">보이저</text>
+    <text x="1175" y="92">디스커버리</text>
+    <text x="975" y="212">아폴로</text>
+    <text x="1175" y="212">허블</text>
+    <text x="1365" y="182">공조실</text>
+    <text x="845" y="482">출입구</text>
+    <text x="1365" y="482">화장실</text>
+    <text x="255" y="812">작은 강의실</text>
+    <text x="625" y="812">캔틴</text>
+    <text x="825" y="782">코치 2</text>
+    <text x="1075" y="812">코치룸</text>
+    <text x="1365" y="782">서버실</text>
+  </g>
+
+  <g class="inaccessible" fill="none" stroke="#b2b2ba" stroke-width="6" stroke-linecap="round">
+    <title>출입 불가 구역</title>
+    <path d="M1258 17L1470 331M1470 17L1258 331" aria-label="공조실 출입 불가" />
+    <path d="M1258 337L1470 611M1470 337L1258 611" aria-label="화장실 출입 불가" />
+  </g>
+</svg>

@@ -13,3 +13,6 @@ vite.config.d.ts
 # OS
 .DS_Store
 .vercel
+
+# IDE
+.idea/

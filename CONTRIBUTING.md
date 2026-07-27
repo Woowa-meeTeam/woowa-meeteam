@@ -100,6 +100,7 @@ src/
 ├─ lib/supabase.ts    Supabase 클라이언트
 ├─ api.ts             데이터 계층 (화면은 이 시그니처만 사용)
 ├─ App.tsx            라우트 · OAuth 콜백
+├─ features/booths/    부스 지도·관리자·SVG 지도·배치 저장소
 └─ components/        화면 + 디자인 프리미티브(primitives.tsx)
 supabase/migrations/  스키마 · RLS · RPC (0001~)
 ```

@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+.booth-feature {
+  color-scheme: dark;
+  font-family:
+    Inter, "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --color-canvas: #0c0c0c;
+  --color-surface: rgb(255 255 255 / 1%);
+  --color-surface-strong: rgb(0 0 0 / 58%);
+  --color-surface-muted: rgb(255 255 255 / 5%);
+  --color-map-paper: #ffffff;
+  --color-ink: #ffffff;
+  --color-ink-muted: rgb(255 255 255 / 62%);
+  --color-ink-subtle: rgb(255 255 255 / 38%);
+  --color-line: rgb(255 255 255 / 10%);
+  --color-line-strong: rgb(255 255 255 / 45%);
+  --color-brand-deep: #091020;
+  --color-brand-blue: #0b2551;
+  --color-brand-cyan: #00d2ff;
+  --color-brand-ice: #a4f4fd;
+  --color-accent: #00d2ff;
+  --color-accent-strong: #a4f4fd;
+  --color-accent-soft: rgb(0 210 255 / 12%);
+  --color-accent-text: #071017;
+  --color-action: #ffffff;
+  --color-action-text: #0c0c0c;
+  --color-marker-rest: #edf2f5;
+  --color-marker-rest-border: #8b9aaa;
+  --color-marker-rest-text: #13263d;
+  --color-marker-hover: #dfe8ee;
+  --color-marker-hover-border: #405a73;
+  --color-marker-selected: #edf2f5;
+  --color-marker-selected-border: #00b8d9;
+  --color-marker-selected-text: #13263d;
+  --color-marker-selected-meta: #007f99;
+  --color-marker-shadow: rgb(4 21 39 / 32%);
+  --color-marker-glow: rgb(0 210 255 / 58%);
+  --color-danger: #ff8d8d;
+  --color-danger-soft: rgb(255 96 96 / 12%);
+  --color-shadow: rgb(0 7 28 / 28%);
+  --color-shadow-strong: rgb(0 5 24 / 48%);
+
+  --gradient-brand: linear-gradient(
+    90deg,
+    #091020 0%,
+    #0b2551 12.5%,
+    #a4f4fd 32.5%,
+    #00d2ff 50%,
+    #0b2551 67.5%,
+    #091020 87.5%,
+    #091020 100%
+  );
+  --gradient-surface: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 7%),
+    rgb(5 12 28 / 24%) 42%,
+    rgb(0 0 0 / 38%)
+  );
+
+  --type-display: clamp(2.75rem, 7vw, 4.5rem);
+  --type-title: clamp(2.25rem, 5vw, 3.75rem);
+  --type-heading: 1.125rem;
+  --type-body: 1rem;
+  --type-small: 0.8125rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-control: 14px;
+  --radius-panel: 32px;
+  --radius-hero: 36px;
+  --radius-pill: 999px;
+
+  --content-max: 1152px;
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-press: 120ms;
+  --duration-state: 150ms;
+  --duration-panel: 220ms;
+
+  background: transparent;
+  color: var(--color-ink);
+}

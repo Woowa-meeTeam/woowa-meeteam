@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1486 940" role="img" aria-labelledby="title desc">
+  <title id="title">13층 행사장 지도</title>
+  <desc id="desc">13층의 방과 통로를 표시한 벡터 지도입니다. 라이브러리, 화장실, 공조실은 출입할 수 없습니다.</desc>
+  <rect width="1486" height="940" fill="#fff" />
+
+  <g class="walls" fill="none" stroke="#454545" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 8H1471V928H13Z" />
+
+    <path d="M913 8V268H1115M1151 268H1253" />
+
+    <path d="M1253 8V290M1253 328H1471" />
+    <path d="M1253 328V350M1253 406V550M1253 586V608H1471" />
+
+    <path d="M493 348H775M891 348H1193V588H891M493 348V588H775" />
+
+    <path d="M891 648H913V850H891" />
+    <path d="M913 906V928" />
+
+    <path d="M913 788H1093M1153 788H1333" />
+    <path d="M973 788V850M1033 788V850M1093 788V850" />
+    <path d="M1153 788V850M1213 788V850M1273 788V850" />
+
+    <path d="M1333 608V630M1333 646V890M1333 906V928" />
+    <path d="M1333 768H1471" />
+  </g>
+
+  <g class="structural-guides" fill="none" stroke="#b2b2ba" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M813 8V288H13" />
+    <path d="M333 288V928" />
+  </g>
+
+  <g class="labels" fill="#111" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="32" font-weight="400" text-anchor="middle">
+    <text x="413" y="156">라이브러리</text>
+    <text x="170" y="616">스타트랙</text>
+    <text x="1075" y="146">안드로메다같은 방</text>
+    <text x="1363" y="176">공조실</text>
+    <text x="843" y="476">출입구</text>
+    <text x="1363" y="476">화장실</text>
+    <text x="623" y="766">코워킹 존</text>
+    <text x="1120" y="726">포커스 존</text>
+    <text x="943" y="826" font-size="28">페 1</text>
+    <text x="1003" y="826" font-size="28">페 2</text>
+    <text x="1063" y="826" font-size="28">페 3</text>
+    <text x="1183" y="826" font-size="28">페 4</text>
+    <text x="1243" y="826" font-size="28">페 5</text>
+    <text x="1303" y="826" font-size="28">페 6</text>
+    <text x="1403" y="696">은하수</text>
+    <text x="1403" y="856">스튜디오</text>
+  </g>
+
+  <g class="inaccessible" fill="none" stroke="#b2b2ba" stroke-width="6" stroke-linecap="round">
+    <title>출입 불가 구역</title>
+    <path d="M14 9L812 287M812 9L14 287" aria-label="라이브러리 출입 불가" />
+    <path d="M1256 11L1468 325M1468 11L1256 325" aria-label="공조실 출입 불가" />
+    <path d="M1256 331L1468 605M1468 331L1256 605" aria-label="화장실 출입 불가" />
+  </g>
+</svg>

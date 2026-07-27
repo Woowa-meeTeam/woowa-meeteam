@@ -77,6 +77,11 @@
 - **의견 보내기** — 우하단 위젯. 버그 · 개선 · 기능 · 기타로 제보.
 - **관리자(`/admin`)** — 지정된 관리자만 접근. 서비스 집계, **승인 대기 프로젝트 승인/반려**, 크루 의견 처리.
 
+### 오프라인 부스 지도
+- **층별 지도(`/booths`)** — 11·12·13층 SVG 지도에서 게시된 프로젝트 부스와 상세 정보를 확인.
+- **배치 관리(`/booths/admin`)** — 관리자가 부스를 드래그·리사이즈하고, 초안을 저장한 뒤 공개 지도에 게시.
+- 프로젝트와 부스 배치는 같은 Supabase 프로젝트를 사용하며 부스는 `projects.id`를 참조.
+
 ---
 
 ## 화면 · 라우트
@@ -93,6 +98,8 @@
 | `/crews` · `/crews/:id` | 크루 목록 · 상세 | 전체 |
 | `/my` · `/profile/edit` | 마이페이지 · 프로필 수정 | 로그인 |
 | `/admin` | 관리자 | 관리자만 |
+| `/booths` | 오프라인 부스 지도 | 전체 |
+| `/booths/admin` | 부스 배치 초안·게시 관리 | 관리자만 |
 
 ---
 
@@ -123,12 +130,15 @@
 | `applications` | 지원 (PENDING/ACCEPTED/REJECTED/CANCELED) |
 | `project_reactions` | 좋아요 · 북마크 |
 | `feedbacks` | 사용자 제보 |
+| `floor_maps` | 11·12·13층 지도 메타데이터와 공간 정의 |
+| `floor_layout_drafts` | 관리자가 편집 중인 층별 부스 배치 |
+| `floor_layout_publications` | 공개 지도에 노출되는 게시 배치 |
 
 **공개 집계 뷰** (개별 행은 비공개, 집계만 공개): `project_slot_status`(분야별 확정 인원), `project_members`(확정 멤버), `project_applicant_counts`(지원자 수), `project_reaction_counts`(좋아요·북마크), `crew_team_status`(팀 보유 여부).
 
 **핵심 RPC**: `create_project` · `update_project` · `accept_application`(정원 락) · `confirm_team`/`unconfirm_team`(1인 1팀 강제) · `approve_project`(코치) · `set_recruiting`.
 
-마이그레이션은 `supabase/migrations/` 에 `0001`~`0006` 순서로 있습니다.
+마이그레이션은 `supabase/migrations/` 에 `0001`~`0007` 순서로 있습니다.
 
 | 마이그레이션 | 내용 |
 | --- | --- |
@@ -138,6 +148,7 @@
 | `0004_lock_admin_flag` | 관리자 권한 자가 부여 차단 |
 | `0005_summary_reactions` | 짧은 소개, 자기소개 500자, 좋아요/북마크, 지원자 수 |
 | `0006_team_lifecycle` | 코치 승인, 팀 확정/되돌리기, 1인 1팀 강제 |
+| `0007_add_booth_map` | 부스 지도 초안·게시 테이블, RLS, 원자적 저장·게시 RPC |
 
 ---
 
