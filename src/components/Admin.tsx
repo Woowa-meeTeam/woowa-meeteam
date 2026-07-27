@@ -81,13 +81,21 @@ export default function Admin() {
     <div className="relative z-20 min-h-screen flex flex-col">
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="홈으로"
-        >
-          <X className="w-[18px] h-[18px]" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/booths/admin')}
+            className="h-10 px-4 rounded-full border border-white/10 bg-white/5 text-sm text-[#7db4ff] hover:bg-white/10 transition-colors"
+          >
+            부스 관리
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="홈으로"
+          >
+            <X className="w-[18px] h-[18px]" />
+          </button>
+        </div>
       </div>
 
       <motion.div

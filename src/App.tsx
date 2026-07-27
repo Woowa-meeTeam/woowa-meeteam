@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -21,6 +21,13 @@ import ApplicantManage from './components/ApplicantManage';
 import { GuideLine } from './components/primitives';
 import { api } from './api';
 import { supabase } from './lib/supabase';
+
+const BoothMapPage = lazy(() =>
+  import('./features/booths/pages').then((module) => ({ default: module.BoothMapPage })),
+);
+const BoothAdminPage = lazy(() =>
+  import('./features/booths/pages').then((module) => ({ default: module.BoothAdminPage })),
+);
 
 const VIDEO_SRC =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4';
@@ -102,6 +109,35 @@ function Landing() {
   );
 }
 
+function BoothRoute({ admin = false }: { admin?: boolean }) {
+  const navigate = useNavigate();
+  const Page = admin ? BoothAdminPage : BoothMapPage;
+
+  const handleStart = async () => {
+    try {
+      const me = await api.me();
+      navigate(me.onboarded ? '/my' : '/onboarding');
+    } catch {
+      await api.login().catch(() => navigate('/onboarding'));
+    }
+  };
+
+  return (
+    <>
+      <Navbar fixed onStart={handleStart} onMyPage={() => navigate('/my')} />
+      <Suspense
+        fallback={
+          <div className="relative z-20 min-h-screen grid place-items-center">
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+          </div>
+        }
+      >
+        <Page />
+      </Suspense>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0c0c0c] text-white">
@@ -143,6 +179,8 @@ export default function App() {
         <Route path="/crews" element={<Crews />} />
         <Route path="/crews/:id" element={<CrewDetail />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/booths" element={<BoothRoute />} />
+        <Route path="/booths/admin" element={<BoothRoute admin />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />

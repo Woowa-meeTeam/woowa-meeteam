@@ -1,0 +1,101 @@
+@media (max-width: 1023px) {
+  .booth-feature .viewer-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booth-feature .booth-detail {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.55fr);
+  }
+
+  .booth-feature .booth-detail__topline {
+    grid-column: 1 / -1;
+  }
+
+  .booth-feature .booth-detail__location {
+    align-self: start;
+    margin-block-start: var(--space-6);
+    margin-inline-start: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .booth-feature .app-shell {
+    width: min(100% - var(--space-4), 1440px);
+    padding-block-end: var(--space-10);
+  }
+
+  .booth-feature .site-header {
+    min-height: calc(100dvh - 80px);
+    padding-block: var(--space-10) var(--space-16);
+  }
+
+  .booth-feature .booth-section {
+    padding-block: var(--space-12);
+  }
+
+  .booth-feature .booth-section__header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin-block-end: var(--space-6);
+  }
+
+  .booth-feature .booth-section__header .floor-selector {
+    width: 100%;
+  }
+
+  .booth-feature .floor-button {
+    flex: 1;
+    padding-inline: var(--space-3);
+  }
+
+  .booth-feature .status-note {
+    align-items: flex-start;
+    width: 100%;
+    margin-block-end: var(--space-3);
+    border-radius: var(--radius-control);
+  }
+
+  .booth-feature .status-note span {
+    line-height: 1.45;
+  }
+
+  .booth-feature .viewer-layout {
+    gap: var(--space-3);
+  }
+
+  .booth-feature .map-panel__header {
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .booth-feature .map-panel__back {
+    flex: none;
+  }
+
+  .booth-feature .map-canvas {
+    min-height: 260px;
+  }
+
+  .booth-feature .booth-detail {
+    display: block;
+  }
+
+  .booth-feature .booth-detail__body,
+  .booth-feature .booth-detail__empty {
+    padding: var(--space-5);
+  }
+
+  .booth-feature .booth-detail__location {
+    margin: 0 var(--space-5) var(--space-5);
+  }
+}
+
+@media (max-width: 420px) {
+  .booth-feature .map-canvas {
+    min-height: 240px;
+  }
+}
