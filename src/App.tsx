@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
@@ -139,6 +139,9 @@ function BoothRoute({ admin = false }: { admin?: boolean }) {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  const showGuideLines = pathname !== '/booths';
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0c0c0c] text-white">
       {/* Root SVG noise filter (shiny headline) */}
@@ -165,8 +168,12 @@ export default function App() {
       </div>
 
       {/* Vertical guide lines */}
-      <GuideLine side="left" />
-      <GuideLine side="right" />
+      {showGuideLines && (
+        <>
+          <GuideLine side="left" />
+          <GuideLine side="right" />
+        </>
+      )}
 
       <Routes>
         <Route path="/" element={<Landing />} />
