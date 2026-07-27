@@ -154,7 +154,15 @@ export const COVER_PRESETS = Object.keys(COVER_GRADIENTS);
  * 커버를 부모 컨테이너에 채웁니다. `fade`가 있으면 아래쪽을 투명하게 마스킹해
  * 시네마틱 배경(고정 비디오)에 자연스럽게 녹아들게 합니다.
  */
-export function CoverFill({ cover, fade = true }: { cover: string | null; fade?: boolean }) {
+export function CoverFill({
+  cover,
+  fade = true,
+  onImageLoad,
+}: {
+  cover: string | null;
+  fade?: boolean;
+  onImageLoad?: (width: number, height: number) => void;
+}) {
   if (!cover) return null;
   const isGradient = cover.startsWith('gradient:');
 
@@ -176,7 +184,14 @@ export function CoverFill({ cover, fade = true }: { cover: string | null; fade?:
           style={{ backgroundImage: COVER_GRADIENTS[cover.slice(9)] ?? COVER_GRADIENTS.aurora }}
         />
       ) : (
-        <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          src={cover}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          onLoad={(event) =>
+            onImageLoad?.(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)
+          }
+        />
       )}
       {/* 뱃지 가독성을 위한 상단 그늘만 최소한으로. 사진 본체는 덮지 않습니다. */}
       <div

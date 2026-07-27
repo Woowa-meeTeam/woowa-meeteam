@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { SectionEyebrow } from './primitives';
-import { Avatar, CoverFill, StatusBadge } from './primitives';
-import { api, FIELD_SHORT } from '../api';
+import ProjectCard from './ProjectCard';
+import { api } from '../api';
 import type { Project } from '../api';
 
 type Props = {
@@ -69,76 +69,23 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
       )}
 
       {!projects && !error && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="liquid-glass rounded-2xl p-5 h-52 animate-pulse" />
+        <div className="project-card-grid">
+          {[0, 1].map((i) => (
+            <div key={i} className="project-card project-card--skeleton animate-pulse" />
           ))}
         </div>
       )}
 
       {projects && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="project-card-grid">
           {projects.map((p, i) => (
-            <motion.button
+            <ProjectCard
               key={p.id}
-              type="button"
+              project={p}
+              index={i}
               onClick={() => onSelect?.(p.id)}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.6, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className={`liquid-glass rounded-2xl overflow-hidden flex flex-col text-left transition-transform hover:-translate-y-1 active:scale-[0.99] ${
-                p.closed ? 'opacity-[0.85]' : ''
-              }`}
-            >
-              {/* 대표 이미지 — 아래로 갈수록 배경에 녹아들도록 fade */}
-              <div className="relative h-36">
-                <CoverFill cover={p.coverImage} />
-                <div className="absolute top-3 left-3 right-3 flex items-center">
-                  <StatusBadge status={p.status} />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 p-5 pt-3 flex-1">
-                <div>
-                  <h3 className="text-base font-semibold text-white leading-snug">{p.title}</h3>
-                  <p className="mt-1.5 text-sm text-white/70 leading-[1.5]">{p.desc}</p>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {p.slots.map((s) => {
-                    const full = s.confirmed >= s.capacity;
-                    return (
-                      <span
-                        key={s.field}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border tabular-nums ${
-                          full
-                            ? 'border-white/15 text-white/70'
-                            : 'border-white/25 text-white/85 bg-white/[0.08]'
-                        }`}
-                      >
-                        {FIELD_SHORT[s.field] ?? s.field} {s.confirmed}/{s.capacity}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-auto pt-3 border-t border-white/10 flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Avatar
-                      name={p.owner?.name}
-                      avatarUrl={p.owner?.avatarUrl}
-                      gradient={p.owner?.avatarGradient}
-                      className="w-6 h-6 text-[10px]"
-                    />
-                    <span className="text-xs text-white/75">
-                      {p.owner?.name} · {p.owner?.field}
-                    </span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-white/50" />
-                </div>
-              </div>
-            </motion.button>
+              animateOnView
+            />
           ))}
         </div>
       )}

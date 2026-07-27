@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
 import Steps from './components/Steps';
-import FinalCTA from './components/FinalCTA';
 import Onboarding from './components/Onboarding';
 import ProjectForm from './components/ProjectForm';
 import ProfileEdit from './components/ProfileEdit';
@@ -16,6 +15,7 @@ import FeedbackWidget from './components/FeedbackWidget';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
 import ApplicantManage from './components/ApplicantManage';
+import Faq from './components/Faq';
 import { api } from './api';
 import { supabase } from './lib/supabase';
 
@@ -98,7 +98,6 @@ function Landing() {
         onSelect={(id) => navigate(`/projects/${id}`)}
       />
       <Steps />
-      <FinalCTA onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
       <FeedbackWidget />
     </>
   );
@@ -133,9 +132,19 @@ function BoothRoute({ admin = false }: { admin?: boolean }) {
   );
 }
 
+function FaqRoute() {
+  return (
+    <>
+      <Navbar fixed />
+      <Faq />
+      <FeedbackWidget />
+    </>
+  );
+}
+
 export default function App() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#0c0c0c] text-white">
+    <div className="relative min-h-screen overflow-x-clip bg-[#0c0c0c] text-white">
       {/* Root SVG noise filter (shiny headline) */}
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
         <filter id="c3-noise">
@@ -176,6 +185,7 @@ export default function App() {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />
+        <Route path="/faq" element={<FaqRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

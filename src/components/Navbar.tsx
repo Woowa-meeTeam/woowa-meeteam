@@ -39,6 +39,7 @@ export default function Navbar({
     { label: '프로젝트 탐색', onClick: () => navigate('/projects') },
     { label: '크루', onClick: () => navigate('/crews') },
     { label: '부스 지도', onClick: () => navigate('/booths') },
+    { label: 'FAQ', onClick: () => navigate('/faq') },
   ];
 
   const go = (fn: () => void) => {

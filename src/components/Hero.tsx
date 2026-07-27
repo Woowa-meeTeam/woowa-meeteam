@@ -55,12 +55,7 @@ export default function Hero({
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-[2px]" />
           </button>
         ) : (
-          <>
-            <GithubButton onClick={onStart} />
-            <span className="text-xs text-white/60">
-              우테코 크루라면 누구나 · GitHub 계정으로 3분 만에
-            </span>
-          </>
+          <GithubButton onClick={onStart} />
         )}
       </motion.div>
     </section>

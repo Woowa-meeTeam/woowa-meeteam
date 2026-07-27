@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Check, ImagePlus, Link as LinkIcon, Minus, Plus, Trash2, X } from 'lucide-react';
+import { Check, Eye, ImagePlus, Link as LinkIcon, Minus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { COVER_PRESETS, CoverFill, HomeLogo } from './primitives';
+import Markdown from './Markdown';
 import { api, ApiError } from '../api';
 import type { Project } from '../api';
 
@@ -40,6 +41,7 @@ export default function ProjectForm() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [insertingImage, setInsertingImage] = useState(false);
+  const [showDescPreview, setShowDescPreview] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skillOpen, setSkillOpen] = useState<string | null>(null);
@@ -189,7 +191,7 @@ export default function ProjectForm() {
   }
 
   return (
-    <div className="relative z-20 min-h-screen flex flex-col">
+    <div className="project-focus-page relative z-20 min-h-screen flex flex-col">
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
         <button
@@ -206,7 +208,7 @@ export default function ProjectForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="flex-1 flex flex-col max-w-lg w-full mx-auto px-6 pb-16"
+          className="project-page-surface project-form-surface flex flex-col max-w-lg w-full mx-auto px-6 pb-16"
         >
           <h1 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.25]">
             {isEdit ? (
@@ -304,14 +306,33 @@ export default function ProjectForm() {
           <label className="mt-6 block">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-medium text-white/80">설명</span>
-              <button
-                type="button"
-                onClick={() => imageRef.current?.click()}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#7db4ff] hover:text-[#A4F4FD] transition-colors"
-              >
-                <ImagePlus className="w-3 h-3" />
-                {insertingImage ? '올리는 중…' : '사진 첨부'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowDescPreview((preview) => !preview)}
+                  aria-pressed={showDescPreview}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3182F6]/60 ${
+                    showDescPreview
+                      ? 'border-[#3182F6]/45 bg-[#3182F6]/15 text-[#a9ccff]'
+                      : 'border-white/12 bg-white/[0.04] text-white/65 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {showDescPreview ? (
+                    <Pencil className="w-3 h-3" />
+                  ) : (
+                    <Eye className="w-3 h-3" />
+                  )}
+                  {showDescPreview ? '편집하기' : '미리보기'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => imageRef.current?.click()}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-[#7db4ff] hover:bg-[#3182F6]/10 hover:text-[#A4F4FD] transition-colors"
+                >
+                  <ImagePlus className="w-3 h-3" />
+                  {insertingImage ? '올리는 중…' : '사진 첨부'}
+                </button>
+              </div>
               <input
                 ref={imageRef}
                 type="file"
@@ -320,14 +341,24 @@ export default function ProjectForm() {
                 onChange={(e) => onInsertImage(e.target.files?.[0])}
               />
             </div>
-            <textarea
-              ref={descRef}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder={'## 어떤 서비스인가요\n다녀온 여행지를 지도에 기록하는 웹앱이에요.\n\n- 매주 화/목 저녁 모임\n- **완성**에 초점을 둡니다\n\n(사진 첨부 버튼으로 이미지를 넣을 수 있어요)'}
-              rows={8}
-              className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-y leading-[1.7] font-mono"
-            />
+            {showDescPreview ? (
+              <div className="project-markdown-preview mt-2.5" aria-label="설명 마크다운 미리보기">
+                {desc.trim() ? (
+                  <Markdown>{desc}</Markdown>
+                ) : (
+                  <p className="text-sm text-white/40">설명을 입력하면 여기에 미리 보여요.</p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                ref={descRef}
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                placeholder={'## 어떤 서비스인가요\n다녀온 여행지를 지도에 기록하는 웹앱이에요.\n\n- 매주 화/목 저녁 모임\n- **완성**에 초점을 둡니다\n\n(사진 첨부 버튼으로 이미지를 넣을 수 있어요)'}
+                rows={8}
+                className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-y leading-[1.7] font-mono"
+              />
+            )}
             <span className="mt-1.5 block text-[11px] text-white/50">
               마크다운 지원 · **굵게** · ## 제목 · - 목록 · ![](이미지)
             </span>
@@ -513,7 +544,7 @@ export default function ProjectForm() {
         </motion.div>
       ) : (
         /* 등록 완료 */
-        <div className="flex-1 flex flex-col items-center justify-center max-w-lg w-full mx-auto px-6 pb-16 text-center">
+        <div className="project-page-surface project-form-surface flex flex-col items-center justify-center max-w-lg w-full mx-auto px-6 pb-16 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

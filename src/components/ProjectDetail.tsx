@@ -138,7 +138,7 @@ export default function ProjectDetail() {
   };
 
   return (
-    <div className="relative z-20 min-h-screen flex flex-col">
+    <div className="project-focus-page relative z-20 min-h-screen flex flex-col">
       {/* top bar */}
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
@@ -157,7 +157,7 @@ export default function ProjectDetail() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="flex-1 max-w-2xl w-full mx-auto px-6 pb-16"
+          className="project-page-surface project-detail-surface max-w-2xl w-full mx-auto px-6 pb-16"
         >
           <button
             onClick={() => navigate('/')}
@@ -168,7 +168,7 @@ export default function ProjectDetail() {
           </button>
 
           {/* 대표 이미지 히어로 — 아래로 배경에 녹아듦 */}
-          <div className="relative mt-5 h-56 md:h-72 rounded-3xl overflow-hidden">
+          <div className="project-detail-hero relative mt-5 h-56 md:h-72 rounded-3xl overflow-hidden">
             <CoverFill cover={project.coverImage} />
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <span
@@ -200,7 +200,7 @@ export default function ProjectDetail() {
           </h1>
 
           {project.summary && (
-            <p className="mt-3 text-[15px] text-white/60 leading-[1.6]">{project.summary}</p>
+            <p className="mt-3 text-[15px] text-white/70 leading-[1.6]">{project.summary}</p>
           )}
 
           {/* 지원자 수 · 좋아요 · 북마크 */}
@@ -263,7 +263,7 @@ export default function ProjectDetail() {
           </button>
 
           {/* 설명 (마크다운) */}
-          <div className="mt-8">
+          <div className="project-detail-copy mt-8">
             <Markdown>{project.longDesc.join('\n')}</Markdown>
           </div>
 
@@ -454,7 +454,7 @@ export default function ProjectDetail() {
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, ease: easeOut }}
-          className="flex-1 flex flex-col max-w-lg w-full mx-auto px-6 pb-16"
+          className="project-page-surface project-form-surface flex flex-col max-w-lg w-full mx-auto px-6 pb-16"
         >
           <button
             onClick={() => setMode('view')}

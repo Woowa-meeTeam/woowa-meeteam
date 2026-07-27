@@ -4,12 +4,11 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Users } from 'lucide-react';
 import { Avatar, SectionEyebrow } from './primitives';
 import Navbar from './Navbar';
+import FieldFilters, { FIELD_STYLES } from './FieldFilters';
 import { api } from '../api';
 import type { User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
-
-const ALL_FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
 export default function Crews() {
   const navigate = useNavigate();
@@ -65,32 +64,9 @@ export default function Crews() {
         </div>
 
         {/* 분야 필터 */}
-        <div className="mt-8 flex flex-wrap gap-2">
+        <FieldFilters value={field} onChange={setField} className="mt-8">
           <button
-            onClick={() => setField(null)}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-              field === null
-                ? 'bg-white text-black border-white'
-                : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
-            }`}
-          >
-            전체
-          </button>
-          {ALL_FIELDS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setField(field === f ? null : f)}
-              className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                field === f
-                  ? 'bg-white text-black border-white'
-                  : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-          <span className="mx-1 w-px h-6 self-center bg-white/10" />
-          <button
+            type="button"
             onClick={() => setLookingOnly((v) => !v)}
             className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
               lookingOnly
@@ -100,7 +76,7 @@ export default function Crews() {
           >
             팀 찾는 중 {lookingCount > 0 && <span className="opacity-70">{lookingCount}</span>}
           </button>
-        </div>
+        </FieldFilters>
 
         {error && (
           <p className="mt-8 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
@@ -134,7 +110,7 @@ export default function Crews() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: (i % 6) * 0.05, ease: easeOut }}
-                className="liquid-glass rounded-2xl p-5 text-left transition-transform hover:-translate-y-1 active:scale-[0.99]"
+                className="liquid-glass h-[190px] rounded-2xl p-5 text-left flex flex-col transition-transform hover:-translate-y-1 active:scale-[0.99]"
               >
                 <div className="flex items-center gap-3">
                   <Avatar
@@ -154,38 +130,40 @@ export default function Crews() {
                   )}
                 </div>
 
-                {c.bio && (
-                  <p className="mt-3.5 text-sm text-white/60 leading-[1.6] line-clamp-3">{c.bio}</p>
-                )}
-
-                <div className="mt-3.5 flex flex-wrap gap-1.5">
-                  {c.fields.map((f) => (
+                <div className="mt-auto h-7 flex flex-nowrap items-center gap-1.5 overflow-hidden">
+                  {c.fields.slice(0, 2).map((f) => (
                     <span
                       key={f}
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10"
+                      className={`max-w-[112px] truncate flex-shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                        FIELD_STYLES[f]?.tag ??
+                        'border-white/20 text-white/70 bg-white/[0.06]'
+                      }`}
                     >
                       {f}
                     </span>
                   ))}
+                  {c.fields.length > 2 && (
+                    <span className="flex-shrink-0 text-[11px] text-[#7db4ff] px-1 py-1">
+                      +{c.fields.length - 2}
+                    </span>
+                  )}
                 </div>
 
-                {c.skills.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {c.skills.slice(0, 5).map((s) => (
-                      <span
-                        key={s}
-                        className="text-[11px] text-white/60 px-2 py-0.5 rounded-full border border-white/10 bg-white/[0.03]"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                    {c.skills.length > 5 && (
-                      <span className="text-[11px] text-white/55 px-1 py-0.5">
-                        +{c.skills.length - 5}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="mt-2 h-6 flex flex-nowrap items-center gap-1.5 overflow-hidden">
+                  {c.skills.slice(0, 3).map((s) => (
+                    <span
+                      key={s}
+                      className="max-w-[92px] truncate flex-shrink-0 text-[11px] text-white/60 px-2 py-0.5 rounded-full border border-white/10 bg-white/[0.03]"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                  {c.skills.length > 3 && (
+                    <span className="flex-shrink-0 text-[11px] text-white/55 px-1 py-0.5">
+                      +{c.skills.length - 3}
+                    </span>
+                  )}
+                </div>
               </motion.button>
             ))}
           </div>
