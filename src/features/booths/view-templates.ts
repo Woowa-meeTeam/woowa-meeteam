@@ -310,24 +310,6 @@ export function renderShell(selectedFloorId: FloorId): string {
       </defs>
     </svg>
     <div class="app-shell">
-      <header class="site-header">
-        <div class="site-header__content">
-          <h1>
-            <span>어느 팀을</span>
-            <span class="gradient-text">만나러 갈까요?</span>
-          </h1>
-          <p class="site-description">
-            meeTeam에서 시작된 프로젝트를<br />
-            오프라인 부스에서 직접 만나보세요.
-          </p>
-          <a class="hero-action" href="#booth-map">
-            부스 지도 보기
-            <span aria-hidden="true">›</span>
-          </a>
-          <p class="hero-caption">11·12·13층에서 참여 팀을 만날 수 있어요.</p>
-        </div>
-      </header>
-
       <section class="booth-section" id="booth-map" aria-labelledby="booth-section-title">
         <div class="booth-section__header">
           <div>

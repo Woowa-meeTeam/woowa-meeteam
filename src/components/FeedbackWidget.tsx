@@ -76,7 +76,7 @@ export default function FeedbackWidget() {
                     <Check className="w-6 h-6 text-white" strokeWidth={3} />
                   </div>
                   <p className="mt-5 text-lg font-semibold text-white">고마워요!</p>
-                  <p className="mt-1.5 text-sm text-white/50">
+                  <p className="mt-1.5 text-sm text-white/70">
                     보내주신 의견은 관리자가 확인할게요.
                   </p>
                 </div>
@@ -85,13 +85,13 @@ export default function FeedbackWidget() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h2 className="text-lg font-semibold text-white">의견 보내기</h2>
-                      <p className="mt-1 text-xs text-white/45">
+                      <p className="mt-1 text-xs text-white/65">
                         불편했던 점이나 있었으면 하는 기능을 알려주세요
                       </p>
                     </div>
                     <button
                       onClick={() => setOpen(false)}
-                      className="w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
                       aria-label="닫기"
                     >
                       <X className="w-4 h-4" />
@@ -123,8 +123,8 @@ export default function FeedbackWidget() {
                     className="mt-4 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-4 py-3.5 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] transition-colors resize-none leading-[1.6]"
                   />
                   <div className="mt-2 flex justify-between text-xs">
-                    <span className="text-white/30">최소 5자</span>
-                    <span className="text-white/30 tabular-nums">{message.trim().length}/1000</span>
+                    <span className="text-white/50">최소 5자</span>
+                    <span className="text-white/50 tabular-nums">{message.trim().length}/1000</span>
                   </div>
 
                   {error && <p className="mt-3 text-xs text-[#F04452]">{error}</p>}
@@ -135,7 +135,7 @@ export default function FeedbackWidget() {
                     className={`mt-5 w-full h-12 rounded-full text-sm font-semibold transition-all ${
                       valid && !sending
                         ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                        : 'bg-white/10 text-white/30 cursor-not-allowed'
+                        : 'bg-white/10 text-white/50 cursor-not-allowed'
                     }`}
                   >
                     {sending ? '보내는 중…' : '보내기'}

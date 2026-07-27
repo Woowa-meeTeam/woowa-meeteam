@@ -23,6 +23,18 @@ export default function Navbar({
     api.me().then(setUser).catch(() => setUser(null));
   }, []);
 
+  // 랜딩 밖(프로젝트 탐색·크루 등)에서는 핸들러 없이 그냥 <Navbar /> 로 쓸 수 있게 기본 동작을 둡니다.
+  const startAuth = async () => {
+    try {
+      const me = await api.me();
+      navigate(me.onboarded ? '/my' : '/onboarding');
+    } catch {
+      await api.login().catch(() => navigate('/onboarding'));
+    }
+  };
+  const handleStart = onStart ?? startAuth;
+  const handleMyPage = onMyPage ?? (() => navigate('/my'));
+
   const links: { label: string; onClick: () => void }[] = [
     { label: '프로젝트 탐색', onClick: () => navigate('/projects') },
     { label: '크루', onClick: () => navigate('/crews') },
@@ -36,7 +48,7 @@ export default function Navbar({
 
   const avatarBtn = (
     <button
-      onClick={onMyPage}
+      onClick={handleMyPage}
       className="rounded-full ring-2 ring-transparent hover:ring-white/20 active:scale-[0.96] transition-all"
       aria-label="마이페이지"
     >
@@ -83,7 +95,7 @@ export default function Navbar({
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          {user ? avatarBtn : <GithubButton onClick={onStart} />}
+          {user ? avatarBtn : <GithubButton onClick={handleStart} />}
         </div>
 
         {/* 모바일 */}
@@ -92,7 +104,7 @@ export default function Navbar({
             avatarBtn
           ) : (
             <button
-              onClick={onStart}
+              onClick={handleStart}
               className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center active:scale-[0.96] transition-all"
               aria-label="시작하기"
             >
@@ -132,7 +144,7 @@ export default function Navbar({
                 <>
                   <div className="my-1.5 h-px bg-white/10" />
                   <button
-                    onClick={() => go(() => onMyPage?.())}
+                    onClick={() => go(handleMyPage)}
                     className="w-full text-left px-5 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
                   >
                     마이페이지

@@ -27,8 +27,8 @@ export default function Markdown({ children }: { children: string }) {
               {children}
             </a>
           ),
-          ul: (p) => <ul className="list-disc pl-5 space-y-1.5 marker:text-white/30" {...p} />,
-          ol: (p) => <ol className="list-decimal pl-5 space-y-1.5 marker:text-white/30" {...p} />,
+          ul: (p) => <ul className="list-disc pl-5 space-y-1.5 marker:text-white/50" {...p} />,
+          ol: (p) => <ol className="list-decimal pl-5 space-y-1.5 marker:text-white/50" {...p} />,
           li: (p) => <li className="text-white/70 pl-1" {...p} />,
           blockquote: (p) => (
             <blockquote

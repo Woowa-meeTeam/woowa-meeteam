@@ -222,7 +222,7 @@ export default function ProjectForm() {
               </>
             )}
           </h1>
-          <p className="mt-3 text-sm text-white/50">
+          <p className="mt-3 text-sm text-white/70">
             {isEdit ? '바꾸고 싶은 항목만 고치면 돼요' : '등록하면 바로 탐색 피드에 노출돼요'}
           </p>
 
@@ -276,30 +276,30 @@ export default function ProjectForm() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="예) 여행 기록 지도 서비스"
-              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
             />
             <div className="mt-2 flex justify-between text-xs">
-              <span className={title && !titleValid ? 'text-[#F04452]' : 'text-white/30'}>
+              <span className={title && !titleValid ? 'text-[#F04452]' : 'text-white/50'}>
                 {title && !titleValid ? '2~40자로 입력해 주세요' : '한눈에 들어오는 이름이 좋아요'}
               </span>
-              <span className="text-white/30 tabular-nums">{title.trim().length}/40</span>
+              <span className="text-white/50 tabular-nums">{title.trim().length}/40</span>
             </div>
           </label>
 
           {/* 짧은 소개 */}
           <label className="mt-6 block">
             <span className="text-sm font-medium text-white/80">
-              짧은 소개 <span className="text-white/35 font-normal">(선택)</span>
+              짧은 소개 <span className="text-white/55 font-normal">(선택)</span>
             </span>
             <input
               value={summary}
               onChange={(e) => setSummary(e.target.value.slice(0, 80))}
               placeholder="예) 다녀온 여행을 지도에 기록하는 웹앱"
-              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+              className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
             />
             <div className="mt-2 flex justify-between text-xs">
-              <span className="text-white/30">카드에 보이는 한 줄 요약이에요</span>
-              <span className="text-white/30 tabular-nums">{summary.length}/80</span>
+              <span className="text-white/50">카드에 보이는 한 줄 요약이에요</span>
+              <span className="text-white/50 tabular-nums">{summary.length}/80</span>
             </div>
           </label>
 
@@ -331,7 +331,7 @@ export default function ProjectForm() {
               rows={8}
               className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/25 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-y leading-[1.7] font-mono"
             />
-            <span className="mt-1.5 block text-[11px] text-white/30">
+            <span className="mt-1.5 block text-[11px] text-white/50">
               마크다운 지원 · **굵게** · ## 제목 · - 목록 · ![](이미지)
             </span>
           </label>
@@ -339,15 +339,15 @@ export default function ProjectForm() {
           {/* 프로토타입 */}
           <label className="mt-6 block">
             <span className="text-sm font-medium text-white/80">
-              프로토타입 링크 <span className="text-white/35 font-normal">(선택)</span>
+              프로토타입 링크 <span className="text-white/55 font-normal">(선택)</span>
             </span>
             <div className="relative mt-2.5">
-              <LinkIcon className="w-4 h-4 text-white/30 absolute left-5 top-1/2 -translate-y-1/2" />
+              <LinkIcon className="w-4 h-4 text-white/50 absolute left-5 top-1/2 -translate-y-1/2" />
               <input
                 value={prototype}
                 onChange={(e) => setPrototype(e.target.value)}
                 placeholder="https://figma.com/..."
-                className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+                className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
               />
             </div>
           </label>
@@ -357,7 +357,7 @@ export default function ProjectForm() {
           <div className="mt-6">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-medium text-white/80">모집 분야 · 인원</span>
-              <span className="text-xs text-white/40 tabular-nums">총 {totalSlots}명 모집</span>
+              <span className="text-xs text-white/60 tabular-nums">총 {totalSlots}명 모집</span>
             </div>
 
             <div className="mt-2.5 space-y-2.5">
@@ -392,7 +392,7 @@ export default function ProjectForm() {
                         </div>
                         <button
                           onClick={() => removeField(r.field)}
-                          className="ml-1 w-8 h-8 rounded-lg text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                          className="ml-1 w-8 h-8 rounded-lg text-white/60 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
                           aria-label={`${r.field} 분야 제거`}
                         >
                           <X className="w-4 h-4" />
@@ -412,7 +412,7 @@ export default function ProjectForm() {
                       ))}
                       <button
                         onClick={() => setSkillOpen(open ? null : r.field)}
-                        className="text-[11px] text-white/45 hover:text-white px-2 py-1 rounded-full border border-dashed border-white/20 hover:border-white/40 transition-colors"
+                        className="text-[11px] text-white/65 hover:text-white px-2 py-1 rounded-full border border-dashed border-white/20 hover:border-white/40 transition-colors"
                       >
                         {r.skills.length === 0 ? '＋ 원하는 기술 스택 (선택)' : open ? '닫기' : '수정'}
                       </button>
@@ -471,7 +471,7 @@ export default function ProjectForm() {
             className={`mt-8 h-12 rounded-full text-sm font-semibold transition-all ${
               canSubmit
                 ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                : 'bg-white/10 text-white/30 cursor-not-allowed'
+                : 'bg-white/10 text-white/50 cursor-not-allowed'
             }`}
           >
             {saving ? '저장하는 중…' : isEdit ? '수정 완료' : '등록하기'}
@@ -483,7 +483,7 @@ export default function ProjectForm() {
               {!confirmDelete ? (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-[#F04452] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-[#F04452] transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                   프로젝트 삭제
@@ -491,7 +491,7 @@ export default function ProjectForm() {
               ) : (
                 <div className="liquid-glass rounded-2xl p-5">
                   <p className="text-sm font-semibold text-white">정말 삭제할까요?</p>
-                  <p className="mt-1.5 text-xs text-white/50 leading-[1.6]">
+                  <p className="mt-1.5 text-xs text-white/70 leading-[1.6]">
                     프로젝트와 지원 내역이 모두 사라지고 되돌릴 수 없어요.
                   </p>
                   <div className="mt-4 flex gap-2.5">
@@ -538,7 +538,7 @@ export default function ProjectForm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25, ease: easeOut }}
-            className="mt-3 text-sm text-white/50"
+            className="mt-3 text-sm text-white/70"
           >
             {isEdit
               ? '변경사항이 저장됐어요.'
@@ -567,7 +567,7 @@ export default function ProjectForm() {
             </div>
             <div className="p-5 pt-3">
               <h3 className="text-base font-semibold text-white">{created.title}</h3>
-              <p className="mt-1.5 text-sm text-white/50 leading-[1.5] line-clamp-2">
+              <p className="mt-1.5 text-sm text-white/70 leading-[1.5] line-clamp-2">
                 {created.desc}
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">

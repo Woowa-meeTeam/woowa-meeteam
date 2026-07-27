@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Users, X } from 'lucide-react';
-import { HomeLogo } from './primitives';
+import { Avatar, HomeLogo } from './primitives';
 import { api, ApiError } from '../api';
 import type { Application, Project } from '../api';
 
@@ -60,6 +60,19 @@ export default function ApplicantManage() {
     }
   };
 
+  const toggleRecruiting = async (open: boolean) => {
+    setActionError(null);
+    setWorking(true);
+    try {
+      await api.setRecruiting(id, open);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : '모집 상태 변경에 실패했어요');
+    } finally {
+      setWorking(false);
+    }
+  };
+
   const unconfirmTeam = async () => {
     setActionError(null);
     setWorking(true);
@@ -76,7 +89,7 @@ export default function ApplicantManage() {
   if (error) {
     return (
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-        <p className="text-sm text-white/50">{error}</p>
+        <p className="text-sm text-white/70">{error}</p>
         <button onClick={() => navigate('/my')} className="text-sm text-[#7db4ff] hover:underline">
           마이페이지로 돌아가기
         </button>
@@ -123,7 +136,7 @@ export default function ApplicantManage() {
       >
         <button
           onClick={() => navigate('/my')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           마이페이지
@@ -132,7 +145,7 @@ export default function ApplicantManage() {
         <h1 className="mt-6 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.2]">
           지원자 관리
         </h1>
-        <p className="mt-2 text-sm text-white/50">{project.title}</p>
+        <p className="mt-2 text-sm text-white/70">{project.title}</p>
 
         {/* 분야별 확정 현황 */}
         <div className="liquid-glass rounded-2xl p-5 mt-7">
@@ -141,7 +154,7 @@ export default function ApplicantManage() {
               const full = s.confirmed >= s.capacity;
               return (
                 <div key={s.field}>
-                  <div className="text-xs text-white/40">{s.field}</div>
+                  <div className="text-xs text-white/60">{s.field}</div>
                   <div className="mt-1 text-xl font-bold tabular-nums">
                     <span className={full ? 'text-[#7ee8b2]' : 'text-white'}>{s.confirmed}</span>
                     <span className="text-white/25"> / {s.capacity}</span>
@@ -155,12 +168,16 @@ export default function ApplicantManage() {
                 <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
                   ✓ 팀 확정됨
                 </span>
+              ) : project.status === 'CLOSED' ? (
+                <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-white/25 text-white/80 bg-black/40">
+                  모집 마감
+                </span>
               ) : allFull ? (
                 <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
                   정원 완료 · 확정 대기
                 </span>
               ) : (
-                <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10">
+                <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-[#00C471]/50 text-[#9df0c4] bg-[#00C471]/15">
                   ● 모집중
                 </span>
               )}
@@ -171,7 +188,7 @@ export default function ApplicantManage() {
           <div className="mt-5 pt-5 border-t border-white/10">
             {project.confirmed ? (
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-white/50 leading-[1.6]">
+                <p className="text-xs text-white/70 leading-[1.6]">
                   팀이 확정됐어요. 구성원들은 이제 다른 팀에 지원할 수 없어요.
                 </p>
                 <button
@@ -184,7 +201,7 @@ export default function ApplicantManage() {
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-white/50 leading-[1.6]">
+                <p className="text-xs text-white/70 leading-[1.6]">
                   {allFull
                     ? '정원이 다 찼어요. 확정하면 미선택 지원자는 자동으로 마감돼요.'
                     : '모든 분야 정원이 차면 팀을 확정할 수 있어요.'}
@@ -195,13 +212,32 @@ export default function ApplicantManage() {
                   className={`flex-shrink-0 h-10 px-5 rounded-full text-xs font-semibold transition-all ${
                     allFull && !working
                       ? 'bg-[#00C471] text-white hover:bg-[#00b368] active:scale-[0.98]'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                      : 'bg-white/10 text-white/50 cursor-not-allowed'
                   }`}
                 >
                   {working ? '처리 중…' : '팀 확정하기'}
                 </button>
               </div>
             )}
+
+            {/* 모집 재개 · 중단 — 확정을 되돌린 뒤 '모집 마감'에 갇히지 않도록 */}
+            {!project.confirmed &&
+              (project.status === 'CLOSED' || project.status === 'RECRUITING') && (
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                  <p className="text-xs text-white/70 leading-[1.6]">
+                    {project.status === 'CLOSED'
+                      ? '지금은 모집이 멈춰 있어요. 재개하면 목록에 다시 노출되고 지원을 받을 수 있어요.'
+                      : '잠시 지원을 받고 싶지 않다면 모집을 멈출 수 있어요.'}
+                  </p>
+                  <button
+                    onClick={() => toggleRecruiting(project.status === 'CLOSED')}
+                    disabled={working}
+                    className="flex-shrink-0 h-10 px-4 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    {project.status === 'CLOSED' ? '모집 재개' : '모집 중단'}
+                  </button>
+                </div>
+              )}
           </div>
         </div>
 
@@ -209,11 +245,11 @@ export default function ApplicantManage() {
 
         {/* 대기 중 지원자 */}
         <h2 className="mt-9 text-sm font-semibold text-white/80">
-          대기 중 <span className="text-white/40 font-normal">{pending.length}명</span>
+          대기 중 <span className="text-white/60 font-normal">{pending.length}명</span>
         </h2>
         <div className="mt-4 space-y-3">
           {pending.length === 0 && (
-            <p className="text-sm text-white/40 py-6 text-center border border-dashed border-white/10 rounded-2xl">
+            <p className="text-sm text-white/60 py-6 text-center border border-dashed border-white/10 rounded-2xl">
               대기 중인 지원자가 없어요
             </p>
           )}
@@ -222,11 +258,12 @@ export default function ApplicantManage() {
             return (
               <div key={a.id} className="liquid-glass rounded-2xl p-5">
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${a.applicant?.avatarGradient} flex items-center justify-center text-sm font-semibold text-white flex-shrink-0`}
-                  >
-                    {a.applicant?.name.slice(0, 1)}
-                  </span>
+                  <Avatar
+                    name={a.applicant?.name}
+                    avatarUrl={a.applicant?.avatarUrl}
+                    gradient={a.applicant?.avatarGradient}
+                    className="w-10 h-10 text-sm"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold text-white">
                       {a.applicant?.name}
@@ -256,7 +293,7 @@ export default function ApplicantManage() {
                     disabled={full}
                     className={`w-full h-11 rounded-full text-sm font-semibold transition-all ${
                       full
-                        ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
                         : 'bg-[#00C471] text-white hover:bg-[#00b368] active:scale-[0.99]'
                     }`}
                   >
@@ -265,7 +302,7 @@ export default function ApplicantManage() {
                   <div className="mt-2 text-center">
                     <button
                       onClick={() => setStatus(a.id, 'rejected')}
-                      className="text-xs text-white/35 hover:text-white/70 transition-colors"
+                      className="text-xs text-white/55 hover:text-white/70 transition-colors"
                     >
                       이번엔 함께하지 않기
                     </button>
@@ -280,7 +317,7 @@ export default function ApplicantManage() {
         {decided.length > 0 && (
           <>
             <h2 className="mt-9 text-sm font-semibold text-white/80">
-              처리 완료 <span className="text-white/40 font-normal">{decided.length}명</span>
+              처리 완료 <span className="text-white/60 font-normal">{decided.length}명</span>
             </h2>
             <div className="mt-4 space-y-2.5">
               {decided.map((a) => (
@@ -290,14 +327,15 @@ export default function ApplicantManage() {
                     a.status === 'rejected' ? 'opacity-50' : ''
                   }`}
                 >
-                  <span
-                    className={`w-8 h-8 rounded-full bg-gradient-to-br ${a.applicant?.avatarGradient} flex items-center justify-center text-xs font-semibold text-white`}
-                  >
-                    {a.applicant?.name.slice(0, 1)}
-                  </span>
+                  <Avatar
+                    name={a.applicant?.name}
+                    avatarUrl={a.applicant?.avatarUrl}
+                    gradient={a.applicant?.avatarGradient}
+                    className="w-8 h-8 text-xs"
+                  />
                   <div className="flex-1 text-sm">
                     <span className="font-medium text-white">{a.applicant?.name}</span>
-                    <span className="text-white/40 ml-2 text-xs">{a.field}</span>
+                    <span className="text-white/60 ml-2 text-xs">{a.field}</span>
                   </div>
                   {a.status === 'accepted' ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
@@ -305,13 +343,13 @@ export default function ApplicantManage() {
                       수락됨
                     </span>
                   ) : (
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/40">
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/60">
                       거절됨
                     </span>
                   )}
                   <button
                     onClick={() => setStatus(a.id, 'pending')}
-                    className="text-[11px] text-white/40 hover:text-white transition-colors"
+                    className="text-[11px] text-white/60 hover:text-white transition-colors"
                   >
                     되돌리기
                   </button>
@@ -325,7 +363,7 @@ export default function ApplicantManage() {
         {accepted.length > 0 && (
           <div className="mt-9">
             <h2 className="text-sm font-semibold text-white/80 inline-flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-white/40" />
+              <Users className="w-4 h-4 text-white/60" />
               확정된 팀 멤버 {project.members.length}명
             </h2>
             <div className="mt-3.5 flex flex-wrap gap-2.5">
@@ -334,14 +372,15 @@ export default function ApplicantManage() {
                   key={`${m.name}-${i}`}
                   className="liquid-glass rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2.5"
                 >
-                  <span
-                    className={`w-7 h-7 rounded-full bg-gradient-to-br ${m.avatarGradient} flex items-center justify-center text-[11px] font-semibold text-white`}
-                  >
-                    {m.name.slice(0, 1)}
-                  </span>
+                  <Avatar
+                    name={m.name}
+                    avatarUrl={m.avatarUrl}
+                    gradient={m.avatarGradient}
+                    className="w-7 h-7 text-[11px]"
+                  />
                   <span className="text-xs">
                     <span className="text-white font-medium">{m.name}</span>
-                    <span className="text-white/40 ml-1.5">{m.field}</span>
+                    <span className="text-white/60 ml-1.5">{m.field}</span>
                   </span>
                 </div>
               ))}

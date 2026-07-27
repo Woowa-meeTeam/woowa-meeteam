@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, Users, X } from 'lucide-react';
-import { Avatar, HomeLogo, SectionEyebrow } from './primitives';
+import { ArrowLeft, Users } from 'lucide-react';
+import { Avatar, SectionEyebrow } from './primitives';
+import Navbar from './Navbar';
 import { api } from '../api';
 import type { User } from '../api';
 
@@ -36,16 +37,7 @@ export default function Crews() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <HomeLogo />
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="홈으로"
-        >
-          <X className="w-[18px] h-[18px]" />
-        </button>
-      </div>
+      <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -55,7 +47,7 @@ export default function Crews() {
       >
         <button
           onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />홈
         </button>
@@ -67,7 +59,7 @@ export default function Crews() {
             <br />
             먼저 만나보세요.
           </h1>
-          <p className="mt-3 text-sm text-white/50">
+          <p className="mt-3 text-sm text-white/70">
             어떤 분야와 스킬을 가진 크루가 있는지 둘러볼 수 있어요
           </p>
         </div>
@@ -111,7 +103,7 @@ export default function Crews() {
         </div>
 
         {error && (
-          <p className="mt-8 text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+          <p className="mt-8 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
             크루를 불러오지 못했어요 ({error})
           </p>
         )}
@@ -125,7 +117,7 @@ export default function Crews() {
         )}
 
         {crews && filtered.length === 0 && (
-          <p className="mt-8 text-sm text-white/40 py-12 text-center border border-dashed border-white/10 rounded-2xl">
+          <p className="mt-8 text-sm text-white/60 py-12 text-center border border-dashed border-white/10 rounded-2xl">
             {crews.length === 0
               ? '아직 온보딩을 마친 크루가 없어요'
               : `${field} 분야 크루가 아직 없어요`}
@@ -153,7 +145,7 @@ export default function Crews() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-base font-semibold text-white truncate">{c.crewName}</div>
-                    <span className="text-xs text-white/40">@{c.githubLogin}</span>
+                    <span className="text-xs text-white/60">@{c.githubLogin}</span>
                   </div>
                   {lookingIds.has(c.id) && (
                     <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
@@ -188,7 +180,7 @@ export default function Crews() {
                       </span>
                     ))}
                     {c.skills.length > 5 && (
-                      <span className="text-[11px] text-white/35 px-1 py-0.5">
+                      <span className="text-[11px] text-white/55 px-1 py-0.5">
                         +{c.skills.length - 5}
                       </span>
                     )}
@@ -200,7 +192,7 @@ export default function Crews() {
         )}
 
         {crews && crews.length > 0 && (
-          <p className="mt-10 text-xs text-white/30 text-center inline-flex items-center gap-1.5 w-full justify-center">
+          <p className="mt-10 text-xs text-white/50 text-center inline-flex items-center gap-1.5 w-full justify-center">
             <Users className="w-3.5 h-3.5" />
             프로필은 온보딩과 마이페이지에서 언제든 바꿀 수 있어요
           </p>

@@ -85,7 +85,7 @@ export default function ProjectDetail() {
   if (loadError) {
     return (
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-        <p className="text-sm text-white/50">{loadError}</p>
+        <p className="text-sm text-white/70">{loadError}</p>
         <button onClick={() => navigate('/')} className="text-sm text-[#7db4ff] hover:underline">
           홈으로 돌아가기
         </button>
@@ -160,7 +160,7 @@ export default function ProjectDetail() {
         >
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             프로젝트 목록
@@ -178,7 +178,7 @@ export default function ProjectDetail() {
                       ? 'border-[#FFB020]/40 text-[#ffd27d] bg-black/30'
                       : project.closed
                         ? 'border-white/15 text-white/70 bg-black/30'
-                        : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
+                        : 'border-[#00C471]/60 text-[#9df0c4] bg-[#065f39]/70'
                 }`}
               >
                 {project.confirmed
@@ -248,7 +248,7 @@ export default function ProjectDetail() {
               <div className="text-sm font-semibold text-white group-hover:text-[#7db4ff] transition-colors">
                 {project.owner?.name}
               </div>
-              <div className="text-xs text-white/50">{project.owner?.field} · 프로젝트 오너</div>
+              <div className="text-xs text-white/70">{project.owner?.field} · 프로젝트 오너</div>
             </div>
           </button>
 
@@ -266,21 +266,21 @@ export default function ProjectDetail() {
                 rel="noopener noreferrer"
                 className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3 group hover:-translate-y-0.5 transition-transform"
               >
-                <LinkIcon className="w-4 h-4 text-white/40 flex-shrink-0" />
+                <LinkIcon className="w-4 h-4 text-white/60 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] text-white/40">프로토타입</div>
+                  <div className="text-[11px] text-white/60">프로토타입</div>
                   <div className="text-sm text-[#7db4ff] mt-0.5 truncate group-hover:text-[#A4F4FD] transition-colors">
                     {project.prototype}
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+                <ExternalLink className="w-3.5 h-3.5 text-white/50 group-hover:text-white/60 flex-shrink-0 transition-colors" />
               </a>
             ) : (
               <div className="liquid-glass rounded-2xl px-5 py-4 flex items-center gap-3 opacity-60">
-                <LinkIcon className="w-4 h-4 text-white/40 flex-shrink-0" />
+                <LinkIcon className="w-4 h-4 text-white/60 flex-shrink-0" />
                 <div>
-                  <div className="text-[11px] text-white/40">프로토타입</div>
-                  <div className="text-sm text-white/50 mt-0.5">아직 없어요</div>
+                  <div className="text-[11px] text-white/60">프로토타입</div>
+                  <div className="text-sm text-white/70 mt-0.5">아직 없어요</div>
                 </div>
               </div>
             )}
@@ -296,11 +296,11 @@ export default function ProjectDetail() {
                 return (
                   <div key={s.field}>
                     <div className="flex justify-between text-sm mb-1.5">
-                      <span className={full ? 'text-white/40' : 'text-white/80 font-medium'}>
+                      <span className={full ? 'text-white/60' : 'text-white/80 font-medium'}>
                         {s.field}
-                        {full && <span className="ml-2 text-[11px] text-white/30">정원 마감</span>}
+                        {full && <span className="ml-2 text-[11px] text-white/50">정원 마감</span>}
                       </span>
-                      <span className="text-white/40 tabular-nums">
+                      <span className="text-white/60 tabular-nums">
                         {s.confirmed} / {s.capacity}
                       </span>
                     </div>
@@ -333,7 +333,7 @@ export default function ProjectDetail() {
           {/* 팀 멤버 */}
           <div className="mt-10">
             <h2 className="text-sm font-semibold text-white/80 inline-flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-white/40" />팀 멤버 {project.members.length}명
+              <Users className="w-4 h-4 text-white/60" />팀 멤버 {project.members.length}명
             </h2>
             <div className="mt-4 flex flex-wrap gap-2.5">
               {project.members.map((m) => (
@@ -349,7 +349,7 @@ export default function ProjectDetail() {
                   />
                   <span className="text-xs">
                     <span className="text-white font-medium">{m.name}</span>
-                    <span className="text-white/40 ml-1.5">{m.field}</span>
+                    <span className="text-white/60 ml-1.5">{m.field}</span>
                   </span>
                 </div>
               ))}
@@ -386,7 +386,7 @@ export default function ProjectDetail() {
                       ✓ 수락됨
                     </span>
                   ) : myApplication.status === 'rejected' ? (
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/40">
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/60">
                       거절됨
                     </span>
                   ) : (
@@ -415,7 +415,7 @@ export default function ProjectDetail() {
                   className={`w-full h-12 rounded-full text-sm font-semibold transition-all ${
                     canApply
                       ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                      : 'bg-white/10 text-white/50 cursor-not-allowed'
                   }`}
                 >
                   {project.confirmed
@@ -427,7 +427,7 @@ export default function ProjectDetail() {
                         : '지원하기'}
                 </button>
                 {canApply && (
-                  <p className="mt-3 text-center text-xs text-white/40">
+                  <p className="mt-3 text-center text-xs text-white/60">
                     지원하면 내 분야 · 스킬 프로필이 오너에게 공유돼요
                   </p>
                 )}
@@ -448,7 +448,7 @@ export default function ProjectDetail() {
         >
           <button
             onClick={() => setMode('view')}
-            className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors self-start"
+            className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors self-start"
           >
             <ArrowLeft className="w-4 h-4" />
             {project.title}
@@ -492,13 +492,13 @@ export default function ProjectDetail() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="예) REST API 설계 경험이 있어요. 함께 성장하고 싶습니다!"
               rows={3}
-              className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-none leading-[1.6]"
+              className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-none leading-[1.6]"
             />
             <div className="mt-2 flex justify-between text-xs">
-              <span className={message.trim().length > 100 ? 'text-[#F04452]' : 'text-white/30'}>
+              <span className={message.trim().length > 100 ? 'text-[#F04452]' : 'text-white/50'}>
                 {message.trim().length > 100 ? '100자 이내로 적어 주세요' : '오너에게 전달되는 메시지예요'}
               </span>
-              <span className="text-white/30 tabular-nums">{message.trim().length}/100</span>
+              <span className="text-white/50 tabular-nums">{message.trim().length}/100</span>
             </div>
           </label>
 
@@ -516,7 +516,7 @@ export default function ProjectDetail() {
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-white">
                     {user.crewName}
-                    <span className="text-white/40 font-normal ml-2 text-xs">{user.fields.join(' · ')}</span>
+                    <span className="text-white/60 font-normal ml-2 text-xs">{user.fields.join(' · ')}</span>
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {user.skills.map((s) => (
@@ -541,7 +541,7 @@ export default function ProjectDetail() {
             className={`mt-9 h-12 rounded-full text-sm font-semibold transition-all ${
               canSubmit
                 ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                : 'bg-white/10 text-white/30 cursor-not-allowed'
+                : 'bg-white/10 text-white/50 cursor-not-allowed'
             }`}
           >
             {submitting ? '지원하는 중…' : '지원 완료하기'}

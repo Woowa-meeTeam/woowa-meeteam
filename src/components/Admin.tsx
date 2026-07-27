@@ -106,7 +106,7 @@ export default function Admin() {
       >
         <button
           onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />홈
         </button>
@@ -115,7 +115,7 @@ export default function Admin() {
           <ShieldCheck className="w-5 h-5 text-[#7db4ff]" />
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">관리자</h1>
         </div>
-        <p className="mt-2 text-sm text-white/50">서비스 현황과 크루들이 보낸 의견을 확인해요</p>
+        <p className="mt-2 text-sm text-white/70">서비스 현황과 크루들이 보낸 의견을 확인해요</p>
 
         {/* 집계 */}
         {stats && (
@@ -128,7 +128,7 @@ export default function Admin() {
               { label: '받은 의견', value: stats.feedbacks },
             ].map((s) => (
               <div key={s.label} className="liquid-glass rounded-2xl px-5 py-4">
-                <div className="text-xs text-white/40">{s.label}</div>
+                <div className="text-xs text-white/60">{s.label}</div>
                 <div
                   className={`mt-1.5 text-2xl font-bold tabular-nums ${
                     s.hot ? 'text-[#ffd27d]' : 'text-white'
@@ -143,11 +143,11 @@ export default function Admin() {
 
         {/* 승인 대기 프로젝트 */}
         <h2 className="mt-10 text-sm font-semibold text-white/80">
-          승인 대기 프로젝트 <span className="text-white/40 font-normal">{pending.length}건</span>
+          승인 대기 프로젝트 <span className="text-white/60 font-normal">{pending.length}건</span>
         </h2>
         <div className="mt-4 space-y-3">
           {pending.length === 0 && (
-            <p className="text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+            <p className="text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
               승인 대기 중인 프로젝트가 없어요
             </p>
           )}
@@ -166,12 +166,12 @@ export default function Admin() {
                       {p.title}
                     </button>
                     {p.status === 'REJECTED' && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10 text-white/40">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10 text-white/60">
                         반려됨
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-white/50 leading-[1.5] line-clamp-2">{p.desc}</p>
+                  <p className="mt-1 text-xs text-white/70 leading-[1.5] line-clamp-2">{p.desc}</p>
                   <div className="mt-1.5 flex items-center gap-2">
                     <Avatar
                       name={p.owner?.name}
@@ -179,14 +179,14 @@ export default function Admin() {
                       gradient={p.owner?.avatarGradient}
                       className="w-4 h-4 text-[8px]"
                     />
-                    <span className="text-[11px] text-white/40">{p.owner?.name}</span>
+                    <span className="text-[11px] text-white/60">{p.owner?.name}</span>
                   </div>
                 </div>
               </div>
               <div className="flex border-t border-white/10">
                 <button
                   onClick={() => review(p, false)}
-                  className="flex-1 py-3 text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                  className="flex-1 py-3 text-xs font-medium text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   반려
                 </button>
@@ -205,7 +205,7 @@ export default function Admin() {
         {/* 제보 목록 */}
         <div className="mt-10 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white/80">
-            크루 의견 <span className="text-white/40 font-normal">{shown.length}건</span>
+            크루 의견 <span className="text-white/60 font-normal">{shown.length}건</span>
           </h2>
           <div className="flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
             {(['OPEN', 'ALL'] as const).map((f) => (
@@ -213,7 +213,7 @@ export default function Admin() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  filter === f ? 'bg-white text-black' : 'text-white/50 hover:text-white'
+                  filter === f ? 'bg-white text-black' : 'text-white/70 hover:text-white'
                 }`}
               >
                 {f === 'OPEN' ? `미처리 ${openCount}` : '전체'}
@@ -226,7 +226,7 @@ export default function Admin() {
 
         <div className="mt-4 space-y-3">
           {shown.length === 0 && (
-            <p className="text-sm text-white/40 py-12 text-center border border-dashed border-white/10 rounded-2xl">
+            <p className="text-sm text-white/60 py-12 text-center border border-dashed border-white/10 rounded-2xl">
               {filter === 'OPEN' ? '미처리 의견이 없어요 👏' : '아직 받은 의견이 없어요'}
             </p>
           )}
@@ -249,7 +249,7 @@ export default function Admin() {
                       {FEEDBACK_KIND_LABEL[f.kind]}
                     </span>
                   </div>
-                  <div className="text-[11px] text-white/35 mt-0.5">
+                  <div className="text-[11px] text-white/55 mt-0.5">
                     {new Date(f.createdAt).toLocaleString('ko-KR', {
                       month: 'long',
                       day: 'numeric',

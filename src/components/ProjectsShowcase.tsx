@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Plus } from 'lucide-react';
 import { SectionEyebrow } from './primitives';
-import { Avatar, CoverFill } from './primitives';
+import { Avatar, CoverFill, StatusBadge } from './primitives';
 import { api, FIELD_SHORT } from '../api';
 import type { Project } from '../api';
 
@@ -62,7 +62,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
       </motion.div>
 
       {error && (
-        <p className="text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+        <p className="text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
           프로젝트를 불러오지 못했어요 — API 서버를 확인해 주세요 ({error})
         </p>
       )}
@@ -87,29 +87,21 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.6, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
               className={`liquid-glass rounded-2xl overflow-hidden flex flex-col text-left transition-transform hover:-translate-y-1 active:scale-[0.99] ${
-                p.closed ? 'opacity-60' : ''
+                p.closed ? 'opacity-[0.85]' : ''
               }`}
             >
               {/* 대표 이미지 — 아래로 갈수록 배경에 녹아들도록 fade */}
               <div className="relative h-36">
                 <CoverFill cover={p.coverImage} />
                 <div className="absolute top-3 left-3 right-3 flex items-center">
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
-                      p.closed
-                        ? 'border-white/15 text-white/70 bg-black/30'
-                        : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
-                    }`}
-                  >
-                    {p.closed ? '모집 마감' : '● 모집중'}
-                  </span>
+                  <StatusBadge status={p.status} />
                 </div>
               </div>
 
               <div className="flex flex-col gap-4 p-5 pt-3 flex-1">
                 <div>
                   <h3 className="text-base font-semibold text-white leading-snug">{p.title}</h3>
-                  <p className="mt-1.5 text-sm text-white/50 leading-[1.5]">{p.desc}</p>
+                  <p className="mt-1.5 text-sm text-white/70 leading-[1.5]">{p.desc}</p>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -120,8 +112,8 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
                         key={s.field}
                         className={`text-[11px] px-2.5 py-1 rounded-full border tabular-nums ${
                           full
-                            ? 'border-white/10 text-white/35'
-                            : 'border-white/15 text-white/75 bg-white/[0.04]'
+                            ? 'border-white/15 text-white/70'
+                            : 'border-white/25 text-white/85 bg-white/[0.08]'
                         }`}
                       >
                         {FIELD_SHORT[s.field] ?? s.field} {s.confirmed}/{s.capacity}
@@ -138,11 +130,11 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
                       gradient={p.owner?.avatarGradient}
                       className="w-6 h-6 text-[10px]"
                     />
-                    <span className="text-xs text-white/60">
+                    <span className="text-xs text-white/75">
                       {p.owner?.name} · {p.owner?.field}
                     </span>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-white/30" />
+                  <ArrowRight className="w-4 h-4 text-white/50" />
                 </div>
               </div>
             </motion.button>

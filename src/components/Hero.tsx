@@ -35,7 +35,7 @@ export default function Hero({
         className="mt-7 text-white/60 text-[15px] md:text-lg leading-[1.7] text-balance"
       >
         <span className="block">우테코 크루들의 사이드 프로젝트 매칭 플랫폼</span>
-        <span className="block mt-1.5 text-white/45 text-sm md:text-base">
+        <span className="block mt-1.5 text-white/65 text-sm md:text-base">
           등록부터 지원, 팀 확정까지 한 곳에서
         </span>
       </motion.p>
@@ -57,7 +57,7 @@ export default function Hero({
         ) : (
           <>
             <GithubButton onClick={onStart} />
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-white/60">
               우테코 크루라면 누구나 · GitHub 계정으로 3분 만에
             </span>
           </>

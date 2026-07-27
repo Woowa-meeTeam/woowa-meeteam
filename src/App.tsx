@@ -18,7 +18,6 @@ import FeedbackWidget from './components/FeedbackWidget';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
 import ApplicantManage from './components/ApplicantManage';
-import { GuideLine } from './components/primitives';
 import { api } from './api';
 import { supabase } from './lib/supabase';
 
@@ -161,12 +160,9 @@ export default function App() {
           className="w-full h-full object-cover pointer-events-none"
           src={VIDEO_SRC}
         />
-        <div className="absolute inset-0 bg-[#0c0c0c]/60" />
+        {/* 글씨 가독성을 위해 영상을 충분히 눌러 둡니다 */}
+        <div className="absolute inset-0 bg-[#0c0c0c]/75" />
       </div>
-
-      {/* Vertical guide lines */}
-      <GuideLine side="left" />
-      <GuideLine side="right" />
 
       <Routes>
         <Route path="/" element={<Landing />} />

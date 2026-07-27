@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Bookmark, Heart, Plus, Search, Users, X } from 'lucide-react';
-import { Avatar, CoverFill, HomeLogo } from './primitives';
+import { ArrowRight, Bookmark, Heart, Plus, Search, Users } from 'lucide-react';
+import { Avatar, CoverFill, StatusBadge } from './primitives';
+import Navbar from './Navbar';
 import { api, FIELD_SHORT } from '../api';
 import type { Project } from '../api';
 
@@ -41,16 +42,7 @@ export default function AllProjects() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <HomeLogo />
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="홈으로"
-        >
-          <X className="w-[18px] h-[18px]" />
-        </button>
-      </div>
+      <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -61,7 +53,7 @@ export default function AllProjects() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">전체 프로젝트</h1>
-            <p className="mt-2 text-sm text-white/50">
+            <p className="mt-2 text-sm text-white/70">
               {projects ? `${projects.length}개의 프로젝트` : '불러오는 중…'}
             </p>
           </div>
@@ -76,12 +68,12 @@ export default function AllProjects() {
 
         {/* 검색 */}
         <div className="relative mt-6">
-          <Search className="w-4 h-4 text-white/30 absolute left-5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-white/50 absolute left-5 top-1/2 -translate-y-1/2" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="프로젝트 · 소개 · 오너로 검색"
-            className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+            className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
           />
         </div>
 
@@ -115,8 +107,8 @@ export default function AllProjects() {
             onClick={() => setOpenOnly((v) => !v)}
             className={`px-3.5 py-2 rounded-full border text-xs font-medium transition-all ${
               openOnly
-                ? 'border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10'
-                : 'bg-white/[0.03] text-white/60 border-white/10 hover:text-white'
+                ? 'border-[#00C471]/50 text-[#9df0c4] bg-[#00C471]/15'
+                : 'bg-white/[0.06] text-white/70 border-white/15 hover:text-white'
             }`}
           >
             모집중만
@@ -124,7 +116,7 @@ export default function AllProjects() {
         </div>
 
         {error && (
-          <p className="mt-8 text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+          <p className="mt-8 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
             프로젝트를 불러오지 못했어요 ({error})
           </p>
         )}
@@ -138,7 +130,7 @@ export default function AllProjects() {
         )}
 
         {projects && filtered.length === 0 && (
-          <p className="mt-8 text-sm text-white/40 py-14 text-center border border-dashed border-white/10 rounded-2xl">
+          <p className="mt-8 text-sm text-white/60 py-14 text-center border border-dashed border-white/10 rounded-2xl">
             조건에 맞는 프로젝트가 없어요
           </p>
         )}
@@ -154,26 +146,20 @@ export default function AllProjects() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: (i % 9) * 0.03, ease: easeOut }}
                 className={`liquid-glass rounded-2xl overflow-hidden flex flex-col text-left transition-transform hover:-translate-y-1 active:scale-[0.99] ${
-                  p.closed ? 'opacity-60' : ''
+                  p.closed ? 'opacity-[0.85]' : ''
                 }`}
               >
                 <div className="relative h-36">
                   <CoverFill cover={p.coverImage} />
-                  <span
-                    className={`absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
-                      p.closed
-                        ? 'border-white/15 text-white/70 bg-black/30'
-                        : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
-                    }`}
-                  >
-                    {p.closed ? '모집 마감' : '● 모집중'}
-                  </span>
+                  <div className="absolute top-3 left-3">
+                    <StatusBadge status={p.status} />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-3 p-5 pt-3 flex-1">
                   <div>
                     <h3 className="text-base font-semibold text-white leading-snug">{p.title}</h3>
-                    <p className="mt-1.5 text-sm text-white/50 leading-[1.5] line-clamp-2">{p.desc}</p>
+                    <p className="mt-1.5 text-sm text-white/70 leading-[1.5] line-clamp-2">{p.desc}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
@@ -184,8 +170,8 @@ export default function AllProjects() {
                           key={s.field}
                           className={`text-[11px] px-2.5 py-1 rounded-full border tabular-nums ${
                             full
-                              ? 'border-white/10 text-white/35'
-                              : 'border-white/15 text-white/75 bg-white/[0.04]'
+                              ? 'border-white/15 text-white/70'
+                              : 'border-white/25 text-white/85 bg-white/[0.08]'
                           }`}
                         >
                           {FIELD_SHORT[s.field] ?? s.field} {s.confirmed}/{s.capacity}
@@ -195,7 +181,7 @@ export default function AllProjects() {
                   </div>
 
                   {/* 지원자 수 · 반응 */}
-                  <div className="flex items-center gap-3 text-[11px] text-white/45">
+                  <div className="flex items-center gap-3 text-[11px] text-white/65">
                     <span className="inline-flex items-center gap-1">
                       <Users className="w-3 h-3" />
                       {p.applicants}
@@ -220,7 +206,7 @@ export default function AllProjects() {
                       />
                       <span className="text-xs text-white/60">{p.owner?.name}</span>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-white/30" />
+                    <ArrowRight className="w-4 h-4 text-white/50" />
                   </div>
                 </div>
               </motion.button>

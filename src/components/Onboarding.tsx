@@ -116,7 +116,7 @@ export default function Onboarding() {
                 />
               </div>
             ))}
-            <span className="ml-2 text-xs text-white/40 tabular-nums">{step + 1} / 3</span>
+            <span className="ml-2 text-xs text-white/60 tabular-nums">{step + 1} / 3</span>
           </div>
 
           <motion.div
@@ -129,7 +129,7 @@ export default function Onboarding() {
               <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-[1.25]">
                 {stepMeta[step].title}
               </h1>
-              <p className="mt-3 text-sm text-white/50">{stepMeta[step].sub}</p>
+              <p className="mt-3 text-sm text-white/70">{stepMeta[step].sub}</p>
 
               {/* step body */}
               {step === 0 && (
@@ -140,13 +140,13 @@ export default function Onboarding() {
                     onChange={(e) => setCrewName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && canNext && go(1)}
                     placeholder="예) 재문"
-                    className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+                    className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
                   />
                   <div className="mt-2.5 flex justify-between text-xs">
-                    <span className={crewName && !nameValid ? 'text-[#F04452]' : 'text-white/30'}>
+                    <span className={crewName && !nameValid ? 'text-[#F04452]' : 'text-white/50'}>
                       {crewName && !nameValid ? '2~20자로 입력해 주세요' : '실명이 아니어도 괜찮아요'}
                     </span>
-                    <span className="text-white/30 tabular-nums">{crewName.trim().length}/20</span>
+                    <span className="text-white/50 tabular-nums">{crewName.trim().length}/20</span>
                   </div>
                 </div>
               )}
@@ -176,12 +176,12 @@ export default function Onboarding() {
               {step === 2 && (
                 <div className="mt-8 flex-1 flex flex-col">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-white/50 absolute left-4 top-1/2 -translate-y-1/2" />
                     <input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="스킬 검색 또는 직접 추가"
-                      className="w-full h-12 rounded-xl bg-white/[0.04] border border-white/10 pl-11 pr-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] transition-colors"
+                      className="w-full h-12 rounded-xl bg-white/[0.04] border border-white/10 pl-11 pr-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] transition-colors"
                     />
                   </div>
 
@@ -233,7 +233,7 @@ export default function Onboarding() {
                     </div>
                   )}
 
-                  <p className="mt-5 text-xs text-white/40">
+                  <p className="mt-5 text-xs text-white/60">
                     {skills.length > 0 ? `${skills.length}개 선택됨` : '최소 1개를 선택해 주세요'}
                   </p>
                 </div>
@@ -262,7 +262,7 @@ export default function Onboarding() {
                     className={`flex-1 h-12 rounded-full text-sm font-semibold transition-all ${
                       canNext && !saving
                         ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                        : 'bg-white/10 text-white/30 cursor-not-allowed'
+                        : 'bg-white/10 text-white/50 cursor-not-allowed'
                     }`}
                   >
                     {step === 2 ? (saving ? '저장하는 중…' : '시작하기') : '다음'}
@@ -295,7 +295,7 @@ export default function Onboarding() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25, ease: easeOut }}
-            className="mt-3 text-sm text-white/50"
+            className="mt-3 text-sm text-white/70"
           >
             프로필이 준비됐어요. 이제 함께할 팀을 찾아볼까요?
           </motion.p>
@@ -312,7 +312,7 @@ export default function Onboarding() {
               </span>
               <div>
                 <div className="text-sm font-semibold text-white">{crewName.trim()}</div>
-                <div className="text-xs text-white/50">{fields.join(' · ')}</div>
+                <div className="text-xs text-white/70">{fields.join(' · ')}</div>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">

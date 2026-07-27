@@ -110,14 +110,14 @@ export default function ProfileEdit() {
       >
         <button
           onClick={() => navigate('/my')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           마이페이지
         </button>
 
         <h1 className="mt-6 text-3xl md:text-4xl font-semibold tracking-tight">프로필 수정</h1>
-        <p className="mt-3 text-sm text-white/50">바꾸고 싶은 항목만 고치면 돼요</p>
+        <p className="mt-3 text-sm text-white/70">바꾸고 싶은 항목만 고치면 돼요</p>
 
         {/* GitHub 계정 (수정 불가) */}
         <div className="liquid-glass rounded-2xl p-4 mt-7 flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function ProfileEdit() {
           />
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white">@{user.githubLogin}</div>
-            <div className="text-xs text-white/40 mt-0.5">
+            <div className="text-xs text-white/60 mt-0.5">
               프로필 사진은 GitHub 계정을 따라갑니다
             </div>
           </div>
@@ -144,10 +144,10 @@ export default function ProfileEdit() {
             className="mt-2.5 w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 px-5 text-base text-white outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
           />
           <div className="mt-2 flex justify-between text-xs">
-            <span className={crewName && !nameValid ? 'text-[#F04452]' : 'text-white/30'}>
+            <span className={crewName && !nameValid ? 'text-[#F04452]' : 'text-white/50'}>
               {crewName && !nameValid ? '2~20자로 입력해 주세요' : '동료 크루들에게 보여지는 이름'}
             </span>
-            <span className="text-white/30 tabular-nums">{crewName.trim().length}/20</span>
+            <span className="text-white/50 tabular-nums">{crewName.trim().length}/20</span>
           </div>
         </label>
 
@@ -159,13 +159,13 @@ export default function ProfileEdit() {
             onChange={(e) => setBio(e.target.value)}
             rows={5}
             placeholder="어떤 걸 좋아하고, 어떤 팀을 찾고 있는지 자유롭게 적어주세요"
-            className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-none leading-[1.6]"
+            className="mt-2.5 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-5 py-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors resize-none leading-[1.6]"
           />
           <div className="mt-2 flex justify-between text-xs">
-            <span className={!bioValid ? 'text-[#F04452]' : 'text-white/30'}>
+            <span className={!bioValid ? 'text-[#F04452]' : 'text-white/50'}>
               {!bioValid ? '500자 이내로 적어 주세요' : '크루 목록과 지원할 때 함께 보여요'}
             </span>
-            <span className="text-white/30 tabular-nums">{bio.length}/500</span>
+            <span className="text-white/50 tabular-nums">{bio.length}/500</span>
           </div>
         </label>
 
@@ -200,12 +200,12 @@ export default function ProfileEdit() {
         <div className="mt-6">
           <span className="text-sm font-medium text-white/80">스킬</span>
           <div className="relative mt-2.5">
-            <Search className="w-4 h-4 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-white/50 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="스킬 검색 또는 직접 추가"
-              className="w-full h-12 rounded-xl bg-white/[0.04] border border-white/10 pl-11 pr-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#3182F6] transition-colors"
+              className="w-full h-12 rounded-xl bg-white/[0.04] border border-white/10 pl-11 pr-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] transition-colors"
             />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -270,7 +270,7 @@ export default function ProfileEdit() {
               ? 'bg-[#00C471] text-white'
               : canSave
                 ? 'bg-white text-black hover:bg-white/90 active:scale-[0.99]'
-                : 'bg-white/10 text-white/30 cursor-not-allowed'
+                : 'bg-white/10 text-white/50 cursor-not-allowed'
           }`}
         >
           {saved ? '저장했어요!' : saving ? '저장하는 중…' : dirty ? '저장하기' : '변경사항 없음'}

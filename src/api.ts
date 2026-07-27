@@ -604,10 +604,13 @@ export const api = {
     return api.project(id);
   },
 
-  /** 팀 확정 되돌리기 */
+  /** 팀 확정 되돌리기 — 되돌리면 다시 모집중으로 돌아옵니다.
+   *  (unconfirm_team 은 CLOSED 로만 내려주기 때문에, 그대로 두면 '모집 마감'에 갇혀요) */
   async unconfirmTeam(id: string): Promise<Project> {
     const { error } = await supabase.rpc('unconfirm_team', { p_id: id });
     if (error) throw toApiError(error, '되돌리기에 실패했어요');
+    const { error: reopenError } = await supabase.rpc('set_recruiting', { p_id: id, p_open: true });
+    if (reopenError) throw toApiError(reopenError, '모집 상태를 되돌리지 못했어요');
     return api.project(id);
   },
 

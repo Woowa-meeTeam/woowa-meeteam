@@ -2,6 +2,8 @@
   width: min(100% - var(--space-8), var(--content-max));
   min-height: 100dvh;
   margin-inline: auto;
+  /* 히어로 헤더를 걷어냈으므로 고정 네비게이션 바만큼 위를 비워 둡니다 */
+  padding-block-start: 76px;
   padding-block-end: var(--space-16);
 }
 
@@ -88,7 +90,8 @@
 
 .booth-feature .booth-section {
   min-height: 100dvh;
-  padding-block: var(--space-16);
+  /* 히어로 헤더가 사라져 이 섹션이 첫 화면입니다 — 위쪽 여백을 줄여 지도를 바로 보여줍니다 */
+  padding-block: var(--space-8) var(--space-16);
   scroll-margin-top: var(--space-6);
 }
 

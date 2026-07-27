@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import type { CSSProperties } from 'react';
+import type { ProjectStatus } from '../api';
 
 export function GithubLogo({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -77,7 +78,7 @@ export function SectionEyebrow({ label, tag }: { label: string; tag?: string }) 
       <span className="w-1.5 h-1.5 rounded-full bg-white" />
       <span>{label}</span>
       {tag && (
-        <span className="px-2 py-0.5 rounded-full border border-white/10 text-white/50 text-xs">{tag}</span>
+        <span className="px-2 py-0.5 rounded-full border border-white/10 text-white/70 text-xs">{tag}</span>
       )}
     </div>
   );
@@ -183,10 +184,25 @@ export function HomeLogo({ className = '' }: { className?: string }) {
   );
 }
 
-export function GuideLine({ side }: { side: 'left' | 'right' }) {
-  const cls =
-    side === 'left'
-      ? 'hidden md:block pointer-events-none fixed inset-y-0 left-1/2 -translate-x-[calc(50%+36rem)] w-px bg-white/10 z-[5]'
-      : 'hidden md:block pointer-events-none fixed inset-y-0 left-1/2 translate-x-[calc(-50%+36rem)] w-px bg-white/10 z-[5]';
-  return <div className={cls} />;
+/* ---------- 프로젝트 상태 배지 ----------
+ * 카드 목록에서 상태를 한 눈에 구분합니다. 승인 대기(PENDING)를 '모집 마감'으로
+ * 뭉뚱그리지 않는 것이 핵심 — 오너에게만 보이는 승인 전 상태입니다.
+ */
+export const PROJECT_STATUS_BADGE: Record<ProjectStatus, { label: string; cls: string }> = {
+  PENDING: { label: '승인 대기', cls: 'border-[#FFB020]/50 text-[#ffd899] bg-[#7a4a00]/60' },
+  REJECTED: { label: '반려됨', cls: 'border-white/25 text-white/75 bg-black/55' },
+  RECRUITING: { label: '● 모집중', cls: 'border-[#00C471]/60 text-[#9df0c4] bg-[#065f39]/70' },
+  CLOSED: { label: '모집 마감', cls: 'border-white/25 text-white/80 bg-black/55' },
+  CONFIRMED: { label: '✓ 팀 확정', cls: 'border-[#00C471]/60 text-[#9df0c4] bg-[#065f39]/70' },
+};
+
+export function StatusBadge({ status }: { status: ProjectStatus }) {
+  const badge = PROJECT_STATUS_BADGE[status] ?? PROJECT_STATUS_BADGE.CLOSED;
+  return (
+    <span
+      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${badge.cls}`}
+    >
+      {badge.label}
+    </span>
+  );
 }

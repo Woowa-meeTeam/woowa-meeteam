@@ -68,18 +68,18 @@ export default function FeatureMatch() {
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="liquid-glass rounded-2xl p-5"
         >
-          <p className="text-xs text-white/50">여행 기록 지도 서비스 · 지원자 관리</p>
+          <p className="text-xs text-white/70">여행 기록 지도 서비스 · 지원자 관리</p>
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             {buckets.map((bucket) => (
               <div key={bucket.name} className="liquid-glass rounded-lg p-3">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ background: bucket.color }} />
                   <span className="text-xs font-medium text-white">{bucket.name}</span>
-                  <span className="text-xs text-white/40">({bucket.count})</span>
+                  <span className="text-xs text-white/60">({bucket.count})</span>
                 </div>
                 <div className="mt-2.5 space-y-1.5">
                   {bucket.items.map((item) => (
-                    <p key={item} className="text-[11px] text-white/50 leading-snug">
+                    <p key={item} className="text-[11px] text-white/70 leading-snug">
                       {item}
                     </p>
                   ))}

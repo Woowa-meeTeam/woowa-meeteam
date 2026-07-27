@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, ExternalLink, X } from 'lucide-react';
-import { Avatar, CoverFill, HomeLogo } from './primitives';
+import { Avatar, CoverFill, HomeLogo, StatusBadge } from './primitives';
 import { api, FIELD_SHORT } from '../api';
 import type { Project, User } from '../api';
 
@@ -28,7 +28,7 @@ export default function CrewDetail() {
   if (error) {
     return (
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-        <p className="text-sm text-white/50">{error}</p>
+        <p className="text-sm text-white/70">{error}</p>
         <button onClick={() => navigate('/crews')} className="text-sm text-[#7db4ff] hover:underline">
           크루 목록으로
         </button>
@@ -64,7 +64,7 @@ export default function CrewDetail() {
       >
         <button
           onClick={() => navigate('/crews')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           크루 목록
@@ -86,7 +86,7 @@ export default function CrewDetail() {
               href={`https://github.com/${crew.githubLogin}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/45 hover:text-[#7db4ff] transition-colors"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/65 hover:text-[#7db4ff] transition-colors"
             >
               @{crew.githubLogin}
               <ExternalLink className="w-3.5 h-3.5" />
@@ -135,10 +135,10 @@ export default function CrewDetail() {
         {/* 등록한 프로젝트 */}
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-white/80">
-            등록한 프로젝트 <span className="text-white/40 font-normal">{projects.length}개</span>
+            등록한 프로젝트 <span className="text-white/60 font-normal">{projects.length}개</span>
           </h2>
           {projects.length === 0 ? (
-            <p className="mt-3 text-sm text-white/40 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+            <p className="mt-3 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
               아직 등록한 프로젝트가 없어요
             </p>
           ) : (
@@ -148,24 +148,18 @@ export default function CrewDetail() {
                   key={p.id}
                   onClick={() => navigate(`/projects/${p.id}`)}
                   className={`liquid-glass rounded-2xl overflow-hidden text-left transition-transform hover:-translate-y-1 ${
-                    p.closed ? 'opacity-60' : ''
+                    p.closed ? 'opacity-[0.85]' : ''
                   }`}
                 >
                   <div className="relative h-28">
                     <CoverFill cover={p.coverImage} />
-                    <span
-                      className={`absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
-                        p.closed
-                          ? 'border-white/15 text-white/70 bg-black/30'
-                          : 'border-[#3182F6]/40 text-[#cfe4ff] bg-[#3182F6]/25'
-                      }`}
-                    >
-                      {p.closed ? '모집 마감' : '● 모집중'}
-                    </span>
+                    <div className="absolute top-3 left-3">
+                      <StatusBadge status={p.status} />
+                    </div>
                   </div>
                   <div className="p-4 pt-3">
                     <h3 className="text-sm font-semibold text-white leading-snug">{p.title}</h3>
-                    <p className="mt-1.5 text-xs text-white/50 leading-[1.5] line-clamp-2">
+                    <p className="mt-1.5 text-xs text-white/70 leading-[1.5] line-clamp-2">
                       {p.desc}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-1.5">
