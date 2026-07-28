@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Bookmark, Heart, Pencil, ShieldCheck, Users, X } from 'lucide-react';
+import { ArrowRight, Pencil, ShieldCheck, Users, X } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
 import ProjectCard from './ProjectCard';
+import { FIELD_STYLES } from './FieldFilters';
 import { api, FIELD_SHORT } from '../api';
 import type { Application, Project, ProjectStatus, User } from '../api';
 
@@ -77,42 +78,55 @@ export default function MyPage() {
 
         {/* 프로필 카드 */}
         <div className="liquid-glass rounded-2xl p-6 mt-7">
-          {/* 모바일에서는 버튼을 아래로 내립니다. 한 줄에 다 넣으면 이름·아이디가
-              폭에 눌려 글자가 한 자씩 세로로 쌓여요. */}
-          <div className="flex items-start gap-4">
-            <Avatar
-              name={user.crewName}
-              avatarUrl={user.avatarUrl}
-              gradient={user.avatarGradient}
-              className="w-14 h-14 text-lg"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="text-lg font-bold text-white truncate">{user.crewName}</div>
-              <div className="mt-1 text-sm text-white/70 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                {user.fields.length > 0 && <span>{user.fields.join(' · ')}</span>}
-                {user.fields.length > 0 && <span className="text-white/25">·</span>}
-                <span className="text-white/55 truncate">github.com/{user.githubLogin}</span>
+          {/* 넓은 화면에서는 버튼이 오른쪽에 붙고, 좁아지면 아래로 내려옵니다.
+              모바일에서 한 줄에 다 넣으면 이름·아이디가 폭에 눌려 세로로 쌓여요. */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="flex items-start gap-4 min-w-0 flex-1">
+              <Avatar
+                name={user.crewName}
+                avatarUrl={user.avatarUrl}
+                gradient={user.avatarGradient}
+                className="w-14 h-14 text-lg"
+              />
+              <div className="min-w-0">
+                {/* 분야 태그는 이름 옆에 — 색은 크루 목록·상세와 같은 걸 씁니다 */}
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                  <span className="text-lg font-bold text-white">{user.crewName}</span>
+                  {user.fields.map((f) => (
+                    <span
+                      key={f}
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                        FIELD_STYLES[f]?.tag ?? 'border-white/20 text-white/70 bg-white/[0.06]'
+                      }`}
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 text-sm text-white/55 truncate">
+                  github.com/{user.githubLogin}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {user.isAdmin && (
+            <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
+              {user.isAdmin && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#7db4ff] border border-[#3182F6]/40 bg-[#3182F6]/10 rounded-full px-3.5 py-2 hover:bg-[#3182F6]/20 transition-colors"
+                >
+                  <ShieldCheck className="w-3 h-3" />
+                  관리자
+                </button>
+              )}
               <button
-                onClick={() => navigate('/admin')}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#7db4ff] border border-[#3182F6]/40 bg-[#3182F6]/10 rounded-full px-3.5 py-2 hover:bg-[#3182F6]/20 transition-colors"
+                onClick={() => navigate('/profile/edit')}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 border border-white/15 rounded-full px-3.5 py-2 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <ShieldCheck className="w-3 h-3" />
-                관리자
+                <Pencil className="w-3 h-3" />
+                프로필 수정
               </button>
-            )}
-            <button
-              onClick={() => navigate('/profile/edit')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 border border-white/15 rounded-full px-3.5 py-2 hover:bg-white/5 hover:text-white transition-colors"
-            >
-              <Pencil className="w-3 h-3" />
-              프로필 수정
-            </button>
+            </div>
           </div>
           {user.bio && (
             <p className="mt-4 text-sm text-white/60 leading-[1.6] whitespace-pre-line">{user.bio}</p>
@@ -129,9 +143,11 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* 탭 — 모바일에서는 접지 않고 가로로 스크롤합니다 */}
-        <div className="mt-8 -mx-5 sm:mx-0 px-5 sm:px-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="inline-flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
+        {/* 탭 — 아래 목록과 같은 폭으로 맞춰 가운데에 둡니다.
+            모바일에서는 접지 않고 가로로 스크롤해요. */}
+        <div className="mt-8 mx-auto w-full max-w-2xl">
+          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="inline-flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
             {(
               [
                 { key: 'owned', label: '등록한 프로젝트', count: ownedProjects.length },
@@ -149,59 +165,75 @@ export default function MyPage() {
                 }`}
               >
                 {item.label} <span className="opacity-50 tabular-nums">{item.count}</span>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* 등록한 프로젝트 — 탐색 화면과 같은 ProjectCard 를 씁니다.
-            같은 프로젝트가 화면마다 다르게 보이면 내 것인지 알아보기 어려워요. */}
+        {/* 등록한 프로젝트 — 관리용이라 카드보다 가로로 긴 줄이 읽기 좋아요.
+            페이지가 넓어져도 본문 폭을 잡아 가운데로 모읍니다. */}
         {tab === 'owned' && (
-          <div className="mt-5">
-            {ownedProjects.length === 0 ? (
+          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
+            {ownedProjects.length === 0 && (
               <p className="text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
                 아직 등록한 프로젝트가 없어요
               </p>
-            ) : (
-              <div className="project-card-grid">
-                {ownedProjects.map((p, i) => (
-                  <div key={p.id} className="flex flex-col gap-3">
-                    <ProjectCard
-                      project={p}
-                      index={i}
-                      onClick={() => navigate(`/projects/${p.id}`)}
-                    />
-                    {p.status === 'PENDING' && (
-                      <p className="text-xs text-[#ffd899] text-center">
-                        코치 승인을 기다리고 있어요
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => navigate(`/projects/${p.id}/edit`)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 text-white/70 text-xs font-medium py-2.5 hover:bg-white/5 hover:text-white transition-colors"
-                      >
-                        <Pencil className="w-3 h-3" />
-                        수정
-                      </button>
-                      <button
-                        onClick={() => navigate(`/projects/${p.id}/applicants`)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
-                      >
-                        지원자 관리
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
+            {ownedProjects.map((p) => (
+              <div key={p.id} className="liquid-glass rounded-2xl p-5">
+                {/* 대표 이미지 — 카드·상세와 같은 16:9 로, 어느 프로젝트인지 한눈에 */}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                  className="relative block w-full aspect-[16/9] rounded-xl overflow-hidden border border-white/10 mb-4"
+                >
+                  <CoverFill cover={p.coverImage} fade={false} />
+                  {/* 밝은 커버 위에서도 읽히도록 어두운 받침을 깔고 그 위에 상태색을 올립니다 */}
+                  <span className="absolute top-3 left-3 rounded-full bg-black/60 backdrop-blur-md">
+                    <span
+                      className={`block text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_BADGE[p.status].cls}`}
+                    >
+                      {STATUS_BADGE[p.status].label}
+                    </span>
+                  </span>
+                </button>
+                {p.status === 'PENDING' && (
+                  <p className="-mt-1 mb-2 text-[11px] text-white/60">
+                    코치 승인을 기다리고 있어요
+                  </p>
+                )}
+                <h3 className="text-base font-semibold text-white">{p.title}</h3>
+                <p className="mt-1.5 text-sm text-white/70 leading-[1.5]">{p.desc}</p>
+                <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-white/70 tabular-nums">
+                    {p.slots.map((s) => `${s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
+                  </span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      onClick={() => navigate(`/projects/${p.id}/edit`)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 text-white/70 text-xs font-medium px-3.5 py-2.5 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      수정
+                    </button>
+                    <button
+                      onClick={() => navigate(`/projects/${p.id}/applicants`)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold px-4 py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
+                    >
+                      지원자 관리
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* 지원한 프로젝트 */}
         {tab === 'applied' && (
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
             {applications.length === 0 && (
               <p className="text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
                 아직 지원한 프로젝트가 없어요
@@ -246,7 +278,7 @@ export default function MyPage() {
 
         {/* 나의 팀 (확정된 팀) */}
         {tab === 'teams' && (
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
             {teams.length === 0 && (
               <p className="text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
                 아직 확정된 팀이 없어요.
@@ -303,7 +335,6 @@ export default function MyPage() {
           <ReactionProjectList
             projects={likedProjects}
             emptyMessage="아직 좋아요한 프로젝트가 없어요"
-            icon="like"
             navigate={navigate}
           />
         )}
@@ -312,7 +343,6 @@ export default function MyPage() {
           <ReactionProjectList
             projects={bookmarkedProjects}
             emptyMessage="아직 북마크한 프로젝트가 없어요"
-            icon="bookmark"
             navigate={navigate}
           />
         )}
@@ -321,71 +351,33 @@ export default function MyPage() {
   );
 }
 
+/** 좋아요 · 북마크 — 탐색 화면과 같은 카드를 그대로 씁니다 */
 function ReactionProjectList({
   projects,
   emptyMessage,
-  icon,
   navigate,
 }: {
   projects: Project[];
   emptyMessage: string;
-  icon: 'like' | 'bookmark';
   navigate: ReturnType<typeof useNavigate>;
 }) {
-  const Icon = icon === 'like' ? Heart : Bookmark;
+  if (projects.length === 0) {
+    return (
+      <p className="mt-5 mx-auto w-full max-w-2xl text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+        {emptyMessage}
+      </p>
+    );
+  }
 
   return (
-    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {projects.length === 0 && (
-        <p className="text-sm text-white/40 py-8 text-center border border-dashed border-white/10 rounded-2xl">
-          {emptyMessage}
-        </p>
-      )}
-      {projects.map((p) => (
-        <button
+    <div className="project-card-grid mt-5">
+      {projects.map((p, i) => (
+        <ProjectCard
           key={p.id}
+          project={p}
+          index={i}
           onClick={() => navigate(`/projects/${p.id}`)}
-          className="group relative aspect-square w-full overflow-hidden rounded-2xl text-left liquid-glass transition-transform hover:-translate-y-0.5"
-        >
-          <div className="absolute inset-0">
-            <CoverFill cover={p.coverImage} />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/10 to-black/90" />
-          </div>
-          <span
-            className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border bg-black/35 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md ${
-              icon === 'like'
-                ? 'border-[#f04452]/35 text-[#ff7d88]'
-                : 'border-[#ffd34d]/35 text-[#ffd34d]'
-            }`}
-          >
-            <Icon className="h-3 w-3" fill="currentColor" />
-            {icon === 'like' ? '좋아요' : '북마크'}
-          </span>
-          <span className={`absolute right-3 top-3 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md ${STATUS_BADGE[p.status].cls}`}>
-            {STATUS_BADGE[p.status].label}
-          </span>
-          <div className="absolute inset-x-4 bottom-4">
-            <h3 className="text-base font-semibold text-white drop-shadow-sm">{p.title}</h3>
-            <p className="mt-1.5 line-clamp-2 text-xs leading-[1.5] text-white/70">{p.desc}</p>
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/20 pt-3">
-              <span className="truncate text-[11px] text-white/65 tabular-nums">
-                {p.slots.map((s) => `${FIELD_SHORT[s.field] ?? s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-white/75">
-                <Heart
-                  className={`h-3.5 w-3.5 ${p.myLike ? 'text-[#ff6975]' : 'text-white/45'}`}
-                  fill={p.myLike ? 'currentColor' : 'none'}
-                />
-                {p.likes}
-                <Bookmark
-                  className={`ml-1 h-3.5 w-3.5 ${p.myBookmark ? 'text-[#ffd34d]' : 'text-white/45'}`}
-                  fill={p.myBookmark ? 'currentColor' : 'none'}
-                />
-                {p.bookmarks}
-              </span>
-            </div>
-          </div>
-        </button>
+        />
       ))}
     </div>
   );

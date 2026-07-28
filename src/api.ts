@@ -45,7 +45,7 @@ export type Project = {
   pending: number;      // 대기중
   likes: number;
   bookmarks: number;
-  /** 오너 본인을 뺀, 이 프로젝트를 열어 본 크루 수 */
+  /** 누적 조회수 — 오너 본인이 연 건 빼고, 열람할 때마다 1씩 */
   views: number;
   myLike: boolean;
   myBookmark: boolean;
@@ -601,11 +601,11 @@ export const api = {
     return api.project(id);
   },
 
-  /** 조회 기록 — 오너 본인과 중복 조회는 DB 가 걸러냅니다.
+  /** 조회 기록 — 열 때마다 한 번씩 쌓이는 누적 조회수입니다.
+   *  내 프로젝트를 내가 연 건 DB 가 걸러내요.
    *  실패해도 화면에는 영향이 없어야 하므로 조용히 넘어갑니다. */
   async recordView(projectId: string): Promise<void> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) return; // 비로그인은 재방문을 구분할 수 없어 세지 않아요
+    // 누적 조회수라 비로그인 방문도 함께 셉니다. 오너 본인 조회 제외는 DB 가 맡아요.
     await supabase.rpc('record_project_view', { p_id: projectId });
   },
 
