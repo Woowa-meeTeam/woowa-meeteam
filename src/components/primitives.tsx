@@ -150,6 +150,30 @@ export const COVER_GRADIENTS: Record<string, string> = {
 
 export const COVER_PRESETS = Object.keys(COVER_GRADIENTS);
 
+/* ---------- 예전 커버의 "보여줄 위치" ----------
+ * 지금은 업로드할 때 CoverCropper 가 16:9 로 잘라 구워서 저장하므로 잘릴 일이 없습니다.
+ * 그 전에 올라간 커버는 비율이 제각각이고 `…/cover.png#pos=50,30` 형태로 초점만 들고 있어서,
+ * 그 값들이 계속 제자리에 보이도록 읽는 쪽에서만 남겨 둡니다.
+ */
+export const DEFAULT_COVER_POSITION = { x: 50, y: 50 };
+
+const clampPercent = (n: number) => Math.min(100, Math.max(0, Math.round(n)));
+
+export function parseCoverPosition(cover: string | null | undefined): { x: number; y: number } {
+  const raw = cover?.split('#pos=')[1];
+  if (!raw) return DEFAULT_COVER_POSITION;
+  const [x, y] = raw.split(',').map(Number);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return DEFAULT_COVER_POSITION;
+  return { x: clampPercent(x), y: clampPercent(y) };
+}
+
+/** 위치 정보를 뺀 순수 커버 값 (이미지 URL 또는 `gradient:*`) */
+export function coverSource(cover: string | null | undefined): string {
+  return cover?.split('#pos=')[0] ?? '';
+}
+
+
+
 /**
  * 커버를 부모 컨테이너에 채웁니다. `fade`가 있으면 아래쪽을 투명하게 마스킹해
  * 시네마틱 배경(고정 비디오)에 자연스럽게 녹아들게 합니다.
@@ -157,14 +181,14 @@ export const COVER_PRESETS = Object.keys(COVER_GRADIENTS);
 export function CoverFill({
   cover,
   fade = true,
-  onImageLoad,
 }: {
   cover: string | null;
   fade?: boolean;
-  onImageLoad?: (width: number, height: number) => void;
 }) {
   if (!cover) return null;
-  const isGradient = cover.startsWith('gradient:');
+  const src = coverSource(cover);
+  const isGradient = src.startsWith('gradient:');
+  const position = parseCoverPosition(cover);
 
   // 사진은 선명하게 보여야 하므로 아래쪽 끝에서만 살짝 흐려지게 합니다.
   // (그라데이션 프리셋은 원래 장식이라 조금 더 일찍 fade 해도 자연스러움)
@@ -181,16 +205,14 @@ export function CoverFill({
       {isGradient ? (
         <div
           className="absolute inset-0"
-          style={{ backgroundImage: COVER_GRADIENTS[cover.slice(9)] ?? COVER_GRADIENTS.aurora }}
+          style={{ backgroundImage: COVER_GRADIENTS[src.slice(9)] ?? COVER_GRADIENTS.aurora }}
         />
       ) : (
         <img
-          src={cover}
+          src={src}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
-          onLoad={(event) =>
-            onImageLoad?.(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)
-          }
+          style={{ objectPosition: `${position.x}% ${position.y}%` }}
         />
       )}
       {/* 뱃지 가독성을 위한 상단 그늘만 최소한으로. 사진 본체는 덮지 않습니다. */}

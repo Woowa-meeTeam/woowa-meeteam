@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Bookmark, Heart, Pencil, ShieldCheck, Users, X } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
+import ProjectCard from './ProjectCard';
 import { api, FIELD_SHORT } from '../api';
 import type { Application, Project, ProjectStatus, User } from '../api';
 
@@ -70,13 +71,15 @@ export default function MyPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: easeOut }}
-        className="flex-1 max-w-2xl w-full mx-auto px-6 pb-16"
+        className="flex-1 max-w-5xl w-full mx-auto px-5 sm:px-6 pb-16"
       >
         <h1 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight">마이페이지</h1>
 
         {/* 프로필 카드 */}
         <div className="liquid-glass rounded-2xl p-6 mt-7">
-          <div className="flex items-center gap-4">
+          {/* 모바일에서는 버튼을 아래로 내립니다. 한 줄에 다 넣으면 이름·아이디가
+              폭에 눌려 글자가 한 자씩 세로로 쌓여요. */}
+          <div className="flex items-start gap-4">
             <Avatar
               name={user.crewName}
               avatarUrl={user.avatarUrl}
@@ -84,13 +87,16 @@ export default function MyPage() {
               className="w-14 h-14 text-lg"
             />
             <div className="flex-1 min-w-0">
-              <div className="text-lg font-bold text-white">{user.crewName}</div>
-              <div className="text-sm text-white/70 mt-0.5">
-                {user.fields.join(' · ')}
-                <span className="text-white/25 mx-2">·</span>
-                <span className="text-white/55">github.com/{user.githubLogin}</span>
+              <div className="text-lg font-bold text-white truncate">{user.crewName}</div>
+              <div className="mt-1 text-sm text-white/70 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                {user.fields.length > 0 && <span>{user.fields.join(' · ')}</span>}
+                {user.fields.length > 0 && <span className="text-white/25">·</span>}
+                <span className="text-white/55 truncate">github.com/{user.githubLogin}</span>
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {user.isAdmin && (
               <button
                 onClick={() => navigate('/admin')}
@@ -123,95 +129,73 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* 탭 */}
-        <div className="mt-8 flex flex-wrap gap-1 bg-white/[0.04] border border-white/10 rounded-2xl sm:rounded-full p-1 w-fit max-w-full">
-          <button
-            onClick={() => setTab('owned')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              tab === 'owned' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
-            }`}
-          >
-            등록한 프로젝트 <span className="opacity-50">{ownedProjects.length}</span>
-          </button>
-          <button
-            onClick={() => setTab('applied')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              tab === 'applied' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
-            }`}
-          >
-            지원한 프로젝트 <span className="opacity-50">{applications.length}</span>
-          </button>
-          <button
-            onClick={() => setTab('teams')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              tab === 'teams' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
-            }`}
-          >
-            나의 팀 <span className="opacity-50">{teams.length}</span>
-          </button>
-          <button
-            onClick={() => setTab('liked')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              tab === 'liked' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
-            }`}
-          >
-            좋아요 <span className="opacity-50">{likedProjects.length}</span>
-          </button>
-          <button
-            onClick={() => setTab('bookmarked')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              tab === 'bookmarked' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
-            }`}
-          >
-            북마크 <span className="opacity-50">{bookmarkedProjects.length}</span>
-          </button>
+        {/* 탭 — 모바일에서는 접지 않고 가로로 스크롤합니다 */}
+        <div className="mt-8 -mx-5 sm:mx-0 px-5 sm:px-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
+            {(
+              [
+                { key: 'owned', label: '등록한 프로젝트', count: ownedProjects.length },
+                { key: 'applied', label: '지원한 프로젝트', count: applications.length },
+                { key: 'teams', label: '나의 팀', count: teams.length },
+                { key: 'liked', label: '좋아요', count: likedProjects.length },
+                { key: 'bookmarked', label: '북마크', count: bookmarkedProjects.length },
+              ] as { key: Tab; label: string; count: number }[]
+            ).map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setTab(item.key)}
+                className={`whitespace-nowrap px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                  tab === item.key ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                {item.label} <span className="opacity-50 tabular-nums">{item.count}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 등록한 프로젝트 */}
+        {/* 등록한 프로젝트 — 탐색 화면과 같은 ProjectCard 를 씁니다.
+            같은 프로젝트가 화면마다 다르게 보이면 내 것인지 알아보기 어려워요. */}
         {tab === 'owned' && (
-          <div className="mt-5 space-y-3">
-            {ownedProjects.length === 0 && (
+          <div className="mt-5">
+            {ownedProjects.length === 0 ? (
               <p className="text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
                 아직 등록한 프로젝트가 없어요
               </p>
-            )}
-            {ownedProjects.map((p) => (
-              <div key={p.id} className="liquid-glass rounded-2xl p-5">
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_BADGE[p.status].cls}`}
-                  >
-                    {STATUS_BADGE[p.status].label}
-                  </span>
-                  {p.status === 'PENDING' && (
-                    <span className="text-[11px] text-white/60">코치 승인을 기다리고 있어요</span>
-                  )}
-                </div>
-                <h3 className="mt-3 text-base font-semibold text-white">{p.title}</h3>
-                <p className="mt-1.5 text-sm text-white/70 leading-[1.5]">{p.desc}</p>
-                <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                  <span className="text-xs text-white/70 tabular-nums">
-                    {p.slots.map((s) => `${s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => navigate(`/projects/${p.id}/edit`)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 text-white/70 text-xs font-medium px-3.5 py-2.5 hover:bg-white/5 hover:text-white transition-colors"
-                    >
-                      <Pencil className="w-3 h-3" />
-                      수정
-                    </button>
-                    <button
-                      onClick={() => navigate(`/projects/${p.id}/applicants`)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold px-4 py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
-                    >
-                      지원자 관리
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+            ) : (
+              <div className="project-card-grid">
+                {ownedProjects.map((p, i) => (
+                  <div key={p.id} className="flex flex-col gap-3">
+                    <ProjectCard
+                      project={p}
+                      index={i}
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                    />
+                    {p.status === 'PENDING' && (
+                      <p className="text-xs text-[#ffd899] text-center">
+                        코치 승인을 기다리고 있어요
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/projects/${p.id}/edit`)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 text-white/70 text-xs font-medium py-2.5 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        수정
+                      </button>
+                      <button
+                        onClick={() => navigate(`/projects/${p.id}/applicants`)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold py-2.5 hover:bg-white/90 active:scale-[0.98] transition-all"
+                      >
+                        지원자 관리
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 

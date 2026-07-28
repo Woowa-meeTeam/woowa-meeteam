@@ -6,6 +6,7 @@ import {
   Bookmark,
   Check,
   ExternalLink,
+  Eye,
   Heart,
   Link as LinkIcon,
   MapPin,
@@ -51,6 +52,12 @@ export default function ProjectDetail() {
         // 지원 여부와 무관하게 항상 상세(view)를 볼 수 있게 둡니다.
       })
       .catch((e) => setLoadError(e.message));
+
+  // 상세를 열면 조회로 기록합니다. 오너 본인과 중복 조회는 DB 가 걸러내요.
+  useEffect(() => {
+    if (!id) return;
+    api.recordView(id).catch(() => {});
+  }, [id]);
 
   const toggleReaction = async (kind: 'LIKE' | 'BOOKMARK') => {
     if (!project) return;
@@ -167,9 +174,11 @@ export default function ProjectDetail() {
             프로젝트 목록
           </button>
 
-          {/* 대표 이미지 히어로 — 아래로 배경에 녹아듦 */}
-          <div className="project-detail-hero relative mt-5 h-56 md:h-72 rounded-3xl overflow-hidden">
-            <CoverFill cover={project.coverImage} />
+          {/* 대표 이미지 — 카드와 같은 16:9.
+              높이를 고정하면 화면 폭에 따라 비율이 달라져 보이는 영역이 계속 바뀝니다.
+              아래를 흐리게 지우던 fade 도 껐어요. 올린 사진이 그대로 다 보여야 합니다. */}
+          <div className="project-detail-hero relative mt-5 aspect-[16/9] rounded-3xl overflow-hidden">
+            <CoverFill cover={project.coverImage} fade={false} />
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <span
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md border ${
@@ -208,6 +217,13 @@ export default function ProjectDetail() {
             <span className="inline-flex items-center gap-1.5 text-xs text-white/55 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10">
               <Users className="w-3.5 h-3.5" />
               지원 {project.applicants}명
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 text-xs text-white/55 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10"
+              title="나를 뺀, 이 프로젝트를 열어 본 크루 수예요"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              조회 {project.views}
             </span>
             <button
               onClick={() => toggleReaction('LIKE')}
@@ -264,7 +280,7 @@ export default function ProjectDetail() {
 
           {/* 설명 (마크다운) */}
           <div className="project-detail-copy mt-8">
-            <Markdown>{project.longDesc.join('\n')}</Markdown>
+            <Markdown>{project.description}</Markdown>
           </div>
 
           {/* 일정 · 프로토타입 */}

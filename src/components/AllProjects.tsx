@@ -33,7 +33,7 @@ export default function AllProjects() {
       return (
         p.title.toLowerCase().includes(q) ||
         (p.summary ?? '').toLowerCase().includes(q) ||
-        p.longDesc.join(' ').toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
         (p.owner?.name ?? '').toLowerCase().includes(q)
       );
     });

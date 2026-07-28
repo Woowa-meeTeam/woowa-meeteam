@@ -1411,90 +1411,8 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(to bottom, transparent 58%, rgba(3, 5, 9, 0.18)),
-    radial-gradient(circle at 50% 110%, rgba(0, 0, 0, 0.22), transparent 54%);
-}
-
-.project-card__visual {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.project-card__visual--browser {
-  inset: 11% 6% -3%;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.19);
-  border-radius: 12px 12px 0 0;
-  background: #17191d;
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(0, 0, 0, 0.3);
-}
-
-.project-card__browser-bar {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  height: 23px;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  background: linear-gradient(180deg, #292c32, #1c1e23);
-}
-
-.project-card__browser-bar span {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-}
-
-.project-card__browser-bar span:nth-child(1) {
-  background: #ff726f;
-}
-
-.project-card__browser-bar span:nth-child(2) {
-  background: #ffc75d;
-}
-
-.project-card__browser-bar span:nth-child(3) {
-  background: #69d682;
-}
-
-.project-card__browser-bar i {
-  position: absolute;
-  left: 50%;
-  width: 44%;
-  height: 10px;
-  transform: translateX(-50%);
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.project-card__cover {
-  position: absolute;
-  inset: 0;
-}
-
-.project-card__visual--browser .project-card__cover {
-  top: 23px;
-  background: #edf0f4;
-}
-
-.project-card__visual--browser .project-card__cover img {
-  object-fit: contain;
-}
-
-.project-card__visual--logo {
-  inset: 8%;
-  border-radius: 16px;
-  background: #03050a;
-}
-
-.project-card__visual--logo .project-card__cover img {
-  object-fit: contain;
+  /* 상태 배지가 밝은 사진 위에서도 읽히도록 위쪽만 아주 살짝 눌러 줍니다 */
+  background: linear-gradient(to bottom, rgba(3, 5, 9, 0.32), transparent 34%);
 }
 
 .project-card__status {
@@ -1715,10 +1633,6 @@ body {
     border-radius: 16px;
   }
 
-  .project-card__visual--browser {
-    inset: 11% 5% -3%;
-  }
-
   .project-card__status {
     top: 14px;
     left: 14px;
@@ -1735,4 +1649,206 @@ body {
   .project-card__description {
     font-size: 14px;
   }
+}
+
+/* ---------- 마크다운 본문 ----------
+ * 프로젝트 설명은 크루가 textarea 에 쓴 글이라, 쓴 모양 그대로 보이는 게 중요합니다.
+ * 줄바꿈은 remark-breaks 가 <br> 로 살리고, 여기서는 간격과 목록 들여쓰기를 잡습니다.
+ */
+.markdown-body {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  line-height: 1.75;
+  /* 긴 URL 이나 붙여쓴 영문이 카드 밖으로 삐져나가지 않게 */
+  overflow-wrap: anywhere;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin-block: 0 16px;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: #fff;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+.markdown-body h1 {
+  margin-block: 32px 12px;
+  font-size: 20px;
+}
+
+.markdown-body h2 {
+  margin-block: 28px 10px;
+  font-size: 18px;
+}
+
+.markdown-body h3,
+.markdown-body h4 {
+  margin-block: 24px 8px;
+  font-size: 16px;
+}
+
+.markdown-body strong {
+  color: #fff;
+  font-weight: 650;
+}
+
+.markdown-body em {
+  color: rgba(255, 255, 255, 0.85);
+  font-style: italic;
+}
+
+.markdown-body a {
+  color: #7db4ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 160ms ease;
+}
+
+.markdown-body a:hover {
+  color: #a4f4fd;
+}
+
+/* 목록 — 마커 자리를 확보해 두 번째 줄부터도 글머리 기호에 맞춰 들여쓰기됩니다 */
+.markdown-body ul,
+.markdown-body ol {
+  margin-block: 0 16px;
+  padding-inline-start: 1.35em;
+}
+
+.markdown-body ul {
+  list-style: disc;
+}
+
+.markdown-body ol {
+  list-style: decimal;
+}
+
+.markdown-body li {
+  margin-block: 4px;
+  padding-inline-start: 2px;
+}
+
+.markdown-body li::marker {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 중첩 목록은 위아래 간격 없이 바로 이어지도록 */
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-block: 4px 0;
+}
+
+.markdown-body ul ul {
+  list-style: circle;
+}
+
+.markdown-body ul ul ul {
+  list-style: square;
+}
+
+/* 항목 사이에 빈 줄이 있으면(loose list) 내용이 <p> 로 감싸집니다.
+ * 그대로 두면 항목마다 문단 여백이 붙어 목록이 뚝뚝 끊겨 보여요. */
+.markdown-body li > p {
+  margin-block: 0;
+}
+
+.markdown-body li > p + p {
+  margin-block-start: 8px;
+}
+
+.markdown-body blockquote {
+  margin-block: 0 16px;
+  padding-inline-start: 16px;
+  border-inline-start: 2px solid rgba(49, 130, 246, 0.5);
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.markdown-body blockquote p:last-child {
+  margin-block-end: 0;
+}
+
+.markdown-body code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a4f4fd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.markdown-body pre {
+  margin-block: 0 16px;
+  padding: 16px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background: none;
+  /* 코드 블록 안에서는 remark-breaks 와 무관하게 원문 줄바꿈이 그대로 유지돼야 합니다 */
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.markdown-body hr {
+  margin-block: 24px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  margin-block: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.markdown-body table {
+  display: block;
+  width: 100%;
+  margin-block: 0 16px;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-weight: 650;
+}
+
+.markdown-body input[type='checkbox'] {
+  margin-inline-end: 6px;
+}
+
+/* 체크리스트는 마커 없이 */
+.markdown-body li:has(> input[type='checkbox']) {
+  list-style: none;
+  margin-inline-start: -1.1em;
 }

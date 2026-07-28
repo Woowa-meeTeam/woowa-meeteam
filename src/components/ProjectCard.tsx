@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import type { Project, ProjectStatus } from '../api';
@@ -35,11 +34,6 @@ export default function ProjectCard({
   onClick,
   animateOnView = false,
 }: Props) {
-  const [imageShape, setImageShape] = useState<'wide' | 'compact' | null>(null);
-  const isUploadedImage =
-    Boolean(project.coverImage) && !project.coverImage?.startsWith('gradient:');
-  const usesBrowserFrame = isUploadedImage && imageShape === 'wide';
-  const usesLogoStage = isUploadedImage && imageShape === 'compact';
   const description = project.summary?.trim() || project.desc;
 
   return (
@@ -56,30 +50,11 @@ export default function ProjectCard({
       transition={{ duration: 0.55, delay: (index % 6) * 0.055, ease: easeOut }}
       className={`project-card ${project.closed ? 'project-card--closed' : ''}`}
     >
+      {/* 대표 이미지는 카드 폭을 그대로 채웁니다.
+          예전엔 사진 비율에 따라 브라우저 창·로고 받침을 덧씌워서 카드 안에 카드가 있는 모양이었어요.
+          비율이 안 맞아 잘리는 문제는 등록할 때 보여줄 위치를 직접 잡는 쪽으로 해결합니다. */}
       <div className="project-card__media">
-        <div
-          className={`project-card__visual ${
-            usesBrowserFrame ? 'project-card__visual--browser' : ''
-          } ${usesLogoStage ? 'project-card__visual--logo' : ''}`}
-        >
-          {usesBrowserFrame && (
-            <div className="project-card__browser-bar" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-              <i />
-            </div>
-          )}
-          <div className="project-card__cover">
-            <CoverFill
-              cover={project.coverImage}
-              fade={false}
-              onImageLoad={(width, height) =>
-                setImageShape(width / height >= 1.25 ? 'wide' : 'compact')
-              }
-            />
-          </div>
-        </div>
+        <CoverFill cover={project.coverImage} fade={false} />
 
         <span
           className={`project-card__status project-card__status--${project.status.toLowerCase()}`}

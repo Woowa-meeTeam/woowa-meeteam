@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Check, Eye, ImagePlus, Link as LinkIcon, Minus, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { COVER_PRESETS, CoverFill, HomeLogo, StatusBadge } from './primitives';
+import { COVER_PRESETS, CoverFill, HomeLogo, StatusBadge, coverSource } from './primitives';
+import CoverCropper from './CoverCropper';
 import Markdown from './Markdown';
 import { api, ApiError, FIELDS } from '../api';
 import type { Project } from '../api';
@@ -46,6 +47,7 @@ export default function ProjectForm() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skillOpen, setSkillOpen] = useState<string | null>(null);
+  const [cropSource, setCropSource] = useState<{ src: string; remote: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const descRef = useRef<HTMLTextAreaElement>(null);
@@ -92,7 +94,7 @@ export default function ProjectForm() {
       .then((p) => {
         setTitle(p.title);
         setSummary(p.summary ?? '');
-        setDesc(p.longDesc.join('\n'));
+        setDesc(p.description);
         setPrototype(p.prototype ?? '');
         setCover(p.coverImage ?? 'gradient:aurora');
         setRecruits(
@@ -106,12 +108,29 @@ export default function ProjectForm() {
       });
   }, [id]);
 
-  const onPickFile = async (file: File | undefined) => {
+  // 고른 사진은 바로 올리지 않고, 16:9 로 잘라 낸 뒤에 올립니다.
+  const onPickFile = (file: File | undefined) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       setServerError('이미지는 5MB 이하로 올려 주세요');
       return;
     }
+    setServerError(null);
+    setCropSource({ src: URL.createObjectURL(file), remote: false });
+  };
+
+  /** 이미 올라간 커버를 다시 맞추기 — 원격 이미지라 CORS 가 열려 있어야 canvas 로 구울 수 있어요 */
+  const recropCurrent = () => {
+    const src = coverSource(cover);
+    if (!src || src.startsWith('gradient:')) return;
+    setServerError(null);
+    setCropSource({ src, remote: true });
+  };
+
+  const applyCrop = async (file: File) => {
+    const source = cropSource;
+    setCropSource(null);
+    if (source && !source.remote) URL.revokeObjectURL(source.src);
     setUploading(true);
     setServerError(null);
     try {
@@ -122,6 +141,14 @@ export default function ProjectForm() {
       setUploading(false);
     }
   };
+
+  const cancelCrop = () => {
+    if (cropSource && !cropSource.remote) URL.revokeObjectURL(cropSource.src);
+    setCropSource(null);
+  };
+
+  /* 커버는 16:9 로 구워서 저장하므로, 화면 폭이 달라져도 보이는 영역이 그대로입니다. */
+  const isImageCover = Boolean(coverSource(cover)) && !coverSource(cover).startsWith('gradient:');
 
   const titleValid = title.trim().length >= 2 && title.trim().length <= 40;
   const descValid = desc.trim().length > 0;
@@ -273,6 +300,14 @@ export default function ProjectForm() {
 
   return (
     <div className="project-focus-page relative z-20 min-h-screen flex flex-col">
+      {cropSource && (
+        <CoverCropper
+          src={cropSource.src}
+          crossOrigin={cropSource.remote}
+          onCancel={cancelCrop}
+          onApply={applyCrop}
+        />
+      )}
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
         <button
@@ -306,10 +341,21 @@ export default function ProjectForm() {
             {isEdit ? '바꾸고 싶은 항목만 고치면 돼요' : '등록하면 바로 탐색 피드에 노출돼요'}
           </p>
 
-          {/* 대표 이미지 */}
+          {/* 대표 이미지 — 미리보기는 카드와 같은 16:9 라, 여기서 보이는 그대로 목록에 나갑니다 */}
           <div className="mt-8">
-            <span className="text-sm font-medium text-white/80">대표 이미지</span>
-            <div className="relative mt-2.5 h-44 rounded-2xl overflow-hidden border border-white/10">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-white/80">대표 이미지</span>
+              {isImageCover && (
+                <button
+                  type="button"
+                  onClick={recropCurrent}
+                  className="text-xs text-white/60 hover:text-white transition-colors"
+                >
+                  다시 맞추기
+                </button>
+              )}
+            </div>
+            <div className="relative mt-2.5 aspect-[16/9] rounded-2xl overflow-hidden border border-white/10">
               <CoverFill cover={cover} fade={false} />
               <button
                 type="button"
@@ -324,9 +370,16 @@ export default function ProjectForm() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => onPickFile(e.target.files?.[0])}
+                onChange={(e) => {
+                  onPickFile(e.target.files?.[0]);
+                  e.target.value = ''; // 같은 파일을 다시 골라도 열리도록
+                }}
               />
             </div>
+            <p className="mt-2 text-xs text-white/60">
+              여기 보이는 16:9 그대로 카드와 상세에 나갑니다. 사진을 올리면 보여줄 부분을 직접 맞출 수
+              있어요.
+            </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {COVER_PRESETS.map((key) => {
                 const value = `gradient:${key}`;

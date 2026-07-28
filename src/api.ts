@@ -31,7 +31,8 @@ export type Project = {
   id: string;
   title: string;
   desc: string;
-  longDesc: string[];
+  /** 마크다운 원문. 빈 줄까지 그대로 — 문단·목록 구분이 여기에 달려 있어요 */
+  description: string;
   prototype: string | null;
   coverImage: string | null;
   summary: string | null;
@@ -44,6 +45,8 @@ export type Project = {
   pending: number;      // 대기중
   likes: number;
   bookmarks: number;
+  /** 오너 본인을 뺀, 이 프로젝트를 열어 본 크루 수 */
+  views: number;
   myLike: boolean;
   myBookmark: boolean;
   slots: Slot[];
@@ -256,13 +259,12 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
       confirmed: s.confirmed,
       skills: s.skills ?? [],
     }));
-  const paragraphs = row.description.split('\n').filter(Boolean);
 
   return {
     id: row.id,
     title: row.title,
     desc: row.summary?.trim() || stripMarkdown(row.description).slice(0, 90),
-    longDesc: paragraphs,
+    description: row.description,
     prototype: row.prototype_url,
     coverImage: row.cover_image,
     summary: row.summary,
@@ -275,6 +277,7 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     pending: 0,
     likes: 0,
     bookmarks: 0,
+    views: 0,
     myLike: false,
     myBookmark: false,
     slots: mySlots,
@@ -305,11 +308,12 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   const { data: auth } = await supabase.auth.getUser();
   const myId = auth.user?.id;
 
-  const [slotsRes, membersRes, applicantRes, reactionRes, myReactRes] = await Promise.all([
+  const [slotsRes, membersRes, applicantRes, reactionRes, viewRes, myReactRes] = await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
     supabase.from('project_members').select('*').in('project_id', ids),
     supabase.from('project_applicant_counts').select('*').in('project_id', ids),
     supabase.from('project_reaction_counts').select('*').in('project_id', ids),
+    supabase.from('project_view_counts').select('*').in('project_id', ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
@@ -327,6 +331,12 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
       (r) => [r.project_id, r],
     ),
   );
+  const views = new Map(
+    ((viewRes.data ?? []) as { project_id: string; views: number }[]).map((v) => [
+      v.project_id,
+      v.views,
+    ]),
+  );
   const mine = new Set(
     ((myReactRes.data ?? []) as { project_id: string; kind: string }[]).map(
       (r) => `${r.project_id}:${r.kind}`,
@@ -340,6 +350,7 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     p.pending = a?.pending ?? 0;
     p.applicants = a?.applicants ?? 0;
     p.likes = rc?.likes ?? 0;
+    p.views = views.get(r.id) ?? 0;
     p.bookmarks = rc?.bookmarks ?? 0;
     p.myLike = mine.has(`${r.id}:LIKE`);
     p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
@@ -401,7 +412,20 @@ export const api = {
       .select()
       .single();
     if (error) throw toApiError(error, '프로필 저장에 실패했어요');
-    return toUser(data as CrewRow);
+    const user = toUser(data as CrewRow);
+
+    /* 온보딩을 끝까지 누르지 않고 나간 크루는 onboarded 가 false 로 남습니다.
+     * 이후 프로필 수정으로 이름·분야·스킬을 다 채워도 이 값은 그대로라,
+     * 본인은 멀쩡히 쓰는데 크루 목록에서는 계속 빠져 보이지 않아요.
+     * 프로필이 갖춰졌다면 온보딩을 마친 것으로 봅니다. */
+    if (!user.onboarded && user.crewName && user.fields.length > 0 && user.skills.length > 0) {
+      const { error: promoteError } = await supabase
+        .from('crews')
+        .update({ onboarded: true })
+        .eq('id', auth.user.id);
+      if (!promoteError) user.onboarded = true;
+    }
+    return user;
   },
 
   /** 크루 한 명 상세 */
@@ -575,6 +599,14 @@ export const api = {
     });
     if (error) throw toApiError(error, '수정에 실패했어요');
     return api.project(id);
+  },
+
+  /** 조회 기록 — 오너 본인과 중복 조회는 DB 가 걸러냅니다.
+   *  실패해도 화면에는 영향이 없어야 하므로 조용히 넘어갑니다. */
+  async recordView(projectId: string): Promise<void> {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return; // 비로그인은 재방문을 구분할 수 없어 세지 않아요
+    await supabase.rpc('record_project_view', { p_id: projectId });
   },
 
   /** 좋아요 · 북마크 토글 (익명 카운트) */
