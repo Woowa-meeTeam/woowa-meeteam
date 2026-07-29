@@ -4,57 +4,35 @@ import { api } from '../api';
 import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
-const SCRAMBLE_SYMBOLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
 
 function ShuffleNumber({ value, delay = 0 }: { value: number; delay?: number }) {
-  const [display, setDisplay] = useState(value === 0 ? '0' : '');
+  const [display, setDisplay] = useState('0');
 
   useEffect(() => {
-    if (value === 0) {
-      setDisplay('0');
-      return;
-    }
+    setDisplay('0');
+    if (value === 0) return;
 
-    let frame = 0;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const target = String(value);
-    const start = performance.now();
-    const duration = 520;
+    let current = 0;
+    let startTimer: ReturnType<typeof setTimeout> | undefined;
+    let countTimer: ReturnType<typeof setTimeout> | undefined;
+    const stepMs = value > 50 ? 12 : 30;
 
-    const update = (now: number) => {
-      const elapsed = now - start - delay;
-      if (elapsed < 0) {
-        timer = setTimeout(() => {
-          frame = requestAnimationFrame(update);
-        }, 30);
-        return;
-      }
-
-      if (elapsed >= duration) {
-        setDisplay(target);
-        return;
-      }
-
-      setDisplay(
-        Array.from({ length: target.length }, () =>
-          SCRAMBLE_SYMBOLS[Math.floor(Math.random() * SCRAMBLE_SYMBOLS.length)],
-        ).join(''),
-      );
-      timer = setTimeout(() => {
-        frame = requestAnimationFrame(update);
-      }, 30);
+    const step = () => {
+      current += 1;
+      setDisplay(String(current));
+      if (current < value) countTimer = setTimeout(step, stepMs);
     };
 
-    frame = requestAnimationFrame(update);
+    startTimer = setTimeout(step, delay);
     return () => {
-      cancelAnimationFrame(frame);
-      if (timer) clearTimeout(timer);
+      if (startTimer) clearTimeout(startTimer);
+      if (countTimer) clearTimeout(countTimer);
     };
   }, [delay, value]);
 
   return (
     <span className="text-2xl font-bold tabular-nums" aria-label={String(value)}>
-      {display || ' '}
+      {display}
     </span>
   );
 }
