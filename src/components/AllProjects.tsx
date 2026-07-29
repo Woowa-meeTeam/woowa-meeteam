@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Plus, Search } from 'lucide-react';
 import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
-import FieldFilters from './FieldFilters';
+import FieldFilters, { ALL_FIELDS } from './FieldFilters';
 import ProjectSort, { sortProjects } from './ProjectSort';
 import type { SortKey } from './ProjectSort';
 import { api, PROJECT_CATEGORIES } from '../api';
@@ -24,15 +24,62 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 const countByStatus = (projects: Project[], status: StatusFilter) =>
   projects.filter((p) => p.status === status).length;
+
+type Filters = {
+  query: string;
+  field: string | null;
+  status: StatusFilter;
+  category: string | null;
+  sort: SortKey;
+};
+
+const EMPTY_FILTERS: Filters = {
+  query: '',
+  field: null,
+  status: 'all',
+  category: null,
+  sort: 'latest',
+};
+
+const FILTERS_KEY = 'meeteam:projects:filters';
+
+/**
+ * 상세나 크루를 보고 돌아왔을 때 고르던 조건이 남아 있도록 탭 세션에 담아 둡니다.
+ * 목록 밖으로 나갔다 오는 길이 여러 갈래(닫기·뒤로가기·크루 경유)라
+ * 저장해 둔 값을 다시 읽는 편이 경로마다 넘겨주는 것보다 확실합니다.
+ */
+function loadFilters(): Filters {
+  try {
+    const raw = sessionStorage.getItem(FILTERS_KEY);
+    if (!raw) return EMPTY_FILTERS;
+    const saved = JSON.parse(raw) as Partial<Filters>;
+    return {
+      query: typeof saved.query === 'string' ? saved.query : '',
+      // 분야·카테고리 목록이 바뀌었을 수 있어, 지금 없는 값이면 버립니다.
+      // 그대로 두면 아무것도 안 걸리는 빈 목록이 이유 없이 나옵니다.
+      field: ALL_FIELDS.includes(saved.field as string) ? (saved.field as string) : null,
+      status: STATUS_FILTERS.some((s) => s.key === saved.status)
+        ? (saved.status as StatusFilter)
+        : 'all',
+      category: PROJECT_CATEGORIES.includes(saved.category as string)
+        ? (saved.category as string)
+        : null,
+      sort: saved.sort === 'views' || saved.sort === 'likes' ? saved.sort : 'latest',
+    };
+  } catch {
+    return EMPTY_FILTERS;
+  }
+}
 export default function AllProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
-  const [field, setField] = useState<string | null>(null);
-  const [status, setStatus] = useState<StatusFilter>('all');
-  const [category, setCategory] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortKey>('latest');
+  const [saved] = useState(loadFilters);
+  const [query, setQuery] = useState(saved.query);
+  const [field, setField] = useState<string | null>(saved.field);
+  const [status, setStatus] = useState<StatusFilter>(saved.status);
+  const [category, setCategory] = useState<string | null>(saved.category);
+  const [sort, setSort] = useState<SortKey>(saved.sort);
 
   useEffect(() => {
     api
@@ -40,6 +87,17 @@ export default function AllProjects() {
       .then(setProjects)
       .catch((e) => setError(e.message));
   }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        FILTERS_KEY,
+        JSON.stringify({ query, field, status, category, sort } satisfies Filters),
+      );
+    } catch {
+      // 저장이 막힌 환경이면 조건을 기억하지 못할 뿐, 목록은 그대로 동작합니다
+    }
+  }, [query, field, status, category, sort]);
 
   const all = projects ?? [];
   const filtered = useMemo(() => {
