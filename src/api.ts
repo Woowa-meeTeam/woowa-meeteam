@@ -181,6 +181,9 @@ function toApiError(error: { message: string; code?: string } | null, fallback: 
 const toStatus = (s: string): ApplicationStatus =>
   s.toLowerCase() as ApplicationStatus;
 
+const PROJECT_VIEW_STORAGE_PREFIX = 'meeteam:project-viewed:';
+const PROJECT_VIEW_COOLDOWN_MS = 30 * 60 * 1000;
+
 /** 카드 미리보기용 — 마크다운 기호를 걷어내고 평문만 남깁니다 */
 export function stripMarkdown(md: string): string {
   return md
@@ -661,8 +664,54 @@ export const api = {
    *  내 프로젝트를 내가 연 건 DB 가 걸러내요.
    *  실패해도 화면에는 영향이 없어야 하므로 조용히 넘어갑니다. */
   async recordView(projectId: string): Promise<void> {
-    // 누적 조회수라 비로그인 방문도 함께 셉니다. 오너 본인 조회 제외는 DB 가 맡아요.
-    await supabase.rpc('record_project_view', { p_id: projectId });
+    // 일반적인 새로고침·재진입은 브라우저에서 먼저 걸러 DB 호출을 줄입니다.
+    // localStorage 를 사용할 수 없는 환경에서는 기존 RPC 흐름으로 fallback 합니다.
+    const storageKey = `${PROJECT_VIEW_STORAGE_PREFIX}${projectId}`;
+    let storage: Storage | null = null;
+    try {
+      storage = typeof window !== 'undefined' ? window.localStorage : null;
+    } catch {
+      storage = null;
+    }
+
+    const now = Date.now();
+    if (storage) {
+      try {
+        const lastViewedAt = Number(storage.getItem(storageKey));
+        if (
+          Number.isFinite(lastViewedAt) &&
+          lastViewedAt > 0 &&
+          now >= lastViewedAt &&
+          now - lastViewedAt < PROJECT_VIEW_COOLDOWN_MS
+        ) {
+          return;
+        }
+
+        // 오래된 프로젝트 키는 정리해 localStorage 가 계속 커지지 않게 합니다.
+        for (let i = storage.length - 1; i >= 0; i -= 1) {
+          const key = storage.key(i);
+          if (!key?.startsWith(PROJECT_VIEW_STORAGE_PREFIX)) continue;
+          const viewedAt = Number(storage.getItem(key));
+          if (!Number.isFinite(viewedAt) || now - viewedAt >= PROJECT_VIEW_COOLDOWN_MS) {
+            storage.removeItem(key);
+          }
+        }
+
+        // 여러 탭에서 동시에 열어도 RPC가 중복 호출될 가능성을 줄입니다.
+        storage.setItem(storageKey, String(now));
+      } catch {
+        storage = null;
+      }
+    }
+
+    try {
+      // 누적 조회수라 비로그인 방문도 함께 셉니다. 오너 본인 조회 제외는 DB 가 맡아요.
+      await supabase.rpc('record_project_view', { p_id: projectId });
+    } catch (error) {
+      // 실패한 요청은 다음 방문에서 재시도할 수 있도록 예약을 되돌립니다.
+      if (storage?.getItem(storageKey) === String(now)) storage.removeItem(storageKey);
+      throw error;
+    }
   },
 
   /** 좋아요 · 북마크 토글 (익명 카운트) */
