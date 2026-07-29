@@ -5,6 +5,7 @@ import { Check, Eye, ImagePlus, Link as LinkIcon, Minus, Pencil, Plus, Trash2, X
 import { COVER_PRESETS, CoverFill, HomeLogo, StatusBadge, coverSource } from './primitives';
 import CoverCropper from './CoverCropper';
 import Markdown from './Markdown';
+import useClose from './useClose';
 import { api, ApiError, FIELDS, PROJECT_CATEGORIES } from '../api';
 import type { Project } from '../api';
 
@@ -25,6 +26,7 @@ export default function ProjectForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const close = useClose(isEdit ? `/projects/${id}` : '/');
 
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
@@ -173,7 +175,8 @@ export default function ProjectForm() {
       const project = isEdit
         ? await api.updateProject(id!, payload)
         : await api.createProject(payload);
-      if (isEdit) navigate(`/projects/${project.id}`);
+      // 저장을 마친 폼은 되돌아갈 곳이 아니라 히스토리에서 대체합니다
+      if (isEdit) navigate(`/projects/${project.id}`, { replace: true });
       else setCreated(project);
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : '저장에 실패했어요');
@@ -188,7 +191,8 @@ export default function ProjectForm() {
     setServerError(null);
     try {
       await api.deleteProject(id);
-      navigate('/my');
+      // 지워진 프로젝트의 수정 화면으로 되돌아갈 수는 없습니다
+      navigate('/my', { replace: true });
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : '삭제에 실패했어요');
       setDeleting(false);
@@ -314,7 +318,7 @@ export default function ProjectForm() {
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
         <button
-          onClick={() => navigate(isEdit ? `/projects/${id}` : '/')}
+          onClick={close}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
           aria-label="닫기"
         >
@@ -778,14 +782,15 @@ export default function ProjectForm() {
             transition={{ duration: 0.6, delay: 0.45, ease: easeOut }}
             className="mt-8 w-full flex flex-col gap-2.5"
           >
+            {/* 등록을 마쳤으니 뒤로 가서 빈 폼으로 돌아오지 않도록 대체합니다 */}
             <button
-              onClick={() => navigate(`/projects/${created.id}`)}
+              onClick={() => navigate(`/projects/${created.id}`, { replace: true })}
               className="w-full h-12 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
             >
               프로젝트 보러 가기
             </button>
             <button
-              onClick={() => navigate('/my')}
+              onClick={() => navigate('/my', { replace: true })}
               className="w-full h-12 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors"
             >
               마이페이지

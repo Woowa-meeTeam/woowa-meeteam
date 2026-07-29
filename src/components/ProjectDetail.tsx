@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
 import Markdown from './Markdown';
+import useClose from './useClose';
 import { api, ApiError } from '../api';
 import type { Application, Project, User } from '../api';
 
@@ -34,7 +35,7 @@ export default function ProjectDetail() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   /** 상세에서 닫으면 진입한 화면(부스 지도 포함)으로 돌아갑니다. */
-  const backToList = () => navigate(-1);
+  const backToList = useClose('/projects');
 
   const [mode, setMode] = useState<Mode>('view');
   const [applyField, setApplyField] = useState<string | null>(null);

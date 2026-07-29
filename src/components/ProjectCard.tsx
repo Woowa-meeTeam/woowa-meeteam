@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import type { Project, ProjectStatus } from '../api';
-import { FIELD_SHORT } from '../api';
 import { Avatar, CoverFill } from './primitives';
+import ProjectSlots from './ProjectSlots';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -12,13 +12,6 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   RECRUITING: '모집중',
   CLOSED: '모집 마감',
   CONFIRMED: '팀 확정',
-};
-
-const fieldTone = (field: string) => {
-  if (field === '프론트엔드') return 'project-card__slot--frontend';
-  if (field === '백엔드') return 'project-card__slot--backend';
-  if (field === '안드로이드') return 'project-card__slot--android';
-  return 'project-card__slot--default';
 };
 
 type Props = {
@@ -74,16 +67,7 @@ export default function ProjectCard({
           <p className="project-card__description">{description}</p>
         </div>
 
-        <div className="project-card__slots" aria-label="모집 현황">
-          {project.slots.map((slot) => (
-            <span
-              key={slot.field}
-              className={`project-card__slot ${fieldTone(slot.field)}`}
-            >
-              {FIELD_SHORT[slot.field] ?? slot.field} 모집 {slot.confirmed}/{slot.capacity}
-            </span>
-          ))}
-        </div>
+        <ProjectSlots slots={project.slots} />
 
         <div className="project-card__footer">
           <div className="project-card__owner">

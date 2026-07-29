@@ -5,6 +5,7 @@ import { ArrowRight, ExternalLink, Pencil, ShieldCheck, Users } from 'lucide-rea
 import { Avatar, CoverFill } from './primitives';
 import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
+import ProjectSlots from './ProjectSlots';
 import { FIELD_STYLES } from './FieldFilters';
 import { api } from '../api';
 import type { Application, Project, ProjectStatus, User } from '../api';
@@ -219,10 +220,8 @@ export default function MyPage() {
                 )}
                 <h3 className="text-base font-semibold text-white">{p.title}</h3>
                 <p className="mt-1.5 text-sm text-white/70 leading-[1.5]">{p.desc}</p>
+                <ProjectSlots slots={p.slots} />
                 <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs text-white/70 tabular-nums">
-                    {p.slots.map((s) => `${s.field} ${s.confirmed}/${s.capacity}`).join(' · ')}
-                  </span>
                   <div className="flex items-center gap-2 ml-auto">
                     <button
                       onClick={() => navigate(`/projects/${p.id}/edit`)}
