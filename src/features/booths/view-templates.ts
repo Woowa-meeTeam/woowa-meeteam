@@ -313,12 +313,6 @@ export function renderShell(selectedFloorId: FloorId): string {
           </div>
         </div>
 
-        <div class="status-note glass-panel" role="note">
-          <span class="status-note__dot" aria-hidden="true"></span>
-          <strong>meeTeam 연동</strong>
-          <span>등록된 프로젝트 중 관리자가 배치한 부스만 표시됩니다.</span>
-        </div>
-
         <main class="viewer-layout">
           <section class="map-panel glass-panel" aria-label="층별 지도"></section>
           <aside

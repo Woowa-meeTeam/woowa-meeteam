@@ -156,31 +156,6 @@
   background: var(--color-action);
 }
 
-.booth-feature .status-note {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: fit-content;
-  margin-block-end: var(--space-5);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  color: var(--color-ink-muted);
-  font-size: var(--type-small);
-}
-
-.booth-feature .status-note__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand-cyan);
-  box-shadow: 0 0 16px var(--color-brand-cyan);
-}
-
-.booth-feature .status-note strong {
-  color: var(--color-ink);
-  font-weight: 650;
-}
-
 .booth-feature .viewer-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;

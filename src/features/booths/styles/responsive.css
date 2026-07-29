@@ -51,17 +51,6 @@
     padding-inline: var(--space-3);
   }
 
-  .booth-feature .status-note {
-    align-items: flex-start;
-    width: 100%;
-    margin-block-end: var(--space-3);
-    border-radius: var(--radius-control);
-  }
-
-  .booth-feature .status-note span {
-    line-height: 1.45;
-  }
-
   .booth-feature .viewer-layout {
     gap: var(--space-3);
   }
