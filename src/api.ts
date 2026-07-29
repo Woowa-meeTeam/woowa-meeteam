@@ -518,6 +518,32 @@ async function saveProjectExtras(
   await supabase.from('projects').update(body).eq('id', id);
 }
 
+let projectsInFlight: Promise<Project[]> | null = null;
+
+/**
+ * 홈의 현황판과 프로젝트 목록처럼 같은 시점에 전체 목록을 요구하는 호출은
+ * 하나의 요청을 공유합니다. 완료된 결과는 보관하지 않아 이후 조회는 최신 데이터를 받습니다.
+ */
+async function loadProjects(): Promise<Project[]> {
+  if (projectsInFlight) return projectsInFlight;
+
+  const request = (async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(PROJECT_SELECT)
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
+    return hydrate((data ?? []) as unknown as ProjectRow[]);
+  })();
+
+  projectsInFlight = request;
+  try {
+    return await request;
+  } finally {
+    if (projectsInFlight === request) projectsInFlight = null;
+  }
+}
+
 export const api = {
   /** GitHub OAuth 시작 — 리다이렉트되므로 반환되지 않습니다 (FR-AUTH-01) */
   async login() {
@@ -686,12 +712,7 @@ export const api = {
   },
 
   async projects(): Promise<Project[]> {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(PROJECT_SELECT)
-      .order('created_at', { ascending: false });
-    if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
-    return hydrate((data ?? []) as unknown as ProjectRow[]);
+    return loadProjects();
   },
 
   async myProjects(): Promise<Project[]> {
