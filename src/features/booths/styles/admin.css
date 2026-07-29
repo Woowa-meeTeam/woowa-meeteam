@@ -342,6 +342,14 @@
   pointer-events: none;
 }
 
+.booth-feature .admin-map {
+  background: var(--color-map-paper);
+}
+
+.booth-feature .admin-map .map-background > rect:first-child {
+  fill: var(--color-map-paper);
+}
+
 .booth-feature .admin-map .room-zoom-target {
   fill: transparent;
   cursor: zoom-in;

@@ -255,12 +255,17 @@
   display: block;
   width: 100%;
   aspect-ratio: var(--map-aspect, 1.56);
+  background: var(--color-map-paper);
   touch-action: pan-y;
   user-select: none;
 }
 
 .booth-feature .map-background {
   pointer-events: none;
+}
+
+.booth-feature .map-background > rect:first-child {
+  fill: var(--color-map-paper);
 }
 
 .booth-feature .booth-marker {
