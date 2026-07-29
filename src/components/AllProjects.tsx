@@ -5,17 +5,39 @@ import { Plus, Search } from 'lucide-react';
 import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import FieldFilters from './FieldFilters';
-import { api } from '../api';
+import { api, PROJECT_CATEGORIES } from '../api';
 import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
+
+type StatusFilter = 'all' | 'RECRUITING' | 'CLOSED' | 'CONFIRMED';
+
+/** 승인 대기·반려는 오너와 코치에게만 보이는 상태라 필터로 내놓지 않습니다 */
+const STATUS_FILTERS: { key: StatusFilter; label: string; activeCls: string }[] = [
+  { key: 'all', label: '전체', activeCls: 'border-white/60 text-white bg-white/10' },
+  {
+    key: 'RECRUITING',
+    label: '모집중',
+    activeCls: 'border-[#00C471]/50 text-[#9df0c4] bg-[#00C471]/15',
+  },
+  { key: 'CLOSED', label: '모집 마감', activeCls: 'border-white/35 text-white/85 bg-white/[0.08]' },
+  {
+    key: 'CONFIRMED',
+    label: '팀 확정',
+    activeCls: 'border-[#7db4ff]/60 text-[#a9cfff] bg-[#3182F6]/15',
+  },
+];
+
+const countByStatus = (projects: Project[], status: StatusFilter) =>
+  projects.filter((p) => p.status === status).length;
 export default function AllProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [field, setField] = useState<string | null>(null);
-  const [openOnly, setOpenOnly] = useState(false);
+  const [status, setStatus] = useState<StatusFilter>('all');
+  const [category, setCategory] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -24,10 +46,18 @@ export default function AllProjects() {
       .catch((e) => setError(e.message));
   }, []);
 
+  const all = projects ?? [];
+  /** 실제로 쓰이고 있는 분류만 — 순서는 PROJECT_CATEGORIES 를 따릅니다 */
+  const usedCategories = useMemo(() => {
+    const present = new Set(all.map((p) => p.category).filter(Boolean) as string[]);
+    return PROJECT_CATEGORIES.filter((c) => present.has(c));
+  }, [all]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (projects ?? []).filter((p) => {
-      if (openOnly && p.closed) return false;
+      if (status !== 'all' && p.status !== status) return false;
+      if (category && p.category !== category) return false;
       if (field && !p.slots.some((s) => s.field === field)) return false;
       if (!q) return true;
       return (
@@ -37,7 +67,7 @@ export default function AllProjects() {
         (p.owner?.name ?? '').toLowerCase().includes(q)
       );
     });
-  }, [projects, query, field, openOnly]);
+  }, [projects, query, field, status, category]);
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -76,20 +106,60 @@ export default function AllProjects() {
           />
         </div>
 
-        {/* 필터 */}
-        <FieldFilters value={field} onChange={setField} className="mt-4">
-          <button
-            type="button"
-            onClick={() => setOpenOnly((v) => !v)}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-              openOnly
-                ? 'border-[#00C471]/50 text-[#9df0c4] bg-[#00C471]/15'
-                : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
-            }`}
-          >
-            모집중만
-          </button>
-        </FieldFilters>
+        {/* 분야 필터 */}
+        <FieldFilters value={field} onChange={setField} className="mt-4" />
+
+        {/* 모집 상태 */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setStatus(item.key)}
+              className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                status === item.key
+                  ? item.activeCls
+                  : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
+              }`}
+            >
+              {item.label}
+              <span className="ml-1.5 text-xs opacity-60 tabular-nums">
+                {item.key === 'all' ? all.length : countByStatus(all, item.key)}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* 카테고리 — 등록된 것만 보여 줍니다. 빈 카테고리를 눌러 봐야 결과가 없으니까요 */}
+        {usedCategories.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCategory(null)}
+              className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                category === null
+                  ? 'border-white/60 text-white bg-white/10'
+                  : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/25 hover:text-white'
+              }`}
+            >
+              전체 분류
+            </button>
+            {usedCategories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(category === c ? null : c)}
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                  category === c
+                    ? 'border-[#7db4ff]/60 text-[#a9cfff] bg-[#3182F6]/15'
+                    : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/25 hover:text-white'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && (
           <p className="mt-8 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">

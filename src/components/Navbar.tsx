@@ -18,9 +18,15 @@ export default function Navbar({
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     api.me().then(setUser).catch(() => setUser(null));
+    // 확정된 팀이 있으면 팀 스페이스로 바로 갈 수 있게 첫 팀 id 를 들고 있습니다
+    api
+      .myTeams()
+      .then((teams) => setMyTeamId(teams[0]?.id ?? null))
+      .catch(() => setMyTeamId(null));
   }, []);
 
   // 랜딩 밖(프로젝트 탐색·크루 등)에서는 핸들러 없이 그냥 <Navbar /> 로 쓸 수 있게 기본 동작을 둡니다.
@@ -39,6 +45,8 @@ export default function Navbar({
     { label: '프로젝트 탐색', onClick: () => navigate('/projects') },
     { label: '크루', onClick: () => navigate('/crews') },
     { label: '부스 지도', onClick: () => navigate('/booths') },
+    // 확정된 팀이 있을 때만 노출 — 없는 사람에게 빈 페이지를 보여줄 이유가 없어요
+    ...(myTeamId ? [{ label: '나의 팀', onClick: () => navigate(`/teams/${myTeamId}`) }] : []),
     { label: 'FAQ', onClick: () => navigate('/faq') },
   ];
 

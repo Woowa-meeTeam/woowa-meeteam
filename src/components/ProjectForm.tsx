@@ -5,7 +5,7 @@ import { Check, Eye, ImagePlus, Link as LinkIcon, Minus, Pencil, Plus, Trash2, X
 import { COVER_PRESETS, CoverFill, HomeLogo, StatusBadge, coverSource } from './primitives';
 import CoverCropper from './CoverCropper';
 import Markdown from './Markdown';
-import { api, ApiError, FIELDS } from '../api';
+import { api, ApiError, FIELDS, PROJECT_CATEGORIES } from '../api';
 import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -31,6 +31,7 @@ export default function ProjectForm() {
   const [desc, setDesc] = useState('');
   const [prototype, setPrototype] = useState('');
   const [cover, setCover] = useState<string>('gradient:aurora');
+  const [category, setCategory] = useState<string | null>(null);
   const [recruits, setRecruits] = useState<Recruit[]>([
     { field: '프론트엔드', capacity: 1, skills: [] },
   ]);
@@ -97,6 +98,7 @@ export default function ProjectForm() {
         setDesc(p.description);
         setPrototype(p.prototype ?? '');
         setCover(p.coverImage ?? 'gradient:aurora');
+        setCategory(p.category);
         setRecruits(
           p.slots.map((s) => ({ field: s.field, capacity: s.capacity, skills: s.skills })),
         );
@@ -164,6 +166,7 @@ export default function ProjectForm() {
       desc: desc.trim(),
       prototype: prototype.trim() || undefined,
       coverImage: cover,
+      category,
       slots: recruits,
     };
     try {
@@ -399,6 +402,30 @@ export default function ProjectForm() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* 분류 — 앱스토어처럼 큰 단위로 묶어 탐색에서 골라볼 수 있게 */}
+          <div className="mt-8">
+            <span className="text-sm font-medium text-white/80">분류</span>
+            <p className="mt-1 text-xs text-white/55">
+              어떤 종류의 서비스인지 하나만 골라 주세요. 탐색에서 이 분류로 모아 볼 수 있어요.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {PROJECT_CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(category === c ? null : c)}
+                  className={`px-3.5 py-2 rounded-full border text-xs font-medium transition-all ${
+                    category === c
+                      ? 'border-[#7db4ff]/60 text-[#a9cfff] bg-[#3182F6]/15'
+                      : 'bg-white/[0.03] text-white/65 border-white/10 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
           </div>
 

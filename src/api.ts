@@ -47,6 +47,11 @@ export type Project = {
   bookmarks: number;
   /** 누적 조회수 — 오너 본인이 연 건 빼고, 열람할 때마다 1씩 */
   views: number;
+  /** 앱스토어식 큰 분류. 아직 안 고른 프로젝트는 null */
+  category: string | null;
+  /** 팀 스페이스에 모아 두는 링크 */
+  githubUrl: string | null;
+  notionUrl: string | null;
   myLike: boolean;
   myBookmark: boolean;
   slots: Slot[];
@@ -86,6 +91,20 @@ const CURRENT_FIELDS = new Set(FIELDS);
  */
 export const currentFields = (fields: string[] | null | undefined): string[] =>
   (fields ?? []).filter((f) => CURRENT_FIELDS.has(f));
+
+/** 프로젝트를 큰 단위로 묶는 분류 — 모집 분야(FIELDS)와는 다른 축입니다 */
+export const PROJECT_CATEGORIES = [
+  '생산성',
+  '소셜·커뮤니티',
+  '교육·학습',
+  '건강·운동',
+  '금융·자산',
+  '여행·지도',
+  '취미·엔터테인먼트',
+  '쇼핑·중고거래',
+  '개발자 도구',
+  '기타',
+];
 
 export const FIELD_SHORT: Record<string, string> = {
   백엔드: 'BE',
@@ -127,6 +146,7 @@ export type ProjectInput = {
   desc: string;
   prototype?: string;
   coverImage?: string;
+  category?: string | null;
   slots: { field: string; capacity: number; skills: string[] }[];
 };
 
@@ -278,6 +298,9 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     likes: 0,
     bookmarks: 0,
     views: 0,
+    category: null,
+    githubUrl: null,
+    notionUrl: null,
     myLike: false,
     myBookmark: false,
     slots: mySlots,
@@ -308,12 +331,16 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   const { data: auth } = await supabase.auth.getUser();
   const myId = auth.user?.id;
 
-  const [slotsRes, membersRes, applicantRes, reactionRes, viewRes, myReactRes] = await Promise.all([
+  const [slotsRes, membersRes, applicantRes, reactionRes, viewRes, extrasRes, myReactRes] =
+    await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
     supabase.from('project_members').select('*').in('project_id', ids),
     supabase.from('project_applicant_counts').select('*').in('project_id', ids),
     supabase.from('project_reaction_counts').select('*').in('project_id', ids),
     supabase.from('project_view_counts').select('*').in('project_id', ids),
+    // 나중에 추가된 컬럼이라 따로 읽습니다. 마이그레이션 적용 전에도 목록이 떠야 하니
+    // 여기서 실패해도 나머지 정보는 그대로 보여 줍니다.
+    supabase.from('projects').select('id, category, github_url, notion_url').in('id', ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
@@ -330,6 +357,16 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     ((reactionRes.data ?? []) as { project_id: string; likes: number; bookmarks: number }[]).map(
       (r) => [r.project_id, r],
     ),
+  );
+  const extras = new Map(
+    (
+      (extrasRes.data ?? []) as {
+        id: string;
+        category: string | null;
+        github_url: string | null;
+        notion_url: string | null;
+      }[]
+    ).map((e) => [e.id, e]),
   );
   const views = new Map(
     ((viewRes.data ?? []) as { project_id: string; views: number }[]).map((v) => [
@@ -351,6 +388,10 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     p.applicants = a?.applicants ?? 0;
     p.likes = rc?.likes ?? 0;
     p.views = views.get(r.id) ?? 0;
+    const extra = extras.get(r.id);
+    p.category = extra?.category ?? null;
+    p.githubUrl = extra?.github_url ?? null;
+    p.notionUrl = extra?.notion_url ?? null;
     p.bookmarks = rc?.bookmarks ?? 0;
     p.myLike = mine.has(`${r.id}:LIKE`);
     p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
@@ -359,6 +400,21 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
 }
 
 /* ── API ───────────────────────────────────────────────────── */
+
+/**
+ * RPC 시그니처 밖에 있는 컬럼(카테고리·팀 링크)을 오너 권한으로 직접 씁니다.
+ * create_project/update_project 는 인자 개수가 곧 시그니처라 인자를 늘리면
+ * 마이그레이션 적용 전까지 등록 자체가 깨져서, 이 값들만 따로 저장합니다.
+ * 컬럼이 아직 없는 환경에서도 본 저장은 성공해야 하므로 실패는 삼킵니다.
+ */
+async function saveProjectExtras(
+  id: string,
+  patch: { category?: string | null; github_url?: string | null; notion_url?: string | null },
+): Promise<void> {
+  const body = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
+  if (Object.keys(body).length === 0) return;
+  await supabase.from('projects').update(body).eq('id', id);
+}
 
 export const api = {
   /** GitHub OAuth 시작 — 리다이렉트되므로 반환되지 않습니다 (FR-AUTH-01) */
@@ -583,7 +639,9 @@ export const api = {
       p_slots: body.slots,
     });
     if (error) throw toApiError(error, '등록에 실패했어요');
-    return api.project((data as { id: string }).id);
+    const id = (data as { id: string }).id;
+    await saveProjectExtras(id, { category: body.category ?? null });
+    return api.project(id);
   },
 
   /** 오너가 등록한 프로젝트 수정 (FR-PRJ-06) — 확정 인원 훼손은 DB가 거부 */
@@ -598,6 +656,7 @@ export const api = {
       p_slots: body.slots,
     });
     if (error) throw toApiError(error, '수정에 실패했어요');
+    await saveProjectExtras(id, { category: body.category ?? null });
     return api.project(id);
   },
 
@@ -645,6 +704,19 @@ export const api = {
   async approveProject(id: string, approve: boolean): Promise<void> {
     const { error } = await supabase.rpc('approve_project', { p_id: id, p_approve: approve });
     if (error) throw toApiError(error, '승인 처리에 실패했어요');
+  },
+
+  /** 팀 스페이스 링크 저장 (오너만 — 컬럼 GRANT + RLS 가 강제) */
+  async saveTeamLinks(id: string, links: { githubUrl: string; notionUrl: string }): Promise<Project> {
+    const { error } = await supabase
+      .from('projects')
+      .update({
+        github_url: links.githubUrl.trim() || null,
+        notion_url: links.notionUrl.trim() || null,
+      })
+      .eq('id', id);
+    if (error) throw toApiError(error, '링크 저장에 실패했어요');
+    return api.project(id);
   },
 
   /** 팀 확정 (오너, 정원 충족 시) — 1인 1팀을 DB 가 강제 */

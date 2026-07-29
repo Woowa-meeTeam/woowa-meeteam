@@ -62,6 +62,10 @@ export default function ProjectCard({
           <i aria-hidden="true" />
           {STATUS_LABEL[project.status]}
         </span>
+
+        {project.category && (
+          <span className="project-card__category">{project.category}</span>
+        )}
       </div>
 
       <div className="project-card__body">

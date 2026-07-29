@@ -5,7 +5,7 @@ import { ArrowRight, Pencil, ShieldCheck, Users, X } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
 import ProjectCard from './ProjectCard';
 import { FIELD_STYLES } from './FieldFilters';
-import { api, FIELD_SHORT } from '../api';
+import { api } from '../api';
 import type { Application, Project, ProjectStatus, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -291,7 +291,7 @@ export default function MyPage() {
             {teams.map((p) => (
               <button
                 key={p.id}
-                onClick={() => navigate(`/projects/${p.id}`)}
+                onClick={() => navigate(`/teams/${p.id}`)}
                 className="w-full text-left liquid-glass rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-transform"
               >
                 <div className="relative h-24">
@@ -321,9 +321,7 @@ export default function MyPage() {
                       ))}
                     </div>
                     <span className="text-xs text-white/70 ml-1">{p.members.length}명</span>
-                    <span className="ml-auto text-[11px] text-white/60 tabular-nums">
-                      {p.slots.map((s) => FIELD_SHORT[s.field] ?? s.field).join(' · ')}
-                    </span>
+                    <span className="ml-auto text-[11px] text-[#7db4ff]">팀 스페이스 →</span>
                   </div>
                 </div>
               </button>

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
+import StatsBoard from './components/StatsBoard';
 import Steps from './components/Steps';
 import Onboarding from './components/Onboarding';
 import ProjectForm from './components/ProjectForm';
@@ -14,6 +15,7 @@ import Admin from './components/Admin';
 import FeedbackWidget from './components/FeedbackWidget';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
+import TeamSpace from './components/TeamSpace';
 import ApplicantManage from './components/ApplicantManage';
 import Faq from './components/Faq';
 import { api } from './api';
@@ -93,6 +95,7 @@ function Landing() {
     <>
       <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
       <Hero onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
+      <StatsBoard />
       <ProjectsShowcase
         onRegister={() => navigate('/projects/new')}
         onSelect={(id) => navigate(`/projects/${id}`)}
@@ -185,6 +188,7 @@ export default function App() {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />
+        <Route path="/teams/:id" element={<TeamSpace />} />
         <Route path="/faq" element={<FaqRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
