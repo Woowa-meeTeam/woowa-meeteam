@@ -239,19 +239,6 @@ function renderRoomPresentation(
         class="room-presentation__summary"
         style="opacity: ${isSummary ? 1 : 0}; pointer-events: ${isSummary ? "auto" : "none"}"
       >
-        ${
-          isSummary
-            ? `<rect
-                class="room-zoom-target"
-                x="${presentation.room.bounds.x}"
-                y="${presentation.room.bounds.y}"
-                width="${presentation.room.bounds.width}"
-                height="${presentation.room.bounds.height}"
-                data-room-name="${escapeMarkup(presentation.room.name)}"
-                aria-label="${escapeMarkup(`${presentation.room.name} 상세 지도 보기`)}"
-              />`
-            : ""
-        }
         ${summaryContent}
       </g>
       <g

@@ -350,11 +350,6 @@
   fill: var(--color-map-paper);
 }
 
-.booth-feature .admin-map .room-zoom-target {
-  fill: transparent;
-  cursor: zoom-in;
-}
-
 .booth-feature .admin-map .booth-marker {
   cursor: grab;
 }
