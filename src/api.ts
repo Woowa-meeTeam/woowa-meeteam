@@ -69,6 +69,7 @@ export type Application = {
   field: string;
   message: string;
   status: ApplicationStatus;
+  createdAt?: string;
   applicant: {
     id: string;
     name: string;
@@ -750,6 +751,20 @@ export const api = {
     return hydrate((data ?? []) as unknown as ProjectRow[]);
   },
 
+  /** 전체 지원 내역 — 관리자 전용. 개별 지원서 조회 권한은 RLS가 강제합니다. */
+  async adminApplications(): Promise<Application[]> {
+    const { data, error } = await supabase
+      .from('applications')
+      .select(
+        `id, project_id, field, message, status, created_at,
+         project:projects ( title, owner:crews!projects_owner_id_fkey ( crew_name ) ),
+         applicant:crews!applications_applicant_id_fkey ( id, crew_name, fields, skills, avatar_url )`,
+      )
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '지원 내역을 불러오지 못했어요');
+    return (data ?? []).map((r) => mapApplication(r as unknown as ApplicationRow));
+  },
+
   /** 내가 속한 확정된 팀 (오너이거나 수락된 멤버) */
   async myTeams(): Promise<Project[]> {
     const { data: auth } = await supabase.auth.getUser();
@@ -901,6 +916,7 @@ type ApplicationRow = {
   field: string;
   message: string;
   status: string;
+  created_at?: string;
   project: { title: string; owner: { crew_name: string | null } | null } | null;
   applicant: {
     id: string;
@@ -920,6 +936,7 @@ function mapApplication(r: ApplicationRow): Application {
     field: r.field,
     message: r.message,
     status: toStatus(r.status),
+    createdAt: r.created_at,
     applicant: r.applicant
       ? {
           id: r.applicant.id,

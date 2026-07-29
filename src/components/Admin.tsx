@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, Check, RotateCcw, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, Check, RotateCcw, ShieldCheck, Users, X } from 'lucide-react';
 import { Avatar, CoverFill, HomeLogo } from './primitives';
 import { api, ApiError, FEEDBACK_KIND_LABEL } from '../api';
-import type { Feedback, Project, User } from '../api';
+import type { Application, Feedback, Project, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -16,6 +16,8 @@ export default function Admin() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [pending, setPending] = useState<Project[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationFilter, setApplicationFilter] = useState<'ACTIVE' | 'ALL'>('ACTIVE');
   const [filter, setFilter] = useState<'OPEN' | 'ALL'>('OPEN');
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -31,14 +33,16 @@ export default function Admin() {
           return;
         }
         setUser(me);
-        const [s, p, f] = await Promise.all([
+        const [s, p, f, a] = await Promise.all([
           api.adminStats(),
           api.pendingProjects(),
           api.feedbacks(),
+          api.adminApplications(),
         ]);
         setStats(s);
         setPending(p);
         setFeedbacks(f);
+        setApplications(a);
         setReady(true);
       })
       .catch(() => navigate('/', { replace: true }));
@@ -76,6 +80,18 @@ export default function Admin() {
 
   const shown = feedbacks.filter((f) => (filter === 'OPEN' ? f.status === 'OPEN' : true));
   const openCount = feedbacks.filter((f) => f.status === 'OPEN').length;
+  const shownApplications = applications.filter((a) =>
+    applicationFilter === 'ACTIVE' ? a.status !== 'canceled' : true,
+  );
+  const activeApplicationCount = applications.filter((a) => a.status !== 'canceled').length;
+  const applicationGroups = Array.from(
+    shownApplications.reduce((groups, application) => {
+      const group = groups.get(application.projectId) ?? [];
+      group.push(application);
+      groups.set(application.projectId, group);
+      return groups;
+    }, new Map<string, Application[]>()),
+  );
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -197,6 +213,93 @@ export default function Admin() {
                 >
                   승인하고 게시
                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 전체 지원 내역 */}
+        <div className="mt-10 flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-white/80">
+            <Users className="w-4 h-4 text-[#7db4ff]" />
+            전체 지원 내역 <span className="text-white/60 font-normal">{shownApplications.length}건</span>
+          </h2>
+          <div className="flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
+            {(['ACTIVE', 'ALL'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setApplicationFilter(f)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  applicationFilter === f ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                {f === 'ACTIVE' ? `유효 ${activeApplicationCount}` : '전체'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {applicationGroups.length === 0 && (
+            <p className="text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+              지원 내역이 없어요
+            </p>
+          )}
+          {applicationGroups.map(([projectId, projectApplications]) => (
+            <div key={projectId} className="liquid-glass rounded-2xl overflow-hidden">
+              <div className="px-4 py-3.5 flex items-center justify-between gap-3 border-b border-white/10">
+                <button
+                  onClick={() => navigate(`/projects/${projectId}`)}
+                  className="min-w-0 text-left text-sm font-semibold text-white hover:text-[#9dc5ff] transition-colors truncate"
+                >
+                  {projectApplications[0].projectTitle || '삭제된 프로젝트'}
+                </button>
+                <span className="flex-shrink-0 text-xs text-white/60">
+                  {projectApplications.length}명 지원
+                </span>
+              </div>
+              <div className="divide-y divide-white/10">
+                {projectApplications.map((a) => {
+                  const statusLabel = {
+                    pending: '검토 중',
+                    accepted: '수락됨',
+                    rejected: '거절됨',
+                    canceled: '취소됨',
+                  }[a.status];
+                  const statusClass = {
+                    pending: 'text-[#ffd27d] border-[#FFB020]/40 bg-[#FFB020]/10',
+                    accepted: 'text-[#7ee8b2] border-[#00C471]/40 bg-[#00C471]/10',
+                    rejected: 'text-white/60 border-white/15 bg-white/5',
+                    canceled: 'text-white/40 border-white/10 bg-white/[0.03]',
+                  }[a.status];
+                  return (
+                    <div
+                      key={a.id}
+                      className={`px-4 py-3 flex items-center gap-3 ${a.status === 'canceled' ? 'opacity-55' : ''}`}
+                    >
+                      <Avatar
+                        name={a.applicant?.name}
+                        avatarUrl={a.applicant?.avatarUrl}
+                        gradient={a.applicant?.avatarGradient}
+                        className="w-8 h-8 text-[11px] flex-shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-white">
+                          {a.applicant?.name ?? '탈퇴한 크루'}
+                          <span className="ml-2 text-[11px] font-normal text-white/55">{a.field}</span>
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-white/45">
+                          {a.createdAt ? new Date(a.createdAt).toLocaleDateString('ko-KR') : '날짜 미상'}
+                        </div>
+                        <p className="mt-2 text-xs text-white/70 leading-[1.55] whitespace-pre-line bg-white/[0.04] rounded-lg px-3 py-2">
+                          {a.message}
+                        </p>
+                      </div>
+                      <span className={`flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
