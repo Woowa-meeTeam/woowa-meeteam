@@ -186,17 +186,16 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* 등록한 프로젝트 — 관리용이라 카드보다 가로로 긴 줄이 읽기 좋아요.
-            페이지가 넓어져도 본문 폭을 잡아 가운데로 모읍니다. */}
+        {/* 모든 프로젝트 탭은 북마크 탭과 같은 공용 카드 그리드를 사용합니다. */}
         {tab === 'owned' && (
-          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
+          <div className="project-card-grid mt-8">
             {ownedProjects.length === 0 && (
               <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 등록한 프로젝트가 없어요
               </p>
             )}
             {ownedProjects.map((p) => (
-              <div key={p.id} className="liquid-glass rounded-2xl p-5">
+              <div key={p.id} className="project-card min-h-[438px] p-5">
                 {/* 대표 이미지 — 카드·상세와 같은 16:9 로, 어느 프로젝트인지 한눈에 */}
                 <button
                   type="button"
@@ -248,7 +247,7 @@ export default function MyPage() {
 
         {/* 지원한 프로젝트 */}
         {tab === 'applied' && (
-          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
+          <div className="project-card-grid mt-8">
             {applications.length === 0 && (
               <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 지원한 프로젝트가 없어요
@@ -258,7 +257,7 @@ export default function MyPage() {
               <button
                 key={a.id}
                 onClick={() => navigate(`/projects/${a.projectId}`)}
-                className="w-full text-left liquid-glass rounded-2xl p-5 hover:-translate-y-0.5 transition-transform"
+                className="project-card min-h-[438px] w-full justify-between p-5 hover:-translate-y-0.5 transition-transform"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -293,7 +292,7 @@ export default function MyPage() {
 
         {/* 나의 팀 (확정된 팀) */}
         {tab === 'teams' && (
-          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
+          <div className="project-card-grid mt-8">
             {teams.length === 0 && (
               <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 확정된 팀이 없어요.
@@ -307,7 +306,7 @@ export default function MyPage() {
               <button
                 key={p.id}
                 onClick={() => navigate(`/teams/${p.id}`)}
-                className="w-full text-left liquid-glass rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-transform"
+                className="project-card min-h-[438px] w-full overflow-hidden hover:-translate-y-0.5 transition-transform"
               >
                 <div className="relative h-24">
                   <CoverFill cover={p.coverImage} />
@@ -376,14 +375,14 @@ function ReactionProjectList({
 }) {
   if (projects.length === 0) {
     return (
-      <p className="mt-8 mx-auto w-full max-w-4xl border-y border-white/10 py-14 text-center text-sm text-white/50">
+    <p className="mt-8 w-full border-y border-white/10 py-14 text-center text-sm text-white/50">
         {emptyMessage}
       </p>
     );
   }
 
   return (
-    <div className="project-card-grid mt-8 mx-auto w-full max-w-4xl">
+    <div className="project-card-grid mt-8">
       {projects.map((p, i) => (
         <ProjectCard
           key={p.id}

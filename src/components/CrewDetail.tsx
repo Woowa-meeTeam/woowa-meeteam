@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, ExternalLink, X } from 'lucide-react';
-import { Avatar, CoverFill, HomeLogo, StatusBadge } from './primitives';
-import { api, FIELD_SHORT } from '../api';
+import { ExternalLink } from 'lucide-react';
+import { Avatar } from './primitives';
+import Navbar from './Navbar';
+import { FIELD_STYLES } from './FieldFilters';
+import ProjectCard from './ProjectCard';
+import { api } from '../api';
 import type { Project, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -45,135 +48,109 @@ export default function CrewDetail() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <HomeLogo />
-        <button
-          onClick={() => navigate('/crews')}
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="크루 목록으로"
-        >
-          <X className="w-[18px] h-[18px]" />
-        </button>
-      </div>
+      <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: easeOut }}
-        className="flex-1 max-w-2xl w-full mx-auto px-6 pb-20"
+        className="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-6 pb-16"
       >
-        <button
-          onClick={() => navigate('/crews')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          크루 목록
-        </button>
+        <h1 className="page-title">크루 프로필</h1>
 
-        {/* 프로필 */}
-        <div className="mt-7 flex items-center gap-5">
-          <Avatar
-            name={crew.crewName}
-            avatarUrl={crew.avatarUrl}
-            gradient={crew.avatarGradient}
-            className="w-20 h-20 text-2xl"
-          />
-          <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-white">
-              {crew.crewName}
-            </h1>
+        <section className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
+          <div className="order-last lg:order-first">
+            <div className="flex items-center gap-5">
+              <h2 className="shrink-0 text-sm font-semibold tracking-[0.18em] text-white/75">
+                기술 스택
+              </h2>
+              <span className="h-px flex-1 bg-white/15" aria-hidden="true" />
+            </div>
+
+            {crew.skills.length > 0 ? (
+              <div className="mt-5 grid grid-cols-2 border-y border-white/15 sm:grid-cols-3">
+                {crew.skills.map((skill, index) => (
+                  <div
+                    key={skill}
+                    className="min-h-24 border-b border-r border-white/10 p-5 last:border-b-0 sm:[&:nth-last-child(-n+3)]:border-b-0"
+                  >
+                    <span className="text-[10px] font-medium tracking-[0.18em] text-[#7db4ff]/70">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <p className="mt-2 text-base font-medium text-white/90">{skill}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 border-y border-white/15 py-10 text-sm text-white/45">
+                등록된 기술 스택이 없어요.
+              </p>
+            )}
+          </div>
+
+          <aside className="order-first flex flex-col items-center text-center lg:order-last lg:border-l lg:border-white/10 lg:pl-16">
+            <Avatar
+              name={crew.crewName}
+              avatarUrl={crew.avatarUrl}
+              gradient={crew.avatarGradient}
+              className="h-36 w-36 text-3xl ring-1 ring-white/20"
+            />
+            <h2 className="mt-6 text-2xl font-semibold tracking-tight">{crew.crewName}</h2>
+            {crew.fields.length > 0 ? (
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {crew.fields.map((field) => (
+                  <span
+                    key={field}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                      FIELD_STYLES[field]?.tag ??
+                      'border-white/20 bg-white/[0.06] text-white/70'
+                    }`}
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-white/45">분야 미설정</p>
+            )}
             <a
               href={`https://github.com/${crew.githubLogin}`}
               target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/65 hover:text-[#7db4ff] transition-colors"
+              rel="noreferrer"
+              className="mt-5 inline-flex max-w-full items-center gap-1.5 text-sm text-[#7db4ff] transition-colors hover:text-[#a9cbff]"
             >
-              @{crew.githubLogin}
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="truncate">github.com/{crew.githubLogin}</span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
             </a>
-          </div>
-        </div>
-
-        {crew.bio && (
-          <p className="mt-6 text-[15px] text-white/70 leading-[1.75] whitespace-pre-line">
-            {crew.bio}
-          </p>
-        )}
-
-        {/* 분야 */}
-        <div className="mt-7">
-          <h2 className="text-sm font-semibold text-white/80">분야</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {crew.fields.map((f) => (
-              <span
-                key={f}
-                className="text-sm font-medium px-3.5 py-1.5 rounded-full border border-[#3182F6]/40 text-[#7db4ff] bg-[#3182F6]/10"
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* 스킬 */}
-        {crew.skills.length > 0 && (
-          <div className="mt-7">
-            <h2 className="text-sm font-semibold text-white/80">스킬</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {crew.skills.map((s) => (
-                <span
-                  key={s}
-                  className="text-sm text-white/70 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.03]"
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+            {crew.bio && (
+              <p className="mt-5 max-w-xs whitespace-pre-line text-sm leading-6 text-white/50">
+                {crew.bio}
+              </p>
+            )}
+          </aside>
+        </section>
 
         {/* 등록한 프로젝트 */}
-        <div className="mt-10">
-          <h2 className="text-sm font-semibold text-white/80">
+        <div className="mt-14">
+          <div className="flex items-center gap-5">
+            <h2 className="shrink-0 text-sm font-semibold tracking-[0.18em] text-white/75">
             등록한 프로젝트 <span className="text-white/60 font-normal">{projects.length}개</span>
-          </h2>
+            </h2>
+            <span className="h-px flex-1 bg-white/15" aria-hidden="true" />
+          </div>
           {projects.length === 0 ? (
-            <p className="mt-3 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+            <p className="mt-5 text-sm text-white/60 py-10 text-center border-y border-white/10">
               아직 등록한 프로젝트가 없어요
             </p>
           ) : (
-            <div className="mt-4 grid sm:grid-cols-2 gap-4">
-              {projects.map((p) => (
-                <button
+            <div className="project-card-grid mt-8">
+              {projects.map((p, index) => (
+                <ProjectCard
                   key={p.id}
+                  project={p}
+                  index={index}
                   onClick={() => navigate(`/projects/${p.id}`)}
-                  className={`liquid-glass rounded-2xl overflow-hidden text-left transition-transform hover:-translate-y-1 ${
-                    p.closed ? 'opacity-[0.85]' : ''
-                  }`}
-                >
-                  <div className="relative h-28">
-                    <CoverFill cover={p.coverImage} />
-                    <div className="absolute top-3 left-3">
-                      <StatusBadge status={p.status} />
-                    </div>
-                  </div>
-                  <div className="p-4 pt-3">
-                    <h3 className="text-sm font-semibold text-white leading-snug">{p.title}</h3>
-                    <p className="mt-1.5 text-xs text-white/70 leading-[1.5] line-clamp-2">
-                      {p.desc}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {p.slots.map((s) => (
-                        <span
-                          key={s.field}
-                          className="text-[11px] px-2 py-0.5 rounded-full border border-white/15 text-white/70 bg-white/[0.04] tabular-nums"
-                        >
-                          {FIELD_SHORT[s.field] ?? s.field} {s.confirmed}/{s.capacity}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           )}
