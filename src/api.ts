@@ -664,6 +664,11 @@ export const api = {
    *  내 프로젝트를 내가 연 건 DB 가 걸러내요.
    *  실패해도 화면에는 영향이 없어야 하므로 조용히 넘어갑니다. */
   async recordView(projectId: string): Promise<void> {
+    // 비로그인 방문은 조회수에 포함하지 않습니다. 세션 확인은 로컬 캐시를 사용해
+    // 익명 방문에서 불필요한 localStorage/RPC 작업도 하지 않게 합니다.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.user) return;
+
     // 일반적인 새로고침·재진입은 브라우저에서 먼저 걸러 DB 호출을 줄입니다.
     // localStorage 를 사용할 수 없는 환경에서는 기존 RPC 흐름으로 fallback 합니다.
     const storageKey = `${PROJECT_VIEW_STORAGE_PREFIX}${projectId}`;
