@@ -32,6 +32,9 @@ export default function ProjectDetail() {
   const [myApplication, setMyApplication] = useState<Application | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  /** 상세에서 빠져나올 곳은 랜딩이 아니라 프로젝트 탐색입니다 */
+  const backToList = () => navigate('/projects');
+
   const [mode, setMode] = useState<Mode>('view');
   const [applyField, setApplyField] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -150,7 +153,7 @@ export default function ProjectDetail() {
       <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
         <HomeLogo />
         <button
-          onClick={() => navigate('/')}
+          onClick={backToList}
           className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
           aria-label="목록으로 돌아가기"
         >
@@ -167,7 +170,7 @@ export default function ProjectDetail() {
           className="project-page-surface project-detail-surface max-w-2xl w-full mx-auto px-6 pb-16"
         >
           <button
-            onClick={() => navigate('/')}
+            onClick={backToList}
             className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
