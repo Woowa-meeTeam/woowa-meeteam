@@ -20,6 +20,14 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'CONFIRMED', label: '팀 확정' },
 ];
 
+type SortKey = 'latest' | 'views' | 'likes';
+
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'latest', label: '등록순' },
+  { key: 'views', label: '조회수순' },
+  { key: 'likes', label: '좋아요순' },
+];
+
 const countByStatus = (projects: Project[], status: StatusFilter) =>
   projects.filter((p) => p.status === status).length;
 export default function AllProjects() {
@@ -30,6 +38,7 @@ export default function AllProjects() {
   const [field, setField] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusFilter>('all');
   const [category, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>('latest');
 
   useEffect(() => {
     api
@@ -41,7 +50,7 @@ export default function AllProjects() {
   const all = projects ?? [];
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (projects ?? []).filter((p) => {
+    const list = (projects ?? []).filter((p) => {
       if (status !== 'all' && p.status !== status) return false;
       if (category && p.category !== category) return false;
       if (field && !p.slots.some((s) => s.field === field)) return false;
@@ -53,7 +62,11 @@ export default function AllProjects() {
         (p.owner?.name ?? '').toLowerCase().includes(q)
       );
     });
-  }, [projects, query, field, status, category]);
+    // 목록이 등록 최신순으로 내려오니 '등록순'은 그대로 둡니다
+    if (sort === 'latest') return list;
+    const weight = sort === 'views' ? (p: Project) => p.views : (p: Project) => p.likes;
+    return [...list].sort((a, b) => weight(b) - weight(a));
+  }, [projects, query, field, status, category, sort]);
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -128,29 +141,48 @@ export default function AllProjects() {
         {/* 분야 필터 */}
         <FieldFilters value={field} onChange={setField} className="mt-3" />
 
-        {/* 프로젝트 목록과 모집 상태 필터 */}
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        {/* 프로젝트 목록과 정렬 · 모집 상태 필터 */}
+        <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-lg font-semibold text-white/90">프로젝트 목록</h2>
-          <div className="flex flex-wrap items-center justify-end text-sm">
-            {STATUS_FILTERS.map((item, index) => (
-              <span key={item.key} className="inline-flex items-center">
-                {index > 0 && <span className="mx-2 text-white/20">|</span>}
-                <button
-                  type="button"
-                  onClick={() => setStatus(item.key)}
-                  className={`font-medium transition-colors ${
-                    status === item.key
-                      ? 'text-white'
-                      : 'text-white/50 hover:text-white/85'
-                  }`}
-                >
-                  {item.label}
-                  <span className="ml-1 text-xs opacity-60 tabular-nums">
-                    {item.key === 'all' ? all.length : countByStatus(all, item.key)}
-                  </span>
-                </button>
-              </span>
-            ))}
+          <div className="flex flex-col items-end gap-2">
+            {/* 정렬 기준 — 상태 필터보다 한 단계 작게 두어 둘을 구분합니다 */}
+            <div className="flex flex-wrap items-center justify-end text-xs">
+              {SORTS.map((item, index) => (
+                <span key={item.key} className="inline-flex items-center">
+                  {index > 0 && <span className="mx-2 text-white/20">|</span>}
+                  <button
+                    type="button"
+                    onClick={() => setSort(item.key)}
+                    className={`font-medium transition-colors ${
+                      sort === item.key ? 'text-white' : 'text-white/40 hover:text-white/75'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center justify-end text-sm">
+              {STATUS_FILTERS.map((item, index) => (
+                <span key={item.key} className="inline-flex items-center">
+                  {index > 0 && <span className="mx-2 text-white/20">|</span>}
+                  <button
+                    type="button"
+                    onClick={() => setStatus(item.key)}
+                    className={`font-medium transition-colors ${
+                      status === item.key
+                        ? 'text-white'
+                        : 'text-white/50 hover:text-white/85'
+                    }`}
+                  >
+                    {item.label}
+                    <span className="ml-1 text-xs opacity-60 tabular-nums">
+                      {item.key === 'all' ? all.length : countByStatus(all, item.key)}
+                    </span>
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
