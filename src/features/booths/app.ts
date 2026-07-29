@@ -49,7 +49,7 @@ export class BoothMapApp {
     this.onToggleReaction = options.onToggleReaction
     const initialLocation = this.findBoothLocation(options.initialProjectId)
     this.selectedFloorId = initialLocation?.floorId ?? 11
-    this.selectedBoothId = initialLocation?.booth.id ?? layout[this.selectedFloorId][0]?.id ?? null
+    this.selectedBoothId = initialLocation?.booth.id ?? null
     this.mapView = initialLocation
       ? { kind: "room", roomName: initialLocation.booth.roomName }
       : { kind: "floor" }
@@ -102,7 +102,7 @@ export class BoothMapApp {
       const button = queryRequired<HTMLButtonElement>(this.root, `[data-floor-id="${floorId}"]`)
       button.addEventListener("click", () => {
         this.selectedFloorId = floorId
-        this.selectedBoothId = this.layout[floorId][0]?.id ?? null
+        this.selectedBoothId = null
         this.mapView = { kind: "floor" }
         this.updateFloorButtonStates()
         this.renderCurrentFloor()
@@ -200,7 +200,10 @@ export class BoothMapApp {
     const boothId = this.getBoothIdFromEvent(event)
     if (boothId !== null) {
       this.selectBooth(boothId)
+      return
     }
+
+    this.clearSelection()
   }
 
   private getBoothIdFromEvent(event: Event): string | null {
@@ -225,7 +228,6 @@ export class BoothMapApp {
     if (this.isMapTransitioning) {
       return
     }
-    const booths = this.layout[this.selectedFloorId].filter((booth) => booth.roomName === roomName)
     const room = roomsByFloor[this.selectedFloorId].find((candidate) => candidate.name === roomName)
     if (!room) {
       return
@@ -245,7 +247,7 @@ export class BoothMapApp {
       this.isMapTransitioning = false
     }
     this.mapView = { kind: "room", roomName }
-    this.selectedBoothId = booths[0]?.id ?? null
+    this.selectedBoothId = null
     this.renderCurrentFloor(svg)
   }
 
@@ -286,6 +288,17 @@ export class BoothMapApp {
     const project = findMeeteamProject(this.projects, booth.projectId)
     const displayName = project?.ownerDisplayName ?? "프로젝트 정보가 없는"
     this.updateLiveStatus(`${displayName} 부스를 선택했습니다. ${booth.roomName}에 있습니다.`)
+  }
+
+  private clearSelection(): void {
+    if (this.selectedBoothId === null) {
+      return
+    }
+
+    this.selectedBoothId = null
+    this.updateMarkerStates()
+    this.renderBoothDetail()
+    this.updateLiveStatus("부스 선택을 해제했습니다.")
   }
 
   private renderBoothDetail(): void {
