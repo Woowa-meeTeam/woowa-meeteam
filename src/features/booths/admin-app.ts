@@ -36,6 +36,12 @@ type BoothDropTarget = BoothBounds & {
   readonly roomName: string
 }
 
+export type BoothAdminSessionSnapshot = {
+  readonly layout: BoothLayout
+  readonly roomSizeModes: RoomSizeModes
+  readonly scrollY: number
+}
+
 const svgNamespace = "http://www.w3.org/2000/svg"
 
 export class BoothAdminApp {
@@ -86,6 +92,14 @@ export class BoothAdminApp {
     this.dragController?.destroy()
     this.resizeObserver.disconnect()
     this.root.replaceChildren()
+  }
+
+  public get sessionSnapshot(): BoothAdminSessionSnapshot {
+    return {
+      layout: this.state.layoutSnapshot,
+      roomSizeModes: this.state.roomSizeModesSnapshot,
+      scrollY: window.scrollY,
+    }
   }
 
   private get availableProjects(): readonly MeeteamProject[] {
@@ -523,7 +537,7 @@ export class BoothAdminApp {
     frame?.setAttribute("y", String(target.y))
     frame?.setAttribute("width", String(target.width))
     frame?.setAttribute("height", String(target.height))
-    frame?.setAttribute("rx", "16")
+    frame?.setAttribute("rx", String(Math.min(8, target.width / 5, target.height / 4)))
     label?.setAttribute("x", String(target.x + target.width / 2))
     label?.setAttribute("y", String(target.y + target.height * 0.58))
     if (svg.getAttribute("data-map-orientation") === "clockwise") {

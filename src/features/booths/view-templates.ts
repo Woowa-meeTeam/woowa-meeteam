@@ -58,21 +58,14 @@ export function renderBoothMarker(
   booth: Booth,
   project: MeeteamProject | undefined,
   selectedBoothId: string | null,
-  markerScale = 1,
   orientation: MapOrientation = "standard",
-  projectionScale = 1,
 ): string {
   const isSelected = booth.id === selectedBoothId
   const displayName = project?.ownerDisplayName ?? "프로젝트 정보 없음"
   const centerX = booth.x + booth.width / 2
   const centerY = booth.y + booth.height / 2
   const cornerRadius = Math.min(8, booth.width / 5, booth.height / 4)
-  const labelProjectionScale = projectionScale * markerScale
-  const labels = boothLabelMetrics(booth, orientation, displayName, labelProjectionScale)
-  const transform =
-    markerScale === 1
-      ? ""
-      : `transform="translate(${centerX} ${centerY}) scale(${markerScale}) translate(${-centerX} ${-centerY})"`
+  const labels = boothLabelMetrics(booth, orientation, displayName)
   const labelTransform =
     orientation === "clockwise" ? `transform="rotate(-90 ${centerX} ${centerY})"` : ""
   const reactionLabel =
@@ -92,11 +85,9 @@ export function renderBoothMarker(
       aria-pressed="${isSelected}"
       data-selected="${isSelected}"
       data-booth-id="${escapeMarkup(booth.id)}"
-      data-marker-scale="${markerScale}"
-      data-label-projection-scale="${labelProjectionScale}"
       data-map-orientation="${orientation}"
     >
-      <g class="booth-marker__visual" ${transform}>
+      <g class="booth-marker__visual">
         <rect
           x="${booth.x}"
           y="${booth.y}"
@@ -204,9 +195,7 @@ export function renderMapLayers(viewModel: BoothMapViewModel): string {
           booth,
           findMeeteamProject(projects, booth.projectId),
           selectedBoothId,
-          1,
           orientation,
-          floorProjectionScale,
         ),
       )
     }
@@ -238,7 +227,7 @@ function renderRoomPresentation(
   const summaryContent =
     (state === "detail" || presentation.mode === "summary") && presentation.booths.length > 0
       ? renderRoomEntry(presentation, floorProjectionScale)
-      : renderRoomBooths(presentation, projects, selectedBoothId, "standard", false).join("")
+      : renderRoomBooths(presentation, projects, selectedBoothId, "standard").join("")
   return `
     <g
       class="room-presentation"
@@ -250,6 +239,19 @@ function renderRoomPresentation(
         class="room-presentation__summary"
         style="opacity: ${isSummary ? 1 : 0}; pointer-events: ${isSummary ? "auto" : "none"}"
       >
+        ${
+          isSummary
+            ? `<rect
+                class="room-zoom-target"
+                x="${presentation.room.bounds.x}"
+                y="${presentation.room.bounds.y}"
+                width="${presentation.room.bounds.width}"
+                height="${presentation.room.bounds.height}"
+                data-room-name="${escapeMarkup(presentation.room.name)}"
+                aria-label="${escapeMarkup(`${presentation.room.name} 상세 지도 보기`)}"
+              />`
+            : ""
+        }
         ${summaryContent}
       </g>
       <g
@@ -261,9 +263,6 @@ function renderRoomPresentation(
           projects,
           selectedBoothId,
           detailOrientation,
-          // 상세 지도에서는 저장된 부스 크기를 그대로 보여 줍니다.
-          // 화면 가독성용 확대 스케일이 부스 추가 전후 크기를 바꾸어 보이게 하지 않습니다.
-          true,
         ).join("")}
       </g>
     </g>
@@ -275,16 +274,13 @@ function renderRoomBooths(
   projects: readonly MeeteamProject[],
   selectedBoothId: string | null,
   orientation: MapOrientation,
-  preview: boolean,
 ): string[] {
   return presentation.booths.map((booth) =>
     renderBoothMarker(
       booth,
       findMeeteamProject(projects, booth.projectId),
       selectedBoothId,
-      preview ? 1 : (presentation.markerScales[booth.id] ?? 1),
       orientation,
-      preview ? 1 : presentation.projectionScale,
     ),
   )
 }

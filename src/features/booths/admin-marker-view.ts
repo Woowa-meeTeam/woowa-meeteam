@@ -58,7 +58,6 @@ export function updateMovedMarker(svg: SVGSVGElement, booth: Booth): SVGGElement
     text.setAttribute("x", String(booth.x + booth.width / 2))
   }
   updateMarkerLabels(marker, booth)
-  updateMarkerTransform(marker, booth)
   updateResizeHandles(marker, booth)
   return marker
 }
@@ -88,7 +87,6 @@ export function updateRoomMarkerSizes(
     }
     if (marker) {
       updateMarkerLabels(marker, booth)
-      updateMarkerTransform(marker, booth)
       updateResizeHandles(marker, booth)
     }
   }
@@ -162,36 +160,12 @@ export function updateSelectedMarkerStates(root: ParentNode, selectedBoothId: st
   }
 }
 
-function updateMarkerTransform(marker: SVGGElement, booth: Booth): void {
-  const visual = marker.querySelector<SVGGElement>(".booth-marker__visual")
-  if (!visual) {
-    return
-  }
-  const scale = Number(marker.getAttribute("data-marker-scale") ?? "1")
-  if (!Number.isFinite(scale) || scale === 1) {
-    visual.removeAttribute("transform")
-    return
-  }
-  const centerX = booth.x + booth.width / 2
-  const centerY = booth.y + booth.height / 2
-  visual.setAttribute(
-    "transform",
-    `translate(${centerX} ${centerY}) scale(${scale}) translate(${-centerX} ${-centerY})`,
-  )
-}
-
 function updateMarkerLabels(marker: SVGGElement, booth: Booth): void {
   const team = marker.querySelector<SVGTextElement>(".booth-marker__team")
   const orientation =
     marker.getAttribute("data-map-orientation") === "clockwise" ? "clockwise" : "standard"
-  const projectionScale = Number(marker.getAttribute("data-label-projection-scale") ?? "1")
   const teamName = team?.textContent?.trim() || "이름"
-  const labels = boothLabelMetrics(
-    booth,
-    orientation,
-    teamName,
-    Number.isFinite(projectionScale) ? projectionScale : 1,
-  )
+  const labels = boothLabelMetrics(booth, orientation, teamName)
   team?.setAttribute("y", String(labels.teamY))
   team?.style.setProperty("font-size", `${labels.teamFontSize}px`)
   const centerX = booth.x + booth.width / 2

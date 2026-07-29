@@ -58,7 +58,7 @@ export function renderProjectActions(project: MeeteamProject): string {
       `
   return `
     <div class="project-actions">
-      <a href="${escapeMarkup(project.sourceUrl)}" target="_blank" rel="noreferrer">
+      <a href="${escapeMarkup(project.sourceUrl)}">
         meeTeam에서 전체 정보 보기
       </a>
       ${prototypeLink}

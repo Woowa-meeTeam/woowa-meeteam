@@ -33,8 +33,8 @@ export default function ProjectDetail() {
   const [activeApplicationCount, setActiveApplicationCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  /** 상세에서 빠져나올 곳은 랜딩이 아니라 프로젝트 탐색입니다 */
-  const backToList = () => navigate('/projects');
+  /** 상세에서 닫으면 진입한 화면(부스 지도 포함)으로 돌아갑니다. */
+  const backToList = () => navigate(-1);
 
   const [mode, setMode] = useState<Mode>('view');
   const [applyField, setApplyField] = useState<string | null>(null);

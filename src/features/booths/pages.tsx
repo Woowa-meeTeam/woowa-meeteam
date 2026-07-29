@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "../../api"
 import { isConfigured } from "../../lib/supabase"
-import { BoothAdminApp } from "./admin-app"
+import { BoothAdminApp, type BoothAdminSessionSnapshot } from "./admin-app"
 import { BoothMapApp } from "./app"
 import { createBoothLayoutRepository } from "./booth-layout-repository"
 import { toBoothProject } from "./project-adapter"
@@ -10,6 +10,23 @@ import "./style.css"
 
 type PageState = "loading" | "ready" | "error"
 const boothEligibleStatuses = new Set(["RECRUITING", "CLOSED", "CONFIRMED"])
+const adminSessionKey = "meeteam.booths.admin-session.v1"
+
+function readAdminSession(): BoothAdminSessionSnapshot | null {
+  try {
+    const raw = sessionStorage.getItem(adminSessionKey)
+    if (!raw) {
+      return null
+    }
+    const value = JSON.parse(raw) as Partial<BoothAdminSessionSnapshot>
+    if (!value.layout || !value.roomSizeModes || typeof value.scrollY !== "number") {
+      return null
+    }
+    return value as BoothAdminSessionSnapshot
+  } catch {
+    return null
+  }
+}
 
 function boothEligibleProjects(projects: Awaited<ReturnType<typeof api.projects>>) {
   return projects.filter((project) => boothEligibleStatuses.has(project.status))
@@ -104,6 +121,7 @@ export function BoothAdminPage() {
   useEffect(() => {
     let disposed = false
     let adminApp: BoothAdminApp | null = null
+    const session = readAdminSession()
 
     async function mount() {
       if (!isConfigured) {
@@ -128,10 +146,14 @@ export function BoothAdminPage() {
           rootRef.current,
           boothEligibleProjects(projects).map(toBoothProject),
           repository,
-          revision.layout,
-          revision.roomSizeModes,
+          session?.layout ?? revision.layout,
+          session?.roomSizeModes ?? revision.roomSizeModes,
         )
+        sessionStorage.removeItem(adminSessionKey)
         setState("ready")
+        if (session) {
+          requestAnimationFrame(() => window.scrollTo({ top: session.scrollY, behavior: "instant" }))
+        }
       } catch (error) {
         if (disposed) {
           return
@@ -144,6 +166,9 @@ export function BoothAdminPage() {
     void mount()
     return () => {
       disposed = true
+      if (adminApp) {
+        sessionStorage.setItem(adminSessionKey, JSON.stringify(adminApp.sessionSnapshot))
+      }
       adminApp?.destroy()
     }
   }, [navigate])

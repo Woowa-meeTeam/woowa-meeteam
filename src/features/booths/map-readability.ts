@@ -24,8 +24,6 @@ export type RoomPresentation = {
   readonly mode: "inline" | "summary" | "detail-overflow"
   readonly hasOverlap: boolean
   readonly fitsWithinRoom: boolean
-  readonly markerScales: Readonly<Record<string, number>>
-  readonly projectionScale: number
 }
 
 export type BoothLabelMetrics = {
@@ -37,17 +35,15 @@ export function boothLabelMetrics(
   booth: Booth,
   orientation: MapOrientation = "standard",
   teamName = "이름",
-  projectionScale = 1,
 ): BoothLabelMetrics {
   const layoutWidth = orientation === "clockwise" ? booth.height : booth.width
   const layoutHeight = orientation === "clockwise" ? booth.width : booth.height
-  const safeProjectionScale = Math.max(Number.EPSILON, projectionScale)
   const teamFontSize = fitLabelFontSize(
     teamName,
     layoutWidth,
     layoutHeight * 0.38,
     9,
-    Math.max(markerBaseFontSizes.team, markerMinimums.teamFontSize / safeProjectionScale),
+    Math.max(markerBaseFontSizes.team, markerMinimums.teamFontSize),
   )
   const centerY = booth.y + booth.height / 2
   return {
@@ -128,12 +124,14 @@ export function calculateRoomPresentation(
   detailMode: boolean,
   orientation: MapOrientation = "standard",
 ): RoomPresentation {
+  // 이 가상 크기는 층 전체 지도에서 방을 요약 카드로 보여 줄지 판단할 때만 씁니다.
+  // 실제 마커의 SVG 크기나 저장된 부스 bounds에는 절대 적용하지 않습니다.
   const projectionScale = calculateProjectionScale(displayViewBox(viewBox, orientation), viewport)
-  const markerScales = Object.fromEntries(
-    booths.map((booth) => [booth.id, calculateMarkerScale(booth, projectionScale, orientation)]),
-  )
   const displayBounds = booths.map((booth) =>
-    scaleBoundsAroundCenter(booth, markerScales[booth.id] ?? 1),
+    scaleBoundsAroundCenter(
+      booth,
+      calculatePresentationScale(booth, projectionScale, orientation),
+    ),
   )
   const fitsWithinRoom = displayBounds.every((bounds) => contains(room.bounds, bounds))
   const hasOverlap = displayBounds.some((bounds, index) =>
@@ -154,8 +152,6 @@ export function calculateRoomPresentation(
       fitsWithinRoom && !lacksReadableGap ? "inline" : detailMode ? "detail-overflow" : "summary",
     hasOverlap,
     fitsWithinRoom,
-    markerScales,
-    projectionScale,
   }
 }
 
@@ -166,7 +162,7 @@ function calculateProjectionScale(viewBox: BoothBounds, viewport: MapViewport): 
   )
 }
 
-function calculateMarkerScale(
+function calculatePresentationScale(
   booth: Booth,
   projectionScale: number,
   orientation: MapOrientation,
