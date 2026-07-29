@@ -1,10 +1,51 @@
 import { boothLabelMetrics } from "./map-readability"
+import type { AlignmentGuide } from "./admin-alignment"
 import type { Booth, ResizeHandleDirection } from "./model"
 import { resizeHandleDirections } from "./model"
 
 const svgNamespace = "http://www.w3.org/2000/svg"
 const resizeHandleScreenRadius = 6
 const resizeHandleHitScreenRadius = 16
+
+export function updateAlignmentGuides(
+  svg: SVGSVGElement,
+  guides: readonly AlignmentGuide[],
+  mapWidth: number,
+  mapHeight: number,
+): void {
+  const layer = svg.querySelector<SVGGElement>(".booth-alignment-guides")
+  if (!layer) {
+    return
+  }
+  layer.replaceChildren(
+    ...guides.flatMap((guide) => {
+      if (guide.orientation === "spacing" && guide.segments) {
+        return guide.segments.map(([x1, y1, x2, y2]) => {
+          const line = document.createElementNS(svgNamespace, "line")
+          line.setAttribute("class", "booth-alignment-guide--spacing")
+          line.setAttribute("x1", String(x1))
+          line.setAttribute("x2", String(x2))
+          line.setAttribute("y1", String(y1))
+          line.setAttribute("y2", String(y2))
+          return line
+        })
+      }
+      const line = document.createElementNS(svgNamespace, "line")
+      if (guide.orientation === "vertical") {
+        line.setAttribute("x1", String(guide.position))
+        line.setAttribute("x2", String(guide.position))
+        line.setAttribute("y1", "0")
+        line.setAttribute("y2", String(mapHeight))
+      } else {
+        line.setAttribute("x1", "0")
+        line.setAttribute("x2", String(mapWidth))
+        line.setAttribute("y1", String(guide.position))
+        line.setAttribute("y2", String(guide.position))
+      }
+      return [line]
+    }),
+  )
+}
 
 export function updateMovedMarker(svg: SVGSVGElement, booth: Booth): SVGGElement | null {
   const marker = svg.querySelector<SVGGElement>(`[data-booth-id="${booth.id}"]`)
@@ -140,7 +181,6 @@ function updateMarkerTransform(marker: SVGGElement, booth: Booth): void {
 }
 
 function updateMarkerLabels(marker: SVGGElement, booth: Booth): void {
-  const number = marker.querySelector<SVGTextElement>(".booth-marker__number")
   const team = marker.querySelector<SVGTextElement>(".booth-marker__team")
   const orientation =
     marker.getAttribute("data-map-orientation") === "clockwise" ? "clockwise" : "standard"
@@ -152,8 +192,6 @@ function updateMarkerLabels(marker: SVGGElement, booth: Booth): void {
     teamName,
     Number.isFinite(projectionScale) ? projectionScale : 1,
   )
-  number?.setAttribute("y", String(labels.numberY))
-  number?.style.setProperty("font-size", `${labels.numberFontSize}px`)
   team?.setAttribute("y", String(labels.teamY))
   team?.style.setProperty("font-size", `${labels.teamFontSize}px`)
   const centerX = booth.x + booth.width / 2
@@ -162,11 +200,9 @@ function updateMarkerLabels(marker: SVGGElement, booth: Booth): void {
     marker.getAttribute("data-map-orientation") === "clockwise"
       ? `rotate(-90 ${centerX} ${centerY})`
       : null
-  for (const label of [number, team]) {
-    if (labelTransform) {
-      label?.setAttribute("transform", labelTransform)
-    } else {
-      label?.removeAttribute("transform")
-    }
+  if (labelTransform) {
+    team?.setAttribute("transform", labelTransform)
+  } else {
+    team?.removeAttribute("transform")
   }
 }

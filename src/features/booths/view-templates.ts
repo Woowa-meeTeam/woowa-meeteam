@@ -66,6 +66,7 @@ export function renderBoothMarker(
   const displayName = project?.ownerDisplayName ?? "프로젝트 정보 없음"
   const centerX = booth.x + booth.width / 2
   const centerY = booth.y + booth.height / 2
+  const cornerRadius = Math.min(8, booth.width / 5, booth.height / 4)
   const labelProjectionScale = projectionScale * markerScale
   const labels = boothLabelMetrics(booth, orientation, displayName, labelProjectionScale)
   const transform =
@@ -101,11 +102,8 @@ export function renderBoothMarker(
           y="${booth.y}"
           width="${booth.width}"
           height="${booth.height}"
-          rx="16"
+          rx="${cornerRadius}"
         />
-        <text class="booth-marker__number" x="${centerX}" y="${labels.numberY}" style="font-size: ${labels.numberFontSize}px" ${labelTransform}>
-          ${escapeMarkup(booth.boothNumber)}
-        </text>
         <text class="booth-marker__team" x="${centerX}" y="${labels.teamY}" style="font-size: ${labels.teamFontSize}px" ${labelTransform}>
           ${escapeMarkup(displayName)}
         </text>
@@ -263,7 +261,9 @@ function renderRoomPresentation(
           projects,
           selectedBoothId,
           detailOrientation,
-          isSummary,
+          // 상세 지도에서는 저장된 부스 크기를 그대로 보여 줍니다.
+          // 화면 가독성용 확대 스케일이 부스 추가 전후 크기를 바꾸어 보이게 하지 않습니다.
+          true,
         ).join("")}
       </g>
     </g>
@@ -396,6 +396,20 @@ export function renderMapPanel(viewModel: BoothMapViewModel): string {
           <desc id="map-description">
             부스를 선택하면 해당 팀의 프로젝트와 위치 정보를 확인할 수 있습니다.
           </desc>
+        <defs>
+          <linearGradient id="booth-marker-glass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.58" />
+            <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.4" />
+            <stop offset="0.72" stop-color="#e7edf2" stop-opacity="0.3" />
+            <stop offset="1" stop-color="#c7d0d8" stop-opacity="0.34" />
+          </linearGradient>
+          <linearGradient id="booth-marker-glass-selected" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.74" />
+            <stop offset="0.32" stop-color="#ffffff" stop-opacity="0.58" />
+            <stop offset="0.72" stop-color="#edf2f5" stop-opacity="0.48" />
+            <stop offset="1" stop-color="#d4dde4" stop-opacity="0.52" />
+          </linearGradient>
+        </defs>
         <g class="map-coordinate-space" ${mapTransform ? `transform="${mapTransform}"` : ""}>
           <g class="map-background" aria-hidden="true">
             ${floor.mapMarkup}

@@ -140,6 +140,14 @@
   color: var(--color-action-text);
 }
 
+.booth-feature .admin-booth-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .booth-feature .admin-status {
   margin-block-end: var(--space-5);
   padding: var(--space-3) var(--space-4);
@@ -344,6 +352,24 @@
 
 .booth-feature .booth-drop-preview {
   pointer-events: none;
+}
+
+.booth-feature .booth-alignment-guides {
+  pointer-events: none;
+}
+
+.booth-feature .booth-alignment-guides line {
+  stroke: var(--color-brand-cyan);
+  stroke-width: 1.5;
+  stroke-dasharray: 8 6;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 3px rgb(0 210 255 / 45%));
+}
+
+.booth-feature .booth-alignment-guides .booth-alignment-guide--spacing {
+  stroke-width: 3;
+  stroke-dasharray: none;
 }
 
 .booth-feature .booth-drop-preview rect {

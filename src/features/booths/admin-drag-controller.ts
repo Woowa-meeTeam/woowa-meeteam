@@ -5,6 +5,7 @@ import {
   isResizeHandleDirection,
   type ResizeHandleDirection,
 } from "./model"
+import { snapBoothToAlignment, type AlignmentGuide } from "./admin-alignment"
 
 type DragState = {
   readonly boothId: string
@@ -33,8 +34,10 @@ type AdminDragControllerOptions = {
   readonly mapWidth: number
   readonly mapHeight: number
   readonly getBooth: (boothId: string) => Booth | undefined
+  readonly getBooths: () => readonly Booth[]
   readonly onSelect: (boothId: string) => void
   readonly onMove: (boothId: string, x: number, y: number) => void
+  readonly onAlignmentGuides: (guides: readonly AlignmentGuide[]) => void
   readonly onResize: (boothId: string, bounds: BoothBounds) => void
   readonly onCommit: () => void
   readonly onResizeCommit: () => void
@@ -87,6 +90,7 @@ export class AdminDragController {
     event.preventDefault()
     this.options.onSelect(boothId)
     this.options.svg.setPointerCapture(event.pointerId)
+    this.options.onAlignmentGuides([])
     marker.setAttribute("data-dragging", "true")
     this.dragState = {
       boothId,
@@ -141,9 +145,19 @@ export class AdminDragController {
     }
 
     event.preventDefault()
-    const x = Math.min(this.options.mapWidth - booth.width, Math.max(0, point.x - state.offsetX))
-    const y = Math.min(this.options.mapHeight - booth.height, Math.max(0, point.y - state.offsetY))
-    this.options.onMove(state.boothId, x, y)
+    const rawBounds = {
+      x: Math.min(this.options.mapWidth - booth.width, Math.max(0, point.x - state.offsetX)),
+      y: Math.min(this.options.mapHeight - booth.height, Math.max(0, point.y - state.offsetY)),
+      width: booth.width,
+      height: booth.height,
+    }
+    const alignment = snapBoothToAlignment(
+      rawBounds,
+      this.options.getBooths().filter((target) => target.roomName === booth.roomName),
+      state.boothId,
+    )
+    this.options.onAlignmentGuides(alignment.guides)
+    this.options.onMove(state.boothId, alignment.bounds.x, alignment.bounds.y)
   }
 
   private computeResizedBounds(state: ResizeState, point: DOMPoint): BoothBounds {
@@ -190,6 +204,7 @@ export class AdminDragController {
         this.options.svg.releasePointerCapture(event.pointerId)
       }
       this.options.svg.removeAttribute("data-resizing")
+      this.options.onAlignmentGuides([])
       this.resizeState = null
 
       if (distance >= dragThreshold) {
@@ -205,6 +220,7 @@ export class AdminDragController {
 
     const distance = Math.hypot(event.clientX - state.startX, event.clientY - state.startY)
     this.getMarkerById(state.boothId)?.removeAttribute("data-dragging")
+    this.options.onAlignmentGuides([])
     if (this.options.svg.hasPointerCapture(event.pointerId)) {
       this.options.svg.releasePointerCapture(event.pointerId)
     }

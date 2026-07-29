@@ -156,10 +156,25 @@ export function renderAdminMap(viewModel: BoothMapViewModel): string {
       aria-label="${floor.label} 부스 배치 편집 지도"
       preserveAspectRatio="xMidYMid meet"
     >
+      <defs>
+        <linearGradient id="booth-marker-glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.58" />
+          <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.4" />
+          <stop offset="0.72" stop-color="#e7edf2" stop-opacity="0.3" />
+          <stop offset="1" stop-color="#c7d0d8" stop-opacity="0.34" />
+        </linearGradient>
+        <linearGradient id="booth-marker-glass-selected" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.74" />
+          <stop offset="0.32" stop-color="#ffffff" stop-opacity="0.58" />
+          <stop offset="0.72" stop-color="#edf2f5" stop-opacity="0.48" />
+          <stop offset="1" stop-color="#d4dde4" stop-opacity="0.52" />
+        </linearGradient>
+      </defs>
       <g class="map-coordinate-space" ${mapTransform ? `transform="${mapTransform}"` : ""}>
         <g class="map-background" aria-hidden="true">
           ${floor.mapMarkup}
         </g>
+        <g class="booth-alignment-guides" aria-hidden="true"></g>
         <g class="booth-layer">
           ${renderMapLayers(viewModel)}
         </g>
@@ -226,7 +241,11 @@ export function renderAdminInspector(viewModel: AdminInspectorViewModel): string
                 <p>선택한 부스</p>
                 <h2>${escapeMarkup(booth.boothNumber)}</h2>
               </div>
-              <button type="button" class="admin-danger" data-admin-action="delete">삭제</button>
+              <div class="admin-booth-editor__actions">
+                <button type="button" class="admin-secondary" data-admin-action="align-column">이 열 자동 정렬</button>
+                <button type="button" class="admin-secondary" data-admin-action="align-row">이 행 자동 정렬</button>
+                <button type="button" class="admin-danger" data-admin-action="delete">삭제</button>
+              </div>
             </div>
 
             <label class="admin-field">

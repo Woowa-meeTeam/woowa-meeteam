@@ -2,6 +2,7 @@ import { AdminDragController } from "./admin-drag-controller"
 import { AdminLayoutState } from "./admin-layout-state"
 import {
   syncResizeHandles,
+  updateAlignmentGuides,
   updateMovedMarker,
   updateResizedMarkers,
   updateRoomMarkerSizes,
@@ -27,6 +28,7 @@ import {
 } from "./map-readability"
 import { animateMapCamera, syncMapBackgroundLabelOrientation } from "./map-view-transition"
 import type { BoothBounds, BoothLayout, FloorId, MapViewState, RoomSizeModes } from "./model"
+import type { AlignmentGuide } from "./admin-alignment"
 import { floorIds } from "./model"
 import { queryRequired } from "./view-templates"
 
@@ -174,8 +176,10 @@ export class BoothAdminApp {
         mapWidth: floor.width,
         mapHeight: floor.height,
         getBooth: (boothId) => this.state.findBooth(boothId),
+        getBooths: () => this.state.booths,
         onSelect: (boothId) => this.selectBooth(boothId),
         onMove: (boothId, x, y) => this.moveBooth(svg, boothId, x, y),
+        onAlignmentGuides: (guides) => this.updateAlignmentGuides(svg, guides),
         onResize: (boothId, bounds) => this.resizeBooth(svg, boothId, bounds),
         onCommit: () => this.commitMove(),
         onResizeCommit: () => this.commitResize(),
@@ -277,6 +281,40 @@ export class BoothAdminApp {
         this.renderCurrentFloor()
       },
     )
+    queryRequired<HTMLButtonElement>(
+      inspector,
+      '[data-admin-action="align-column"]',
+    ).addEventListener("click", () => {
+      const alignedBooths = this.state.alignSelectedColumn()
+      if (alignedBooths.length < 2) {
+        this.updateSaveState("같은 열에 부스가 2개 이상 있어야 자동 정렬할 수 있습니다.")
+        return
+      }
+      const svg = queryRequired<SVGSVGElement>(this.root, ".admin-map")
+      for (const booth of alignedBooths) {
+        updateMovedMarker(svg, booth)
+      }
+      syncResizeHandles(svg, this.state.selectedBooth ?? null)
+      this.updateSaveState("같은 열의 부스 간격과 높이를 맞췄습니다.")
+      this.refreshAfterLayoutCommit()
+    })
+    queryRequired<HTMLButtonElement>(
+      inspector,
+      '[data-admin-action="align-row"]',
+    ).addEventListener("click", () => {
+      const alignedBooths = this.state.alignSelectedRow()
+      if (alignedBooths.length < 2) {
+        this.updateSaveState("같은 행에 부스가 2개 이상 있어야 자동 정렬할 수 있습니다.")
+        return
+      }
+      const svg = queryRequired<SVGSVGElement>(this.root, ".admin-map")
+      for (const booth of alignedBooths) {
+        updateMovedMarker(svg, booth)
+      }
+      syncResizeHandles(svg, this.state.selectedBooth ?? null)
+      this.updateSaveState("같은 행의 부스 간격과 높이를 맞췄습니다.")
+      this.refreshAfterLayoutCommit()
+    })
     this.bindBoothFields(inspector)
   }
 
@@ -320,6 +358,11 @@ export class BoothAdminApp {
     if (booth) {
       updateMovedMarker(svg, booth)
     }
+  }
+
+  private updateAlignmentGuides(svg: SVGSVGElement, guides: readonly AlignmentGuide[]): void {
+    const floor = floorMaps[this.state.selectedFloorId]
+    updateAlignmentGuides(svg, guides, floor.width, floor.height)
   }
 
   private resizeBooth(svg: SVGSVGElement, boothId: string, bounds: BoothBounds): void {

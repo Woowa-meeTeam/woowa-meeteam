@@ -26,8 +26,9 @@ export class AdminLayoutState {
   private saved = true
 
   public constructor(layout: BoothLayout, roomSizeModes: RoomSizeModes) {
-    this.layout = layout
+    this.layout = normalizeUniformBoothSizes(layout, roomSizeModes)
     this.roomSizeModes = roomSizeModes
+    this.saved = this.layout === layout
     this.boothId = layout[11][0]?.id ?? null
     this.roomName = layout[11][0]?.roomName ?? roomsByFloor[11][0]?.name ?? ""
   }
@@ -79,7 +80,7 @@ export class AdminLayoutState {
   }
 
   public boothSizeForRoom(roomName: string): BoothSize {
-    const booth = this.booths.find((candidate) => candidate.roomName === roomName)
+    const booth = this.referenceBoothForRoom(roomName)
     if (booth) {
       return { width: booth.width, height: booth.height }
     }
@@ -124,6 +125,8 @@ export class AdminLayoutState {
     if (!room) {
       return undefined
     }
+    // 신규 부스는 같은 공간에 이미 배치된 부스의 크기를 그대로 따릅니다.
+    // 기존 부스는 절대 함께 리사이즈하지 않습니다.
     const size = this.boothSizeForRoom(room.name)
     const booth: Booth = {
       id: `${this.floorId}-${crypto.randomUUID()}`,
@@ -250,6 +253,111 @@ export class AdminLayoutState {
     return updatedBooth
   }
 
+  public alignSelectedColumn(): readonly Booth[] {
+    const selected = this.selectedBooth
+    if (!selected) {
+      return []
+    }
+    const columnTolerance = Math.max(24, selected.width * 0.5)
+    const column = this.booths
+      .filter(
+        (booth) =>
+          booth.roomName === selected.roomName &&
+          Math.abs(booth.x + booth.width / 2 - (selected.x + selected.width / 2)) <=
+            columnTolerance,
+      )
+      .sort((first, second) => first.y - second.y)
+    if (column.length < 2) {
+      return []
+    }
+
+    const averageGap =
+      column.slice(1).reduce((total, booth, index) => {
+        const previous = column[index]
+        return total + booth.y - (previous.y + previous.height)
+      }, 0) /
+      (column.length - 1)
+    const gap = Math.max(8, averageGap)
+    const room = this.rooms.find((candidate) => candidate.name === selected.roomName)
+    if (!room) {
+      return []
+    }
+
+    const positions: number[] = []
+    for (const [index, booth] of column.entries()) {
+      positions.push(index === 0 ? booth.y : positions[index - 1] + column[index - 1].height + gap)
+    }
+    const last = column[column.length - 1]
+    const overflow = positions[positions.length - 1] + last.height - (room.bounds.y + room.bounds.height)
+    const shift = overflow > 0 ? -overflow : 0
+    const x = Math.min(room.bounds.x + room.bounds.width - selected.width, Math.max(room.bounds.x, selected.x))
+    const aligned = this.booths.map((booth) => {
+      const index = column.findIndex((candidate) => candidate.id === booth.id)
+      if (index === -1) {
+        return booth
+      }
+      return {
+        ...booth,
+        x,
+        y: Math.max(room.bounds.y, positions[index] + shift),
+      }
+    })
+    this.setBooths(aligned)
+    return aligned.filter((booth) => column.some((candidate) => candidate.id === booth.id))
+  }
+
+  public alignSelectedRow(): readonly Booth[] {
+    const selected = this.selectedBooth
+    if (!selected) {
+      return []
+    }
+    const rowTolerance = Math.max(24, selected.height * 0.5)
+    const row = this.booths
+      .filter(
+        (booth) =>
+          booth.roomName === selected.roomName &&
+          Math.abs(booth.y + booth.height / 2 - (selected.y + selected.height / 2)) <= rowTolerance,
+      )
+      .sort((first, second) => first.x - second.x)
+    if (row.length < 2) {
+      return []
+    }
+
+    const averageGap =
+      row.slice(1).reduce((total, booth, index) => {
+        const previous = row[index]
+        return total + booth.x - (previous.x + previous.width)
+      }, 0) /
+      (row.length - 1)
+    const gap = Math.max(8, averageGap)
+    const room = this.rooms.find((candidate) => candidate.name === selected.roomName)
+    if (!room) {
+      return []
+    }
+
+    const positions: number[] = []
+    for (const [index, booth] of row.entries()) {
+      positions.push(index === 0 ? booth.x : positions[index - 1] + row[index - 1].width + gap)
+    }
+    const last = row[row.length - 1]
+    const overflow = positions[positions.length - 1] + last.width - (room.bounds.x + room.bounds.width)
+    const shift = overflow > 0 ? -overflow : 0
+    const y = Math.min(room.bounds.y + room.bounds.height - selected.height, Math.max(room.bounds.y, selected.y))
+    const aligned = this.booths.map((booth) => {
+      const index = row.findIndex((candidate) => candidate.id === booth.id)
+      if (index === -1) {
+        return booth
+      }
+      return {
+        ...booth,
+        x: Math.max(room.bounds.x, positions[index] + shift),
+        y,
+      }
+    })
+    this.setBooths(aligned)
+    return aligned.filter((booth) => row.some((candidate) => candidate.id === booth.id))
+  }
+
   public markUnsaved(): void {
     this.saved = false
   }
@@ -260,6 +368,10 @@ export class AdminLayoutState {
 
   private isRoomSizeUniformFor(roomName: string): boolean {
     return this.roomSizeModes[this.roomSizeModeKey(roomName)] ?? true
+  }
+
+  private referenceBoothForRoom(roomName: string): Booth | undefined {
+    return this.booths.find((booth) => booth.roomName === roomName)
   }
 
   private roomSizeModeKey(roomName: string): string {
@@ -285,4 +397,36 @@ export class AdminLayoutState {
     }
     return `${this.floorId}-${String(sequence).padStart(2, "0")}`
   }
+}
+
+function normalizeUniformBoothSizes(layout: BoothLayout, roomSizeModes: RoomSizeModes): BoothLayout {
+  let changed = false
+  const normalized = Object.fromEntries(
+    floorIds.map((floorId) => {
+      const floorBooths = layout[floorId]
+      const roomNames = [...new Set(floorBooths.map((booth) => booth.roomName))]
+      const booths = roomNames.reduce((current, roomName) => {
+        if (roomSizeModes[`${floorId}:${roomName}`] === false) {
+          return current
+        }
+        const roomBooths = current.filter((booth) => booth.roomName === roomName)
+        const reference = roomBooths[0]
+        if (!reference) {
+          return current
+        }
+        return current.map((booth) => {
+          if (booth.roomName !== roomName) {
+            return booth
+          }
+          if (booth.width === reference.width && booth.height === reference.height) {
+            return booth
+          }
+          changed = true
+          return { ...booth, width: reference.width, height: reference.height }
+        })
+      }, floorBooths)
+      return [floorId, booths]
+    }),
+  ) as unknown as BoothLayout
+  return changed ? normalized : layout
 }

@@ -43,9 +43,9 @@ export type MapViewState =
 export type MapOrientation = "standard" | "clockwise"
 
 export const boothSizeLimits = {
-  minWidth: 48,
+  minWidth: 28,
   maxWidth: 280,
-  minHeight: 36,
+  minHeight: 28,
   maxHeight: 180,
 } as const
 

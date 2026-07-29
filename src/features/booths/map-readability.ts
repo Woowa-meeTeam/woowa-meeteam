@@ -3,13 +3,11 @@ import type { Booth, BoothBounds, FloorMap, MapOrientation, RoomDefinition } fro
 const markerMinimums = {
   width: 72,
   height: 44,
-  numberFontSize: 15,
   teamFontSize: 20,
   gap: 8,
 } as const
 
 const markerBaseFontSizes = {
-  number: 18,
   team: 25,
 } as const
 
@@ -31,9 +29,7 @@ export type RoomPresentation = {
 }
 
 export type BoothLabelMetrics = {
-  readonly numberFontSize: number
   readonly teamFontSize: number
-  readonly numberY: number
   readonly teamY: number
 }
 
@@ -46,13 +42,6 @@ export function boothLabelMetrics(
   const layoutWidth = orientation === "clockwise" ? booth.height : booth.width
   const layoutHeight = orientation === "clockwise" ? booth.width : booth.height
   const safeProjectionScale = Math.max(Number.EPSILON, projectionScale)
-  const numberFontSize = fitLabelFontSize(
-    booth.boothNumber,
-    layoutWidth,
-    layoutHeight * 0.3,
-    8,
-    Math.max(markerBaseFontSizes.number, markerMinimums.numberFontSize / safeProjectionScale),
-  )
   const teamFontSize = fitLabelFontSize(
     teamName,
     layoutWidth,
@@ -62,10 +51,8 @@ export function boothLabelMetrics(
   )
   const centerY = booth.y + booth.height / 2
   return {
-    numberFontSize,
     teamFontSize,
-    numberY: centerY - layoutHeight * 0.18,
-    teamY: centerY + layoutHeight * 0.27,
+    teamY: centerY + layoutHeight * 0.1,
   }
 }
 
@@ -189,7 +176,6 @@ function calculateMarkerScale(
     1,
     markerMinimums.width / (booth.width * projectionScale),
     markerMinimums.height / (booth.height * projectionScale),
-    markerMinimums.numberFontSize / (labels.numberFontSize * projectionScale),
     markerMinimums.teamFontSize / (labels.teamFontSize * projectionScale),
   )
 }
