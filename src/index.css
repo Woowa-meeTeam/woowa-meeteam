@@ -1431,11 +1431,20 @@ body {
   background: linear-gradient(to bottom, rgba(3, 5, 9, 0.32), transparent 34%);
 }
 
-.project-card__status {
+/* 상태 배지들을 왼쪽 위에 세로로 쌓습니다.
+   각각을 따로 띄우면 위 배지 높이를 눈대중으로 빼서 top 을 잡아야 해요. */
+.project-card__badges {
   position: absolute;
   z-index: 3;
   top: 14px;
   left: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.project-card__status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1483,6 +1492,39 @@ body {
 
 .project-card__status--rejected {
   color: #ff9b9b;
+}
+
+/* 내 지원이 어떻게 됐는지 — 프로젝트 모집 상태와 다른 축이라 따로 답니다 */
+.project-card__applied {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(5, 8, 13, 0.76);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.project-card__applied--pending {
+  color: #ffd06d;
+  border-color: rgba(255, 176, 32, 0.34);
+  background: rgba(54, 34, 2, 0.78);
+}
+
+.project-card__applied--accepted {
+  color: #7de9a9;
+  border-color: rgba(42, 208, 112, 0.34);
+  background: rgba(2, 42, 24, 0.78);
+}
+
+.project-card__applied--rejected {
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .project-card__body {
@@ -1649,7 +1691,7 @@ body {
     border-radius: 16px;
   }
 
-  .project-card__status {
+  .project-card__badges {
     top: 14px;
     left: 14px;
   }

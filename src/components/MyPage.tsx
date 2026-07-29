@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, ExternalLink, Pencil, ShieldCheck, Users } from 'lucide-react';
@@ -8,11 +9,20 @@ import ProjectCard from './ProjectCard';
 import ProjectSlots from './ProjectSlots';
 import { FIELD_STYLES } from './FieldFilters';
 import { api } from '../api';
-import type { Application, Project, ProjectStatus, User } from '../api';
+import type { Application, ApplicationStatus, Project, ProjectStatus, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
 type Tab = 'owned' | 'applied' | 'teams' | 'liked' | 'bookmarked';
+
+/** 내 지원이 어떻게 됐는지 — 취소한 건은 목록에 오지 않아 배지도 없습니다 */
+type AppliedBadgeKey = Exclude<ApplicationStatus, 'canceled'>;
+
+const APPLIED_BADGE: Record<AppliedBadgeKey, { label: string; cls: string }> = {
+  pending: { label: '대기중', cls: 'project-card__applied--pending' },
+  accepted: { label: '✓ 수락됨', cls: 'project-card__applied--accepted' },
+  rejected: { label: '거절됨', cls: 'project-card__applied--rejected' },
+};
 
 const STATUS_BADGE: Record<ProjectStatus, { label: string; cls: string }> = {
   PENDING: { label: '승인 대기', cls: 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10' },
@@ -55,6 +65,12 @@ export default function MyPage() {
 
   const likedProjects = projects.filter((project) => project.myLike);
   const bookmarkedProjects = projects.filter((project) => project.myBookmark);
+  // 지원 목록엔 제목·오너 이름만 담겨 있어서, 카드가 필요로 하는 나머지는
+  // 이미 불러온 전체 목록에서 같은 프로젝트를 찾아 씁니다.
+  const appliedProjects = applications
+    .map((a) => projects.find((p) => p.id === a.projectId))
+    .filter((p): p is Project => p != null);
+  const appliedStatus = new Map(applications.map((a) => [a.projectId, a.status]));
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -173,14 +189,20 @@ export default function MyPage() {
               <button
                 key={item.key}
                 onClick={() => setTab(item.key)}
-                className={`border-b-2 px-5 py-5 text-sm font-medium transition-colors sm:flex-1 sm:px-3 sm:text-center ${
-                  tab === item.key
-                    ? 'border-[#7db4ff] text-[#7db4ff]'
-                    : 'border-transparent text-white/55 hover:text-white'
+                className={`relative px-5 py-5 text-sm font-medium transition-colors sm:flex-1 sm:px-3 sm:text-center ${
+                  tab === item.key ? 'text-[#7db4ff]' : 'text-white/55 hover:text-white'
                 }`}
               >
                 {item.label}{' '}
                 <span className="ml-1 text-xs opacity-50 tabular-nums">{item.count}</span>
+                {/* 밑줄 하나를 layoutId 로 공유해, 탭을 옮길 때 그 자리로 미끄러집니다 */}
+                {tab === item.key && (
+                  <motion.span
+                    layoutId="mypage-tab-indicator"
+                    className="absolute inset-x-0 bottom-0 h-0.5 bg-[#7db4ff]"
+                    transition={{ duration: 0.32, ease: easeOut }}
+                  />
+                )}
                 </button>
               ))}
             </div>
@@ -246,47 +268,26 @@ export default function MyPage() {
 
         {/* 지원한 프로젝트 */}
         {tab === 'applied' && (
-          <div className="project-card-grid mt-8">
-            {applications.length === 0 && (
-              <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
-                아직 지원한 프로젝트가 없어요
-              </p>
-            )}
-            {applications.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => navigate(`/projects/${a.projectId}`)}
-                className="project-card min-h-[438px] w-full justify-between p-5 hover:-translate-y-0.5 transition-transform"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-white truncate">{a.projectTitle}</h3>
-                    <p className="mt-1 text-xs text-white/70">
-                      {a.field} 지원 · 오너 {a.projectOwner}
-                    </p>
-                  </div>
-                  {a.status === 'pending' ? (
-                    <span className="flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
-                      대기중
-                    </span>
-                  ) : a.status === 'accepted' ? (
-                    <span className="flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#00C471]/40 text-[#7ee8b2] bg-[#00C471]/10">
-                      ✓ 수락됨
-                    </span>
-                  ) : (
-                    <span className="flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 text-white/60">
-                      거절됨
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-            {applications.length > 0 && (
-              <p className="text-xs text-white/55 text-center pt-2">
+          <>
+            <ReactionProjectList
+              projects={appliedProjects}
+              emptyMessage="아직 지원한 프로젝트가 없어요"
+              navigate={navigate}
+              badgeFor={(p) => {
+                // 상태 문자열은 서버 값을 그대로 소문자로 바꾼 것이라 확인 없이 믿으면 안 됩니다.
+                // 모르는 값이 오면 배지만 접고 목록은 그대로 보여 줍니다.
+                const status = appliedStatus.get(p.id);
+                const badge = status && APPLIED_BADGE[status as AppliedBadgeKey];
+                if (!badge) return null;
+                return <span className={`project-card__applied ${badge.cls}`}>{badge.label}</span>;
+              }}
+            />
+            {appliedProjects.length > 0 && (
+              <p className="pt-4 text-center text-xs text-white/55">
                 수락되면 팀 멤버로 확정되고, 대기 중에는 지원을 취소할 수 있어요
               </p>
             )}
-          </div>
+          </>
         )}
 
         {/* 나의 팀 (확정된 팀) */}
@@ -362,15 +363,18 @@ export default function MyPage() {
   );
 }
 
-/** 좋아요 · 북마크 — 탐색 화면과 같은 카드를 그대로 씁니다 */
+/** 좋아요 · 북마크 · 지원 — 탐색 화면과 같은 카드를 그대로 씁니다 */
 function ReactionProjectList({
   projects,
   emptyMessage,
   navigate,
+  badgeFor,
 }: {
   projects: Project[];
   emptyMessage: string;
   navigate: ReturnType<typeof useNavigate>;
+  /** 카드마다 모집 상태 아래에 덧붙일 배지 */
+  badgeFor?: (project: Project) => ReactNode;
 }) {
   if (projects.length === 0) {
     return (
@@ -388,6 +392,7 @@ function ReactionProjectList({
           project={p}
           index={i}
           onClick={() => navigate(`/projects/${p.id}`)}
+          badge={badgeFor?.(p)}
         />
       ))}
     </div>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import type { Project, ProjectStatus } from '../api';
@@ -19,6 +20,8 @@ type Props = {
   index: number;
   onClick: () => void;
   animateOnView?: boolean;
+  /** 모집 상태 아래에 함께 세울 배지 (마이페이지의 내 지원 상태 등) */
+  badge?: ReactNode;
 };
 
 export default function ProjectCard({
@@ -26,6 +29,7 @@ export default function ProjectCard({
   index,
   onClick,
   animateOnView = false,
+  badge,
 }: Props) {
   const description = project.summary?.trim() || project.desc;
 
@@ -49,12 +53,15 @@ export default function ProjectCard({
       <div className="project-card__media">
         <CoverFill cover={project.coverImage} fade={false} />
 
-        <span
-          className={`project-card__status project-card__status--${project.status.toLowerCase()}`}
-        >
-          <i aria-hidden="true" />
-          {STATUS_LABEL[project.status]}
-        </span>
+        <div className="project-card__badges">
+          <span
+            className={`project-card__status project-card__status--${project.status.toLowerCase()}`}
+          >
+            <i aria-hidden="true" />
+            {STATUS_LABEL[project.status]}
+          </span>
+          {badge}
+        </div>
 
         {project.category && (
           <span className="project-card__category">{project.category}</span>
