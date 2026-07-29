@@ -13,19 +13,11 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
 type StatusFilter = 'all' | 'RECRUITING' | 'CLOSED' | 'CONFIRMED';
 
 /** 승인 대기·반려는 오너와 코치에게만 보이는 상태라 필터로 내놓지 않습니다 */
-const STATUS_FILTERS: { key: StatusFilter; label: string; activeCls: string }[] = [
-  { key: 'all', label: '전체', activeCls: 'border-white/60 text-white bg-white/10' },
-  {
-    key: 'RECRUITING',
-    label: '모집중',
-    activeCls: 'border-[#00C471]/50 text-[#9df0c4] bg-[#00C471]/15',
-  },
-  { key: 'CLOSED', label: '모집 마감', activeCls: 'border-white/35 text-white/85 bg-white/[0.08]' },
-  {
-    key: 'CONFIRMED',
-    label: '팀 확정',
-    activeCls: 'border-[#7db4ff]/60 text-[#a9cfff] bg-[#3182F6]/15',
-  },
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: '전체' },
+  { key: 'RECRUITING', label: '모집중' },
+  { key: 'CLOSED', label: '모집 마감' },
+  { key: 'CONFIRMED', label: '팀 확정' },
 ];
 
 const countByStatus = (projects: Project[], status: StatusFilter) =>
@@ -100,60 +92,67 @@ export default function AllProjects() {
           />
         </div>
 
-        {/* 분야 필터 */}
-        <FieldFilters value={field} onChange={setField} className="mt-4" />
-
-        {/* 모집 상태 */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setStatus(item.key)}
-              className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                status === item.key
-                  ? item.activeCls
-                  : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
-              }`}
-            >
-              {item.label}
-              <span className="ml-1.5 text-xs opacity-60 tabular-nums">
-                {item.key === 'all' ? all.length : countByStatus(all, item.key)}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* 카테고리 — 프로젝트가 아직 없어도 전체 선택지를 보여 줍니다 */}
+        {/* 카테고리 — 프로젝트 탐색의 주요 기준이라 탭 형태로 크게 보여 줍니다 */}
         {PROJECT_CATEGORIES.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setCategory(null)}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all ${
-                category === null
-                  ? 'border-white/60 text-white bg-white/10'
-                  : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/25 hover:text-white'
-              }`}
-            >
-              전체 분류
-            </button>
-            {PROJECT_CATEGORIES.map((c) => (
+          <div className="mt-4 overflow-x-auto border-b border-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-stretch">
               <button
-                key={c}
                 type="button"
-                onClick={() => setCategory(category === c ? null : c)}
-                className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all ${
-                  category === c
-                    ? 'border-[#7db4ff]/60 text-[#a9cfff] bg-[#3182F6]/15'
-                    : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/25 hover:text-white'
+                onClick={() => setCategory(null)}
+                className={`border-b-2 px-4 py-4 text-sm md:px-5 md:text-base font-semibold whitespace-nowrap transition-colors ${
+                  category === null
+                    ? 'border-[#3182F6] text-white'
+                    : 'border-transparent text-white/50 hover:text-white/85'
                 }`}
               >
-                {c}
+                전체
               </button>
-            ))}
+              {PROJECT_CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(category === c ? null : c)}
+                  className={`border-b-2 px-4 py-4 text-sm md:px-5 md:text-base font-semibold whitespace-nowrap transition-colors ${
+                    category === c
+                      ? 'border-[#3182F6] text-white'
+                      : 'border-transparent text-white/50 hover:text-white/85'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* 분야 필터 */}
+        <FieldFilters value={field} onChange={setField} className="mt-3" />
+
+        {/* 프로젝트 목록과 모집 상태 필터 */}
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white/90">프로젝트 목록</h2>
+          <div className="flex flex-wrap items-center justify-end text-sm">
+            {STATUS_FILTERS.map((item, index) => (
+              <span key={item.key} className="inline-flex items-center">
+                {index > 0 && <span className="mx-2 text-white/20">|</span>}
+                <button
+                  type="button"
+                  onClick={() => setStatus(item.key)}
+                  className={`font-medium transition-colors ${
+                    status === item.key
+                      ? 'text-white'
+                      : 'text-white/50 hover:text-white/85'
+                  }`}
+                >
+                  {item.label}
+                  <span className="ml-1 text-xs opacity-60 tabular-nums">
+                    {item.key === 'all' ? all.length : countByStatus(all, item.key)}
+                  </span>
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
 
         {error && (
           <p className="mt-8 text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
@@ -162,7 +161,7 @@ export default function AllProjects() {
         )}
 
         {!projects && !error && (
-          <div className="project-card-grid mt-6">
+          <div className="project-card-grid mt-4">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="project-card project-card--skeleton animate-pulse" />
             ))}
