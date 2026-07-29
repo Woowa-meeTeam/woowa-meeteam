@@ -9,6 +9,17 @@ import { api } from '../api';
 import type { User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
+const HANGUL_INITIALS = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+
+const getHangulInitials = (name: string) =>
+  Array.from(name)
+    .map((character) => {
+      const code = character.charCodeAt(0) - 0xac00;
+      return code >= 0 && code <= 11171
+        ? HANGUL_INITIALS[Math.floor(code / 588)]
+        : character;
+    })
+    .join('');
 
 export default function Crews() {
   const navigate = useNavigate();
@@ -32,7 +43,9 @@ export default function Crews() {
   const filtered =
     crews?.filter(
       (c) =>
-        (!normalizedQuery || (c.crewName ?? '').toLowerCase().includes(normalizedQuery)) &&
+        (!normalizedQuery ||
+          (c.crewName ?? '').toLowerCase().includes(normalizedQuery) ||
+          getHangulInitials(c.crewName ?? '').includes(normalizedQuery)) &&
         (!field || c.fields.includes(field)) &&
         (!lookingOnly || lookingIds.has(c.id)),
     ) ?? [];
