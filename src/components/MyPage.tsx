@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Pencil, ShieldCheck, Users, X } from 'lucide-react';
-import { Avatar, CoverFill, HomeLogo } from './primitives';
+import { ArrowRight, ExternalLink, Pencil, ShieldCheck, Users } from 'lucide-react';
+import { Avatar, CoverFill } from './primitives';
+import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import { FIELD_STYLES } from './FieldFilters';
 import { api } from '../api';
@@ -56,98 +57,109 @@ export default function MyPage() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      {/* top bar */}
-      <div className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <HomeLogo />
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="홈으로 돌아가기"
-        >
-          <X className="w-[18px] h-[18px]" />
-        </button>
-      </div>
+      <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: easeOut }}
-        className="flex-1 max-w-5xl w-full mx-auto px-5 sm:px-6 pb-16"
+        className="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-6 pb-16"
       >
-        <h1 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight">마이페이지</h1>
+        <h1 className="mt-8 text-4xl md:text-5xl font-semibold tracking-tight">마이페이지</h1>
 
-        {/* 프로필 카드 */}
-        <div className="liquid-glass rounded-2xl p-6 mt-7">
-          {/* 넓은 화면에서는 버튼이 오른쪽에 붙고, 좁아지면 아래로 내려옵니다.
-              모바일에서 한 줄에 다 넣으면 이름·아이디가 폭에 눌려 세로로 쌓여요. */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-            <div className="flex items-start gap-4 min-w-0 flex-1">
-              <Avatar
-                name={user.crewName}
-                avatarUrl={user.avatarUrl}
-                gradient={user.avatarGradient}
-                className="w-14 h-14 text-lg"
-              />
-              <div className="min-w-0">
-                {/* 분야 태그는 이름 옆에 — 색은 크루 목록·상세와 같은 걸 씁니다 */}
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-                  <span className="text-lg font-bold text-white">{user.crewName}</span>
-                  {user.fields.map((f) => (
-                    <span
-                      key={f}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                        FIELD_STYLES[f]?.tag ?? 'border-white/20 text-white/70 bg-white/[0.06]'
-                      }`}
-                    >
-                      {f}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-1 text-sm text-white/55 truncate">
-                  github.com/{user.githubLogin}
-                </div>
-              </div>
+        <section className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
+          <div className="order-last lg:order-first">
+            <div className="flex items-center gap-5">
+              <h2 className="shrink-0 text-sm font-semibold tracking-[0.18em] text-white/75">
+                기술 스택
+              </h2>
+              <span className="h-px flex-1 bg-white/15" aria-hidden="true" />
             </div>
 
-            <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
+            {user.skills.length > 0 ? (
+              <div className="mt-5 grid grid-cols-2 border-y border-white/15 sm:grid-cols-3">
+                {user.skills.map((skill, index) => (
+                  <div
+                    key={skill}
+                    className="min-h-24 border-b border-r border-white/10 p-5 last:border-b-0 sm:[&:nth-last-child(-n+3)]:border-b-0"
+                  >
+                    <span className="text-[10px] font-medium tracking-[0.18em] text-[#7db4ff]/70">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <p className="mt-2 text-base font-medium text-white/90">{skill}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 border-y border-white/15 py-10 text-sm text-white/45">
+                등록된 기술 스택이 없어요.
+              </p>
+            )}
+          </div>
+
+          <aside className="order-first flex flex-col items-center text-center lg:order-last lg:border-l lg:border-white/10 lg:pl-16">
+            <Avatar
+              name={user.crewName}
+              avatarUrl={user.avatarUrl}
+              gradient={user.avatarGradient}
+              className="h-36 w-36 text-3xl ring-1 ring-white/20"
+            />
+            <h2 className="mt-6 text-2xl font-semibold tracking-tight">{user.crewName}</h2>
+            {user.fields.length > 0 ? (
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {user.fields.map((field) => (
+                  <span
+                    key={field}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                      FIELD_STYLES[field]?.tag ??
+                      'border-white/20 bg-white/[0.06] text-white/70'
+                    }`}
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-white/45">분야 미설정</p>
+            )}
+            <a
+              href={`https://github.com/${user.githubLogin}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex max-w-full items-center gap-1.5 text-sm text-[#7db4ff] transition-colors hover:text-[#a9cbff]"
+            >
+              <span className="truncate">github.com/{user.githubLogin}</span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            </a>
+            {user.bio && (
+              <p className="mt-5 max-w-xs whitespace-pre-line text-sm leading-6 text-white/50">
+                {user.bio}
+              </p>
+            )}
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
               {user.isAdmin && (
                 <button
                   onClick={() => navigate('/admin')}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#7db4ff] border border-[#3182F6]/40 bg-[#3182F6]/10 rounded-full px-3.5 py-2 hover:bg-[#3182F6]/20 transition-colors"
+                  className="inline-flex items-center gap-1.5 border-b border-[#3182F6]/50 px-1 py-2 text-xs font-medium text-[#7db4ff] transition-colors hover:border-[#7db4ff] hover:text-[#a9cbff]"
                 >
-                  <ShieldCheck className="w-3 h-3" />
+                  <ShieldCheck className="h-3.5 w-3.5" />
                   관리자
                 </button>
               )}
               <button
                 onClick={() => navigate('/profile/edit')}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 border border-white/15 rounded-full px-3.5 py-2 hover:bg-white/5 hover:text-white transition-colors"
+                className="inline-flex items-center gap-1.5 border-b border-white/20 px-1 py-2 text-xs font-medium text-white/60 transition-colors hover:border-white/50 hover:text-white"
               >
-                <Pencil className="w-3 h-3" />
+                <Pencil className="h-3.5 w-3.5" />
                 프로필 수정
               </button>
             </div>
-          </div>
-          {user.bio && (
-            <p className="mt-4 text-sm text-white/60 leading-[1.6] whitespace-pre-line">{user.bio}</p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {user.skills.map((s) => (
-              <span
-                key={s}
-                className="text-[11px] text-white/70 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.03]"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
+          </aside>
+        </section>
 
-        {/* 탭 — 아래 목록과 같은 폭으로 맞춰 가운데에 둡니다.
-            모바일에서는 접지 않고 가로로 스크롤해요. */}
-        <div className="mt-8 mx-auto w-full max-w-2xl">
+        <div className="mt-14 w-full border-y border-white/10">
           <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="inline-flex gap-1 bg-white/[0.04] border border-white/10 rounded-full p-1">
+            <div className="inline-flex min-w-max sm:flex sm:w-full sm:min-w-0">
             {(
               [
                 { key: 'owned', label: '등록한 프로젝트', count: ownedProjects.length },
@@ -160,11 +172,14 @@ export default function MyPage() {
               <button
                 key={item.key}
                 onClick={() => setTab(item.key)}
-                className={`whitespace-nowrap px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                  tab === item.key ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                className={`border-b-2 px-5 py-5 text-sm font-medium transition-colors sm:flex-1 sm:px-3 sm:text-center ${
+                  tab === item.key
+                    ? 'border-[#7db4ff] text-[#7db4ff]'
+                    : 'border-transparent text-white/55 hover:text-white'
                 }`}
               >
-                {item.label} <span className="opacity-50 tabular-nums">{item.count}</span>
+                {item.label}{' '}
+                <span className="ml-1 text-xs opacity-50 tabular-nums">{item.count}</span>
                 </button>
               ))}
             </div>
@@ -174,9 +189,9 @@ export default function MyPage() {
         {/* 등록한 프로젝트 — 관리용이라 카드보다 가로로 긴 줄이 읽기 좋아요.
             페이지가 넓어져도 본문 폭을 잡아 가운데로 모읍니다. */}
         {tab === 'owned' && (
-          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
+          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
             {ownedProjects.length === 0 && (
-              <p className="text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+              <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 등록한 프로젝트가 없어요
               </p>
             )}
@@ -233,9 +248,9 @@ export default function MyPage() {
 
         {/* 지원한 프로젝트 */}
         {tab === 'applied' && (
-          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
+          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
             {applications.length === 0 && (
-              <p className="text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+              <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 지원한 프로젝트가 없어요
               </p>
             )}
@@ -278,9 +293,9 @@ export default function MyPage() {
 
         {/* 나의 팀 (확정된 팀) */}
         {tab === 'teams' && (
-          <div className="mt-5 mx-auto w-full max-w-2xl space-y-3">
+          <div className="mt-8 mx-auto w-full max-w-4xl space-y-3">
             {teams.length === 0 && (
-              <p className="text-sm text-white/60 py-10 text-center border border-dashed border-white/10 rounded-2xl">
+              <p className="border-y border-white/10 py-14 text-center text-sm text-white/50">
                 아직 확정된 팀이 없어요.
                 <br />
                 <span className="text-white/50 text-xs">
@@ -361,14 +376,14 @@ function ReactionProjectList({
 }) {
   if (projects.length === 0) {
     return (
-      <p className="mt-5 mx-auto w-full max-w-2xl text-sm text-white/60 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+      <p className="mt-8 mx-auto w-full max-w-4xl border-y border-white/10 py-14 text-center text-sm text-white/50">
         {emptyMessage}
       </p>
     );
   }
 
   return (
-    <div className="project-card-grid mt-5">
+    <div className="project-card-grid mt-8 mx-auto w-full max-w-4xl">
       {projects.map((p, i) => (
         <ProjectCard
           key={p.id}
