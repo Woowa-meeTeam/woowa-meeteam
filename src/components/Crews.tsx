@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, Search, Users } from 'lucide-react';
-import { Avatar, SectionEyebrow } from './primitives';
+import { Search, Users } from 'lucide-react';
+import { Avatar } from './primitives';
 import Navbar from './Navbar';
 import FieldFilters, { FIELD_STYLES } from './FieldFilters';
 import { api } from '../api';
@@ -61,27 +61,24 @@ export default function Crews() {
         transition={{ duration: 0.5, ease: easeOut }}
         className="flex-1 max-w-6xl w-full mx-auto px-6 pb-20"
       >
-        <button
-          onClick={() => navigate('/')}
-          className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />홈
-        </button>
-
-        <div className="mt-6">
-          <SectionEyebrow label="크루" tag={crews ? `${crews.length}명` : '불러오는 중'} />
-          <h1 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight leading-[1.15]">
+        <div>
+          <h1 className="page-title leading-[1.15]">
             함께할 크루들을
             <br />
             먼저 만나보세요.
           </h1>
-        <p className="mt-3 text-sm text-white/70">
+          <p className="mt-3 text-sm text-white/70">
             어떤 분야와 스킬을 가진 크루가 있는지 둘러볼 수 있어요
           </p>
         </div>
 
         {/* 크루 이름 검색 */}
-        <div className="relative mt-6">
+        <div className="mt-6 flex justify-end">
+          <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-white/70">
+            크루 {crews ? `${crews.length}명` : '불러오는 중'}
+          </span>
+        </div>
+        <div className="relative mt-2">
           <Search className="w-4 h-4 text-white/50 absolute left-5 top-1/2 -translate-y-1/2" />
           <input
             value={query}

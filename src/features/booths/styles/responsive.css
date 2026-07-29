@@ -22,7 +22,8 @@
 
 @media (max-width: 767px) {
   .booth-feature .app-shell {
-    width: min(100% - var(--space-4), 1440px);
+    width: 100%;
+    padding-inline: 24px;
     padding-block-end: var(--space-10);
   }
 
@@ -32,7 +33,7 @@
   }
 
   .booth-feature .booth-section {
-    padding-block: var(--space-12);
+    padding-block: 0 var(--space-12);
   }
 
   .booth-feature .booth-section__header {

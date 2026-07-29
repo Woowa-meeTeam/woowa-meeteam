@@ -65,7 +65,7 @@ export default function MyPage() {
         transition={{ duration: 0.5, ease: easeOut }}
         className="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-6 pb-16"
       >
-        <h1 className="mt-8 text-4xl md:text-5xl font-semibold tracking-tight">마이페이지</h1>
+        <h1 className="page-title">마이페이지</h1>
 
         <section className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
           <div className="order-last lg:order-first">

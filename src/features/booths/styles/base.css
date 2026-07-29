@@ -8,7 +8,7 @@
   isolation: isolate;
   min-width: 320px;
   min-height: 100dvh;
-  padding-top: 80px;
+  padding-top: 0;
   background: transparent;
   color: var(--color-ink);
   scroll-behavior: smooth;

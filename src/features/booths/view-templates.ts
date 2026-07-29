@@ -304,8 +304,7 @@ export function renderShell(selectedFloorId: FloorId): string {
       <section class="booth-section" id="booth-map" aria-labelledby="booth-section-title">
         <div class="booth-section__header">
           <div>
-            <p class="site-label">OFFLINE BOOTH GUIDE</p>
-            <h2 id="booth-section-title">층별 부스 지도</h2>
+            <h2 class="page-title" id="booth-section-title">층별 부스 지도</h2>
             <p>찾고 싶은 팀이 있는 층을 선택해 주세요.</p>
           </div>
           <div class="floor-selector" role="tablist" aria-label="층 선택">

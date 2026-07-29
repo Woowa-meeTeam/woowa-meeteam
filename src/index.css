@@ -16,6 +16,20 @@ body {
   color: #fff;
 }
 
+/* 탐색 화면들의 대표 제목은 프로젝트 탐색의 제목을 기준으로 통일합니다. */
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 2.25rem;
+  }
+}
+
 ::selection {
   background: rgba(61, 129, 227, 0.3);
 }
@@ -836,10 +850,10 @@ body {
 }
 
 .faq-page {
-  width: min(920px, calc(100% - 40px));
+  width: min(100%, 1152px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 160px 0 100px;
+  padding: 0 24px 100px;
 }
 
 .faq-page__header {
@@ -854,12 +868,14 @@ body {
 }
 
 .faq-page__header h1 {
-  margin-top: 14px;
+  margin-top: 0;
   color: #fff;
-  font-size: clamp(42px, 6vw, 68px);
-  font-weight: 760;
-  line-height: 1.04;
-  letter-spacing: -0.055em;
+}
+
+@media (min-width: 768px) {
+  .faq-page__header h1 {
+    font-size: 2.25rem;
+  }
 }
 
 .faq-page__header > span {
@@ -1266,12 +1282,12 @@ body {
   }
 
   .faq-page {
-    width: calc(100% - 40px);
-    padding: 124px 0 72px;
+    width: 100%;
+    padding: 0 24px 72px;
   }
 
   .faq-page__header h1 {
-    font-size: 42px;
+    font-size: 1.875rem;
   }
 
   .faq-list {

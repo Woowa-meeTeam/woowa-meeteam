@@ -129,7 +129,7 @@ export default function AllProjects() {
       >
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">전체 프로젝트</h1>
+            <h1 className="page-title">전체 프로젝트</h1>
             <p className="mt-2 text-sm text-white/70">
               {projects ? `${projects.length}개의 프로젝트` : '불러오는 중…'}
             </p>

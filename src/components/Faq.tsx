@@ -27,8 +27,7 @@ export default function Faq() {
   return (
     <main className="faq-page relative z-20">
       <header className="faq-page__header">
-        <p>FAQ</p>
-        <h1>팀을 찾기 전에<br />궁금한 것들</h1>
+        <h1 className="page-title">팀을 찾기 전에<br />궁금한 것들</h1>
         <span>프로젝트 등록과 지원에 필요한 규칙만 정리했어요.</span>
       </header>
 

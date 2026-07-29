@@ -119,7 +119,7 @@ function BoothRoute({ admin = false }: { admin?: boolean }) {
 
   return (
     <>
-      <Navbar fixed onStart={handleStart} onMyPage={() => navigate('/my')} />
+      <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
       <Suspense
         fallback={
           <div className="relative z-20 min-h-screen grid place-items-center">
@@ -136,7 +136,7 @@ function BoothRoute({ admin = false }: { admin?: boolean }) {
 function FaqRoute() {
   return (
     <>
-      <Navbar fixed />
+      <Navbar />
       <Faq />
       <FeedbackWidget />
     </>
