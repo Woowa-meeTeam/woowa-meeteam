@@ -415,8 +415,7 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     applicantRes,
     reactionRes,
     viewRes,
-    extrasRes,
-    teamRes,
+    projectExtrasRes,
     myReactRes,
   ] = await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
@@ -424,12 +423,10 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     supabase.from('project_applicant_counts').select('*').in('project_id', ids),
     supabase.from('project_reaction_counts').select('*').in('project_id', ids),
     supabase.from('project_view_counts').select('*').in('project_id', ids),
-    // 나중에 추가된 컬럼이라 따로 읽습니다. 마이그레이션 적용 전에도 목록이 떠야 하니
-    // 여기서 실패해도 나머지 정보는 그대로 보여 줍니다.
-    supabase.from('projects').select('id, category, github_url, notion_url').in('id', ids),
-    // 팀 스페이스 컬럼은 한 번 더 나눠 읽습니다. 위 질의에 합치면 마이그레이션 적용 전에
-    // category 까지 같이 죽어서, 탐색 페이지의 카테고리 필터가 통째로 멎습니다.
-    supabase.from('projects').select('id, team_links, team_notice').in('id', ids),
+    supabase
+      .from('projects')
+      .select('id, category, github_url, notion_url, team_links, team_notice')
+      .in('id', ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
@@ -449,18 +446,11 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   );
   const extras = new Map(
     (
-      (extrasRes.data ?? []) as {
+      (projectExtrasRes.data ?? []) as {
         id: string;
         category: string | null;
         github_url: string | null;
         notion_url: string | null;
-      }[]
-    ).map((e) => [e.id, e]),
-  );
-  const teamExtras = new Map(
-    (
-      (teamRes.data ?? []) as {
-        id: string;
         team_links: TeamLink[] | null;
         team_notice: string | null;
       }[]
@@ -488,12 +478,10 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     p.views = views.get(r.id) ?? 0;
     const extra = extras.get(r.id);
     p.category = extra?.category ?? null;
-    const team = teamExtras.get(r.id);
-    // 마이그레이션 전이라 team_links 를 못 읽었으면 옛 두 컬럼에서라도 끌어옵니다
-    p.teamLinks = team
-      ? normalizeTeamLinks(team.team_links)
+    p.teamLinks = extra?.team_links
+      ? normalizeTeamLinks(extra.team_links)
       : legacyTeamLinks(extra?.github_url, extra?.notion_url);
-    p.teamNotice = team?.team_notice?.trim() || null;
+    p.teamNotice = extra?.team_notice?.trim() || null;
     p.bookmarks = rc?.bookmarks ?? 0;
     p.myLike = mine.has(`${r.id}:LIKE`);
     p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
