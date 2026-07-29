@@ -404,8 +404,10 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
 async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const { data: auth } = await supabase.auth.getUser();
-  const myId = auth.user?.id;
+  // 목록 표시용 사용자 식별은 브라우저에 저장된 세션이면 충분합니다.
+  // 권한 검사는 각 쿼리의 JWT와 DB RLS가 맡으므로 Auth 서버를 매번 조회하지 않습니다.
+  const { data: auth } = await supabase.auth.getSession();
+  const myId = auth.session?.user.id;
 
   const [
     slotsRes,
