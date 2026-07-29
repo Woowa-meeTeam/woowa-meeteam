@@ -5,6 +5,8 @@ import { Plus, Search } from 'lucide-react';
 import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import FieldFilters from './FieldFilters';
+import ProjectSort, { sortProjects } from './ProjectSort';
+import type { SortKey } from './ProjectSort';
 import { api, PROJECT_CATEGORIES } from '../api';
 import type { Project } from '../api';
 
@@ -18,14 +20,6 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'RECRUITING', label: '모집중' },
   { key: 'CLOSED', label: '모집 마감' },
   { key: 'CONFIRMED', label: '팀 확정' },
-];
-
-type SortKey = 'latest' | 'views' | 'likes';
-
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'latest', label: '등록순' },
-  { key: 'views', label: '조회수순' },
-  { key: 'likes', label: '좋아요순' },
 ];
 
 const countByStatus = (projects: Project[], status: StatusFilter) =>
@@ -62,10 +56,7 @@ export default function AllProjects() {
         (p.owner?.name ?? '').toLowerCase().includes(q)
       );
     });
-    // 목록이 등록 최신순으로 내려오니 '등록순'은 그대로 둡니다
-    if (sort === 'latest') return list;
-    const weight = sort === 'views' ? (p: Project) => p.views : (p: Project) => p.likes;
-    return [...list].sort((a, b) => weight(b) - weight(a));
+    return sortProjects(list, sort);
   }, [projects, query, field, status, category, sort]);
 
   return (
@@ -146,22 +137,7 @@ export default function AllProjects() {
           <h2 className="text-lg font-semibold text-white/90">프로젝트 목록</h2>
           <div className="flex flex-col items-end gap-2">
             {/* 정렬 기준 — 상태 필터보다 한 단계 작게 두어 둘을 구분합니다 */}
-            <div className="flex flex-wrap items-center justify-end text-xs">
-              {SORTS.map((item, index) => (
-                <span key={item.key} className="inline-flex items-center">
-                  {index > 0 && <span className="mx-2 text-white/20">|</span>}
-                  <button
-                    type="button"
-                    onClick={() => setSort(item.key)}
-                    className={`font-medium transition-colors ${
-                      sort === item.key ? 'text-white' : 'text-white/40 hover:text-white/75'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                </span>
-              ))}
-            </div>
+            <ProjectSort value={sort} onChange={setSort} />
             <div className="flex flex-wrap items-center justify-end text-sm">
               {STATUS_FILTERS.map((item, index) => (
                 <span key={item.key} className="inline-flex items-center">

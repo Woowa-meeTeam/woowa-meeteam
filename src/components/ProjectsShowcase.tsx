@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
 import { SectionEyebrow } from './primitives';
 import ProjectCard from './ProjectCard';
+import ProjectSort, { sortProjects } from './ProjectSort';
+import type { SortKey } from './ProjectSort';
 import { api } from '../api';
 import type { Project } from '../api';
 
@@ -14,6 +16,7 @@ type Props = {
 export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>('latest');
 
   useEffect(() => {
     api
@@ -23,6 +26,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
   }, []);
 
   const recruiting = projects?.filter((p) => !p.closed).length ?? 0;
+  const sorted = useMemo(() => sortProjects(projects ?? [], sort), [projects, sort]);
 
   return (
     <section id="projects" className="relative z-20 max-w-6xl mx-auto px-6 py-16 md:py-24 scroll-mt-20">
@@ -45,20 +49,24 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
             먼저 둘러보세요.
           </h2>
         </div>
-        <div className="flex items-center gap-2.5">
-          <a
-            href="/projects"
-            className="text-sm font-medium text-white/60 hover:text-white transition-colors px-2"
-          >
-            전체 보기
-          </a>
-          <button
-            onClick={onRegister}
-            className="group inline-flex items-center gap-2 rounded-full bg-white text-black text-sm font-semibold px-5 py-3 hover:bg-white/90 active:scale-[0.98] transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            프로젝트 등록
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          {/* 정렬 기준 — 프로젝트 탐색과 같은 UI */}
+          <ProjectSort value={sort} onChange={setSort} />
+          <div className="flex items-center gap-2.5">
+            <a
+              href="/projects"
+              className="text-sm font-medium text-white/60 hover:text-white transition-colors px-2"
+            >
+              전체 보기
+            </a>
+            <button
+              onClick={onRegister}
+              className="group inline-flex items-center gap-2 rounded-full bg-white text-black text-sm font-semibold px-5 py-3 hover:bg-white/90 active:scale-[0.98] transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              프로젝트 등록
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -78,7 +86,7 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
 
       {projects && (
         <div className="project-card-grid">
-          {projects.map((p, i) => (
+          {sorted.map((p, i) => (
             <ProjectCard
               key={p.id}
               project={p}
