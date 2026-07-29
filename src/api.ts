@@ -346,6 +346,18 @@ type MemberRow = {
   github_login?: string | null;
 };
 
+type ApplicantCountRow = { project_id: string; pending: number; applicants: number };
+type ReactionCountRow = { project_id: string; likes: number; bookmarks: number };
+type ViewCountRow = { project_id: string; views: number };
+
+type ProjectHydrationPayload = {
+  slots: SlotRow[];
+  members: MemberRow[];
+  applicants: ApplicantCountRow[];
+  reactions: ReactionCountRow[];
+  views: ViewCountRow[];
+};
+
 function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Project {
   const mySlots = slots
     .filter((s) => s.project_id === row.id)
@@ -408,6 +420,48 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
   };
 }
 
+let projectHydrationRpcAvailable: boolean | null = null;
+
+function toHydrationPayload(data: unknown): ProjectHydrationPayload {
+  const payload = (data ?? {}) as Partial<ProjectHydrationPayload>;
+  return {
+    slots: Array.isArray(payload.slots) ? payload.slots : [],
+    members: Array.isArray(payload.members) ? payload.members : [],
+    applicants: Array.isArray(payload.applicants) ? payload.applicants : [],
+    reactions: Array.isArray(payload.reactions) ? payload.reactions : [],
+    views: Array.isArray(payload.views) ? payload.views : [],
+  };
+}
+
+async function loadProjectHydration(ids: string[]): Promise<ProjectHydrationPayload> {
+  if (projectHydrationRpcAvailable !== false) {
+    const { data, error } = await supabase.rpc('get_project_hydration', {
+      p_project_ids: ids,
+    });
+    if (!error) {
+      projectHydrationRpcAvailable = true;
+      return toHydrationPayload(data);
+    }
+    projectHydrationRpcAvailable = false;
+  }
+
+  const [slotsRes, membersRes, applicantRes, reactionRes, viewRes] = await Promise.all([
+    supabase.from('project_slot_status').select('*').in('project_id', ids),
+    supabase.from('project_members').select('*').in('project_id', ids),
+    supabase.from('project_applicant_counts').select('*').in('project_id', ids),
+    supabase.from('project_reaction_counts').select('*').in('project_id', ids),
+    supabase.from('project_view_counts').select('*').in('project_id', ids),
+  ]);
+
+  return {
+    slots: (slotsRes.data ?? []) as SlotRow[],
+    members: (membersRes.data ?? []) as MemberRow[],
+    applicants: (applicantRes.data ?? []) as ApplicantCountRow[],
+    reactions: (reactionRes.data ?? []) as ReactionCountRow[],
+    views: (viewRes.data ?? []) as ViewCountRow[],
+  };
+}
+
 /** 여러 프로젝트의 슬롯/멤버/집계를 한 번에 가져와 N+1 을 피합니다. */
 async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   if (rows.length === 0) return [];
@@ -417,41 +471,18 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   const { data: auth } = await supabase.auth.getSession();
   const myId = auth.session?.user.id;
 
-  const [
-    slotsRes,
-    membersRes,
-    applicantRes,
-    reactionRes,
-    viewRes,
-    myReactRes,
-  ] = await Promise.all([
-    supabase.from('project_slot_status').select('*').in('project_id', ids),
-    supabase.from('project_members').select('*').in('project_id', ids),
-    supabase.from('project_applicant_counts').select('*').in('project_id', ids),
-    supabase.from('project_reaction_counts').select('*').in('project_id', ids),
-    supabase.from('project_view_counts').select('*').in('project_id', ids),
+  const [hydration, myReactRes] = await Promise.all([
+    loadProjectHydration(ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
   ]);
 
-  const slots = (slotsRes.data ?? []) as SlotRow[];
-  const members = (membersRes.data ?? []) as MemberRow[];
-  const applicants = new Map(
-    ((applicantRes.data ?? []) as { project_id: string; pending: number; applicants: number }[]).map(
-      (a) => [a.project_id, a],
-    ),
-  );
-  const reactions = new Map(
-    ((reactionRes.data ?? []) as { project_id: string; likes: number; bookmarks: number }[]).map(
-      (r) => [r.project_id, r],
-    ),
-  );
+  const { slots, members } = hydration;
+  const applicants = new Map(hydration.applicants.map((a) => [a.project_id, a]));
+  const reactions = new Map(hydration.reactions.map((r) => [r.project_id, r]));
   const views = new Map(
-    ((viewRes.data ?? []) as { project_id: string; views: number }[]).map((v) => [
-      v.project_id,
-      v.views,
-    ]),
+    hydration.views.map((v) => [v.project_id, v.views]),
   );
   const mine = new Set(
     ((myReactRes.data ?? []) as { project_id: string; kind: string }[]).map(
