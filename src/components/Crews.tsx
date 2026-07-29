@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Search, Users } from 'lucide-react';
 import { Avatar, SectionEyebrow } from './primitives';
 import Navbar from './Navbar';
 import FieldFilters, { FIELD_STYLES } from './FieldFilters';
@@ -15,6 +15,7 @@ export default function Crews() {
   const [crews, setCrews] = useState<User[] | null>(null);
   const [lookingIds, setLookingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const [field, setField] = useState<string | null>(null);
   const [lookingOnly, setLookingOnly] = useState(false);
 
@@ -27,10 +28,13 @@ export default function Crews() {
       .catch((e) => setError(e.message));
   }, []);
 
+  const normalizedQuery = query.trim().toLowerCase();
   const filtered =
     crews?.filter(
       (c) =>
-        (!field || c.fields.includes(field)) && (!lookingOnly || lookingIds.has(c.id)),
+        (!normalizedQuery || (c.crewName ?? '').toLowerCase().includes(normalizedQuery)) &&
+        (!field || c.fields.includes(field)) &&
+        (!lookingOnly || lookingIds.has(c.id)),
     ) ?? [];
   const lookingCount = crews?.filter((c) => lookingIds.has(c.id)).length ?? 0;
 
@@ -58,9 +62,21 @@ export default function Crews() {
             <br />
             먼저 만나보세요.
           </h1>
-          <p className="mt-3 text-sm text-white/70">
+        <p className="mt-3 text-sm text-white/70">
             어떤 분야와 스킬을 가진 크루가 있는지 둘러볼 수 있어요
           </p>
+        </div>
+
+        {/* 크루 이름 검색 */}
+        <div className="relative mt-6">
+          <Search className="w-4 h-4 text-white/50 absolute left-5 top-1/2 -translate-y-1/2" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="크루 이름으로 검색"
+            aria-label="크루 이름으로 검색"
+            className="w-full h-14 rounded-2xl bg-white/[0.04] border border-white/10 pl-12 pr-5 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#3182F6] focus:bg-white/[0.06] transition-colors"
+          />
         </div>
 
         {/* 분야 필터 */}
@@ -96,6 +112,8 @@ export default function Crews() {
           <p className="mt-8 text-sm text-white/60 py-12 text-center border border-dashed border-white/10 rounded-2xl">
             {crews.length === 0
               ? '아직 온보딩을 마친 크루가 없어요'
+              : normalizedQuery
+                ? `'${query}' 이름의 크루가 없어요`
               : `${field} 분야 크루가 아직 없어요`}
           </p>
         )}

@@ -105,7 +105,7 @@ export const PROJECT_CATEGORIES = [
 export const FIELD_SHORT: Record<string, string> = {
   백엔드: 'BE',
   프론트엔드: 'FE',
-  안드로이드: 'AOS',
+  안드로이드: 'AN',
 };
 
 export type FeedbackKind = 'BUG' | 'IMPROVEMENT' | 'FEATURE' | 'ETC';
