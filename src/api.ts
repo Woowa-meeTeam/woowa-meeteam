@@ -301,6 +301,7 @@ const toUser = (c: CrewRow): User => ({
 
 const PROJECT_SELECT = `
   id, title, summary, description, cover_image, prototype_url, deadline, status,
+  category, github_url, notion_url, team_links, team_notice,
   owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url, github_login )
 `;
 
@@ -313,6 +314,11 @@ type ProjectRow = {
   prototype_url: string | null;
   deadline: string | null;
   status: string;
+  category: string | null;
+  github_url: string | null;
+  notion_url: string | null;
+  team_links: TeamLink[] | null;
+  team_notice: string | null;
   owner: {
     id: string;
     crew_name: string | null;
@@ -368,9 +374,11 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     likes: 0,
     bookmarks: 0,
     views: 0,
-    category: null,
-    teamLinks: [],
-    teamNotice: null,
+    category: row.category,
+    teamLinks: row.team_links
+      ? normalizeTeamLinks(row.team_links)
+      : legacyTeamLinks(row.github_url, row.notion_url),
+    teamNotice: row.team_notice?.trim() || null,
     myLike: false,
     myBookmark: false,
     slots: mySlots,
@@ -415,7 +423,6 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     applicantRes,
     reactionRes,
     viewRes,
-    projectExtrasRes,
     myReactRes,
   ] = await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
@@ -423,10 +430,6 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     supabase.from('project_applicant_counts').select('*').in('project_id', ids),
     supabase.from('project_reaction_counts').select('*').in('project_id', ids),
     supabase.from('project_view_counts').select('*').in('project_id', ids),
-    supabase
-      .from('projects')
-      .select('id, category, github_url, notion_url, team_links, team_notice')
-      .in('id', ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
@@ -443,18 +446,6 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     ((reactionRes.data ?? []) as { project_id: string; likes: number; bookmarks: number }[]).map(
       (r) => [r.project_id, r],
     ),
-  );
-  const extras = new Map(
-    (
-      (projectExtrasRes.data ?? []) as {
-        id: string;
-        category: string | null;
-        github_url: string | null;
-        notion_url: string | null;
-        team_links: TeamLink[] | null;
-        team_notice: string | null;
-      }[]
-    ).map((e) => [e.id, e]),
   );
   const views = new Map(
     ((viewRes.data ?? []) as { project_id: string; views: number }[]).map((v) => [
@@ -476,12 +467,6 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     p.applicants = a?.applicants ?? 0;
     p.likes = rc?.likes ?? 0;
     p.views = views.get(r.id) ?? 0;
-    const extra = extras.get(r.id);
-    p.category = extra?.category ?? null;
-    p.teamLinks = extra?.team_links
-      ? normalizeTeamLinks(extra.team_links)
-      : legacyTeamLinks(extra?.github_url, extra?.notion_url);
-    p.teamNotice = extra?.team_notice?.trim() || null;
     p.bookmarks = rc?.bookmarks ?? 0;
     p.myLike = mine.has(`${r.id}:LIKE`);
     p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
