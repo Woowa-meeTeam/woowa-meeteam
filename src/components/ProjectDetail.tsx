@@ -30,6 +30,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [myApplication, setMyApplication] = useState<Application | null>(null);
+  const [activeApplicationCount, setActiveApplicationCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   /** 상세에서 빠져나올 곳은 랜딩이 아니라 프로젝트 탐색입니다 */
@@ -50,6 +51,7 @@ export default function ProjectDetail() {
       .then(([p, u, apps]) => {
         setProject(p);
         setUser(u);
+        setActiveApplicationCount(apps.filter((a) => a.status === 'pending' || a.status === 'accepted').length);
         const mine = apps.find((a) => a.projectId === p.id && a.status !== 'canceled') ?? null;
         setMyApplication(mine);
         // 지원 여부와 무관하게 항상 상세(view)를 볼 수 있게 둡니다.
@@ -113,7 +115,12 @@ export default function ProjectDetail() {
 
   const isOwner = user != null && project.owner?.id === user.id;
   const openSlots = project.slots.filter((s) => s.confirmed < s.capacity);
-  const canApply = !project.closed && openSlots.length > 0 && !isOwner && myApplication == null;
+  const canApply =
+    !project.closed &&
+    openSlots.length > 0 &&
+    !isOwner &&
+    myApplication == null &&
+    activeApplicationCount < 3;
   const canSubmit =
     applyField !== null && message.trim().length > 0 && message.trim().length <= 100 && !submitting;
 
@@ -452,7 +459,15 @@ export default function ProjectDetail() {
                     : project.status === 'PENDING'
                       ? '코치 승인 대기 중인 프로젝트예요'
                       : project.closed
-                        ? '모집이 마감된 프로젝트예요'
+                      ? '모집이 마감된 프로젝트예요'
+                      : activeApplicationCount >= 3
+                        ? (
+                            <>
+                              동시에 지원할 수 있는 프로젝트는 최대 3개예요.
+                              <br />
+                              기존 지원을 하나 취소한 뒤 다시 시도해 주세요.
+                            </>
+                          )
                         : '지원하기'}
                 </button>
                 {canApply && (
@@ -462,7 +477,7 @@ export default function ProjectDetail() {
                 )}
               </>
             )}
-            {submitError && <p className="mt-3 text-center text-xs text-[#F04452]">{submitError}</p>}
+            {submitError && <p className="mt-3 whitespace-pre-line text-center text-xs text-[#F04452]">{submitError}</p>}
           </div>
         </motion.div>
       )}
@@ -562,7 +577,7 @@ export default function ProjectDetail() {
             </div>
           )}
 
-          {submitError && <p className="mt-4 text-xs text-[#F04452]">{submitError}</p>}
+          {submitError && <p className="mt-4 whitespace-pre-line text-xs text-[#F04452]">{submitError}</p>}
 
           <button
             onClick={submitApplication}

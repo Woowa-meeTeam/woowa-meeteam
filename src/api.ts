@@ -1,7 +1,8 @@
 /* meeTeam 데이터 계층 — Supabase (Postgres + Auth + Storage)
  *
  * 비즈니스 규칙은 여기서 방어하지 않습니다. DB가 강제합니다:
- *  - 1인 1지원        → applications_one_active (partial unique index)
+ *  - 프로젝트별 1인 1지원 → applications_one_active (partial unique index)
+ *  - 동시 지원 최대 3개 → applications_active_limit 트리거
  *  - 본인 프로젝트 지원 → applications_insert RLS 정책
  *  - 정원 초과 방지    → accept_application() RPC 의 FOR UPDATE 락
  *  - 오너만 수락/거절  → RLS + RPC 내부 auth.uid() 검사
@@ -168,6 +169,11 @@ function toApiError(error: { message: string; code?: string } | null, fallback: 
     );
   if (msg.includes('applications_one_active'))
     return new ApiError(409, '이미 지원한 프로젝트예요');
+  if (msg.includes('동시에 지원할 수 있는 프로젝트는 최대 3개'))
+    return new ApiError(
+      409,
+      '동시에 지원할 수 있는 프로젝트는 최대 3개예요.\n기존 지원을 하나 취소한 뒤 다시 시도해 주세요.',
+    );
   if (msg.includes('crews_crew_name_key'))
     return new ApiError(409, '이미 사용 중인 크루명이에요');
   if (error.code === '23505') return new ApiError(409, msg || '이미 등록된 내용이에요');
