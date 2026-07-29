@@ -335,7 +335,7 @@ export function renderShell(selectedFloorId: FloorId): string {
 }
 
 export function renderMapPanel(viewModel: BoothMapViewModel): string {
-  const { floor, booths, view, viewBox, orientation, roomPresentations } = viewModel
+  const { floor, booths, view, viewBox, orientation } = viewModel
   const mapTransform = mapCameraTransform(floor, viewBox, orientation)
   const activeRoom =
     view.kind === "room" ? viewModel.rooms.find((room) => room.name === view.roomName) : undefined
@@ -343,8 +343,6 @@ export function renderMapPanel(viewModel: BoothMapViewModel): string {
     view.kind === "room"
       ? booths.filter((booth) => booth.roomName === view.roomName).length
       : booths.length
-  const detailOverflow =
-    view.kind === "room" && roomPresentations.some((presentation) => presentation.hasOverlap)
   return `
     <div class="map-panel__header">
       <div>
@@ -359,12 +357,6 @@ export function renderMapPanel(viewModel: BoothMapViewModel): string {
           : ""
       }
     </div>
-    ${
-      detailOverflow
-        ? '<p class="map-panel__warning" role="status">이 공간은 부스가 매우 촘촘합니다. 번호와 팀명을 확인한 뒤 부스를 선택해 주세요.</p>'
-        : ""
-    }
-
     <div class="map-frame">
       <svg
         class="map-canvas"
