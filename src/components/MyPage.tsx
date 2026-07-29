@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, ExternalLink, Pencil, ShieldCheck, Users } from 'lucide-react';
-import { Avatar, CoverFill } from './primitives';
+import { ArrowRight, Pencil, ShieldCheck, Users } from 'lucide-react';
+import { Avatar, CoverFill, GithubLink } from './primitives';
 import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import ProjectSlots from './ProjectSlots';
-import { FIELD_STYLES } from './FieldFilters';
+import { FieldTag } from './FieldFilters';
 import { api } from '../api';
 import type { Application, ApplicationStatus, Project, ProjectStatus, User } from '../api';
 
@@ -125,29 +125,13 @@ export default function MyPage() {
             {user.fields.length > 0 ? (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {user.fields.map((field) => (
-                  <span
-                    key={field}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                      FIELD_STYLES[field]?.tag ??
-                      'border-white/20 bg-white/[0.06] text-white/70'
-                    }`}
-                  >
-                    {field}
-                  </span>
+                  <FieldTag key={field} field={field} />
                 ))}
               </div>
             ) : (
               <p className="mt-2 text-sm text-white/45">분야 미설정</p>
             )}
-            <a
-              href={`https://github.com/${user.githubLogin}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 inline-flex max-w-full items-center gap-1.5 text-sm text-[#7db4ff] transition-colors hover:text-[#a9cbff]"
-            >
-              <span className="truncate">github.com/{user.githubLogin}</span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-            </a>
+            <GithubLink login={user.githubLogin} className="mt-5" />
             {user.bio && (
               <p className="mt-5 max-w-xs whitespace-pre-line text-sm leading-6 text-white/50">
                 {user.bio}

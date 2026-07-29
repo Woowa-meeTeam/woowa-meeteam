@@ -26,7 +26,19 @@ export type User = {
 export type ProjectStatus = 'PENDING' | 'RECRUITING' | 'CLOSED' | 'CONFIRMED' | 'REJECTED';
 
 export type Slot = { field: string; capacity: number; confirmed: number; skills: string[] };
-export type Member = { name: string; field: string; avatarGradient: string; avatarUrl?: string | null };
+export type Member = {
+  id: string;
+  name: string;
+  field: string;
+  /** 팀원 카드에서 GitHub 프로필로 바로 가기 위한 로그인명 */
+  githubLogin: string;
+  isOwner: boolean;
+  avatarGradient: string;
+  avatarUrl?: string | null;
+};
+
+/** 팀이 골라 넣는 링크 한 줄 — 종류는 TEAM_LINK_KINDS 에서 고릅니다 */
+export type TeamLink = { type: string; url: string };
 
 export type Project = {
   id: string;
@@ -50,9 +62,10 @@ export type Project = {
   views: number;
   /** 앱스토어식 큰 분류. 아직 안 고른 프로젝트는 null */
   category: string | null;
-  /** 팀 스페이스에 모아 두는 링크 */
-  githubUrl: string | null;
-  notionUrl: string | null;
+  /** 팀 스페이스에 모아 두는 링크 — 팀이 필요한 것만 골라 넣습니다 */
+  teamLinks: TeamLink[];
+  /** 팀이 맨 위에 붙여 두는 한마디 */
+  teamNotice: string | null;
   myLike: boolean;
   myBookmark: boolean;
   slots: Slot[];
@@ -103,6 +116,48 @@ export const PROJECT_CATEGORIES = [
   '교육·학습',
   '생활·유틸리티',
 ];
+
+/**
+ * 팀 링크로 고를 수 있는 종류. 팀마다 쓰는 도구가 달라서 고정 두 칸 대신 목록에서 고릅니다.
+ * key 는 DB(jsonb)에 그대로 들어가니 함부로 바꾸지 마세요 — 이미 저장된 링크가 '기타'로 떨어집니다.
+ */
+export const TEAM_LINK_KINDS: { key: string; label: string; placeholder: string }[] = [
+  { key: 'github', label: 'GitHub', placeholder: 'github.com/team/repo' },
+  { key: 'notion', label: 'Notion', placeholder: 'notion.so/…' },
+  { key: 'figma', label: 'Figma', placeholder: 'figma.com/file/…' },
+  { key: 'slack', label: 'Slack', placeholder: 'app.slack.com/…' },
+  { key: 'discord', label: 'Discord', placeholder: 'discord.gg/…' },
+  { key: 'deploy', label: '배포 주소', placeholder: 'my-team.vercel.app' },
+  { key: 'docs', label: '문서', placeholder: 'docs.google.com/…' },
+  { key: 'etc', label: '기타', placeholder: 'example.com' },
+];
+
+const TEAM_LINK_LABELS = new Map(TEAM_LINK_KINDS.map((k) => [k.key, k.label]));
+
+export const teamLinkLabel = (type: string): string =>
+  TEAM_LINK_LABELS.get(type) ?? TEAM_LINK_LABELS.get('etc')!;
+
+/** DB 에서 온 jsonb 를 믿지 않고 한 번 걸러 냅니다 — 손으로 넣은 값이 섞일 수 있어요 */
+function normalizeTeamLinks(raw: unknown): TeamLink[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { type, url } = item as { type?: unknown; url?: unknown };
+    if (typeof url !== 'string' || !url.trim()) return [];
+    return [{ type: typeof type === 'string' && type ? type : 'etc', url: url.trim() }];
+  });
+}
+
+/** team_links 마이그레이션 적용 전에도 예전 링크가 보이도록 */
+function legacyTeamLinks(
+  githubUrl: string | null | undefined,
+  notionUrl: string | null | undefined,
+): TeamLink[] {
+  const links: TeamLink[] = [];
+  if (githubUrl) links.push({ type: 'github', url: githubUrl });
+  if (notionUrl) links.push({ type: 'notion', url: notionUrl });
+  return links;
+}
 
 export const FIELD_SHORT: Record<string, string> = {
   백엔드: 'BE',
@@ -246,7 +301,7 @@ const toUser = (c: CrewRow): User => ({
 
 const PROJECT_SELECT = `
   id, title, summary, description, cover_image, prototype_url, deadline, status,
-  owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url )
+  owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url, github_login )
 `;
 
 type ProjectRow = {
@@ -258,7 +313,13 @@ type ProjectRow = {
   prototype_url: string | null;
   deadline: string | null;
   status: string;
-  owner: { id: string; crew_name: string | null; fields: string[] | null; avatar_url: string | null } | null;
+  owner: {
+    id: string;
+    crew_name: string | null;
+    fields: string[] | null;
+    avatar_url: string | null;
+    github_login: string | null;
+  } | null;
 };
 
 type SlotRow = {
@@ -274,6 +335,9 @@ type MemberRow = {
   crew_name: string | null;
   avatar_url: string | null;
   field: string;
+  is_owner: boolean;
+  /** 뷰에 나중에 붙인 컬럼이라, 마이그레이션 전에는 안 내려올 수 있습니다 */
+  github_login?: string | null;
 };
 
 function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Project {
@@ -305,8 +369,8 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
     bookmarks: 0,
     views: 0,
     category: null,
-    githubUrl: null,
-    notionUrl: null,
+    teamLinks: [],
+    teamNotice: null,
     myLike: false,
     myBookmark: false,
     slots: mySlots,
@@ -319,14 +383,20 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
           avatarUrl: row.owner.avatar_url,
         }
       : null,
+    // project_members 뷰는 오너까지 포함한 '확정된 팀 전원'입니다.
+    // 팀장이 늘 맨 위에 오도록 여기서 한 번 정렬해 둡니다 (UNION 은 순서를 보장하지 않아요).
     members: members
       .filter((m) => m.project_id === row.id)
       .map((m) => ({
+        id: m.crew_id,
         name: m.crew_name ?? '크루',
         field: m.field,
+        githubLogin: m.github_login ?? '',
+        isOwner: m.is_owner ?? m.crew_id === row.owner?.id,
         avatarGradient: gradientFor(m.crew_id),
         avatarUrl: m.avatar_url,
-      })),
+      }))
+      .sort((a, b) => Number(b.isOwner) - Number(a.isOwner)),
   };
 }
 
@@ -337,8 +407,16 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   const { data: auth } = await supabase.auth.getUser();
   const myId = auth.user?.id;
 
-  const [slotsRes, membersRes, applicantRes, reactionRes, viewRes, extrasRes, myReactRes] =
-    await Promise.all([
+  const [
+    slotsRes,
+    membersRes,
+    applicantRes,
+    reactionRes,
+    viewRes,
+    extrasRes,
+    teamRes,
+    myReactRes,
+  ] = await Promise.all([
     supabase.from('project_slot_status').select('*').in('project_id', ids),
     supabase.from('project_members').select('*').in('project_id', ids),
     supabase.from('project_applicant_counts').select('*').in('project_id', ids),
@@ -347,6 +425,9 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     // 나중에 추가된 컬럼이라 따로 읽습니다. 마이그레이션 적용 전에도 목록이 떠야 하니
     // 여기서 실패해도 나머지 정보는 그대로 보여 줍니다.
     supabase.from('projects').select('id, category, github_url, notion_url').in('id', ids),
+    // 팀 스페이스 컬럼은 한 번 더 나눠 읽습니다. 위 질의에 합치면 마이그레이션 적용 전에
+    // category 까지 같이 죽어서, 탐색 페이지의 카테고리 필터가 통째로 멎습니다.
+    supabase.from('projects').select('id, team_links, team_notice').in('id', ids),
     myId
       ? supabase.from('project_reactions').select('project_id, kind').in('project_id', ids)
       : Promise.resolve({ data: [] as { project_id: string; kind: string }[] }),
@@ -374,6 +455,15 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
       }[]
     ).map((e) => [e.id, e]),
   );
+  const teamExtras = new Map(
+    (
+      (teamRes.data ?? []) as {
+        id: string;
+        team_links: TeamLink[] | null;
+        team_notice: string | null;
+      }[]
+    ).map((e) => [e.id, e]),
+  );
   const views = new Map(
     ((viewRes.data ?? []) as { project_id: string; views: number }[]).map((v) => [
       v.project_id,
@@ -396,8 +486,12 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
     p.views = views.get(r.id) ?? 0;
     const extra = extras.get(r.id);
     p.category = extra?.category ?? null;
-    p.githubUrl = extra?.github_url ?? null;
-    p.notionUrl = extra?.notion_url ?? null;
+    const team = teamExtras.get(r.id);
+    // 마이그레이션 전이라 team_links 를 못 읽었으면 옛 두 컬럼에서라도 끌어옵니다
+    p.teamLinks = team
+      ? normalizeTeamLinks(team.team_links)
+      : legacyTeamLinks(extra?.github_url, extra?.notion_url);
+    p.teamNotice = team?.team_notice?.trim() || null;
     p.bookmarks = rc?.bookmarks ?? 0;
     p.myLike = mine.has(`${r.id}:LIKE`);
     p.myBookmark = mine.has(`${r.id}:BOOKMARK`);
@@ -764,15 +858,23 @@ export const api = {
   },
 
   /** 팀 스페이스 링크 저장 (오너만 — 컬럼 GRANT + RLS 가 강제) */
-  async saveTeamLinks(id: string, links: { githubUrl: string; notionUrl: string }): Promise<Project> {
+  async saveTeamLinks(id: string, links: TeamLink[]): Promise<Project> {
+    // 주소가 빈 줄은 버립니다 — 고르다 만 항목이 빈 카드로 남지 않게.
+    const cleaned = links.flatMap((l) =>
+      l.url.trim() ? [{ type: l.type, url: l.url.trim() }] : [],
+    );
+    const { error } = await supabase.from('projects').update({ team_links: cleaned }).eq('id', id);
+    if (error) throw toApiError(error, '링크 저장에 실패했어요');
+    return api.project(id);
+  },
+
+  /** 팀 공지 저장 (오너만) */
+  async saveTeamNotice(id: string, notice: string): Promise<Project> {
     const { error } = await supabase
       .from('projects')
-      .update({
-        github_url: links.githubUrl.trim() || null,
-        notion_url: links.notionUrl.trim() || null,
-      })
+      .update({ team_notice: notice.trim() || null })
       .eq('id', id);
-    if (error) throw toApiError(error, '링크 저장에 실패했어요');
+    if (error) throw toApiError(error, '공지 저장에 실패했어요');
     return api.project(id);
   },
 

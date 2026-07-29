@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Search, Users } from 'lucide-react';
 import { Avatar } from './primitives';
 import Navbar from './Navbar';
-import FieldFilters, { FIELD_STYLES } from './FieldFilters';
+import FieldFilters, { FieldTag } from './FieldFilters';
 import { api } from '../api';
 import type { User } from '../api';
 
@@ -94,7 +94,7 @@ export default function Crews() {
           <button
             type="button"
             onClick={() => setLookingOnly((v) => !v)}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+            className={`flex-shrink-0 whitespace-nowrap px-3.5 py-2 rounded-full border text-sm font-medium transition-all sm:px-4 ${
               lookingOnly
                 ? 'border-[#FFB020]/50 text-[#ffd27d] bg-[#FFB020]/10'
                 : 'bg-white/[0.03] text-white/70 border-white/10 hover:border-white/25 hover:text-white'
@@ -160,15 +160,7 @@ export default function Crews() {
 
                 <div className="mt-auto h-7 flex flex-nowrap items-center gap-1.5 overflow-hidden">
                   {c.fields.slice(0, 2).map((f) => (
-                    <span
-                      key={f}
-                      className={`max-w-[112px] truncate flex-shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                        FIELD_STYLES[f]?.tag ??
-                        'border-white/20 text-white/70 bg-white/[0.06]'
-                      }`}
-                    >
-                      {f}
-                    </span>
+                    <FieldTag key={f} field={f} className="max-w-[112px] truncate flex-shrink-0" />
                   ))}
                   {c.fields.length > 2 && (
                     <span className="flex-shrink-0 text-[11px] text-[#7db4ff] px-1 py-1">

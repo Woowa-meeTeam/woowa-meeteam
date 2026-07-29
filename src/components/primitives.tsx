@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ExternalLink } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import type { ProjectStatus } from '../api';
 
@@ -261,5 +261,29 @@ export function StatusBadge({ status }: { status: ProjectStatus }) {
     >
       {badge.label}
     </span>
+  );
+}
+
+/**
+ * GitHub 프로필 링크 — 마이페이지·크루 상세·팀 스페이스가 같은 모양을 씁니다.
+ * 세 곳에 같은 마크업이 흩어져 있어 한 곳으로 모았습니다.
+ */
+export function GithubLink({
+  login,
+  className = '',
+}: {
+  login: string;
+  className?: string;
+}) {
+  return (
+    <a
+      href={`https://github.com/${login}`}
+      target="_blank"
+      rel="noreferrer"
+      className={`inline-flex max-w-full items-center gap-1.5 text-sm text-[#7db4ff] transition-colors hover:text-[#a9cbff] ${className}`}
+    >
+      <span className="truncate">github.com/{login}</span>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+    </a>
   );
 }

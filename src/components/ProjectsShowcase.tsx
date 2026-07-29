@@ -49,7 +49,8 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
             먼저 둘러보세요.
           </h2>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        {/* 좁은 화면에서 줄이 바뀌어도 오른쪽에 붙어 있도록 ml-auto 로 남는 폭을 밀어 둡니다 */}
+        <div className="ml-auto flex flex-col items-end gap-2">
           {/* 정렬 기준 — 프로젝트 탐색과 같은 UI */}
           <ProjectSort value={sort} onChange={setSort} />
           <div className="flex items-center gap-2.5">

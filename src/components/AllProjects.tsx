@@ -191,19 +191,20 @@ export default function AllProjects() {
         <FieldFilters value={field} onChange={setField} className="mt-3" />
 
         {/* 프로젝트 목록과 정렬 · 모집 상태 필터 */}
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
+        <div className="mt-8 flex flex-wrap items-end gap-x-3 gap-y-2">
           <h2 className="text-lg font-semibold text-white/90">프로젝트 목록</h2>
-          <div className="flex flex-col items-end gap-2">
-            {/* 정렬 기준 — 상태 필터보다 한 단계 작게 두어 둘을 구분합니다 */}
-            <ProjectSort value={sort} onChange={setSort} />
-            <div className="flex flex-wrap items-center justify-end text-sm">
+          {/* 정렬 기준 — 상태 필터보다 한 단계 작게 두어 둘을 구분합니다 */}
+          <ProjectSort value={sort} onChange={setSort} className="ml-auto" />
+          {/* 상태 필터는 늘 제 줄을 씁니다. 좁은 화면에서 접히는 대신 가로로 스크롤돼요 */}
+          <div className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center justify-end text-sm">
               {STATUS_FILTERS.map((item, index) => (
                 <span key={item.key} className="inline-flex items-center">
                   {index > 0 && <span className="mx-2 text-white/20">|</span>}
                   <button
                     type="button"
                     onClick={() => setStatus(item.key)}
-                    className={`font-medium transition-colors ${
+                    className={`whitespace-nowrap font-medium transition-colors ${
                       status === item.key
                         ? 'text-white'
                         : 'text-white/50 hover:text-white/85'
