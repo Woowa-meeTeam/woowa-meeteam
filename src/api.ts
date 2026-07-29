@@ -94,16 +94,12 @@ export const currentFields = (fields: string[] | null | undefined): string[] =>
 
 /** 프로젝트를 큰 단위로 묶는 분류 — 모집 분야(FIELDS)와는 다른 축입니다 */
 export const PROJECT_CATEGORIES = [
-  '생산성',
-  '소셜·커뮤니티',
+  '여행',
+  '사진·콘텐츠',
+  '모임·커뮤니티',
+  '생산성·관리',
   '교육·학습',
-  '건강·운동',
-  '금융·자산',
-  '여행·지도',
-  '취미·엔터테인먼트',
-  '쇼핑·중고거래',
-  '개발자 도구',
-  '기타',
+  '생활·유틸리티',
 ];
 
 export const FIELD_SHORT: Record<string, string> = {
