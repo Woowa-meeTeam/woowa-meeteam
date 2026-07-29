@@ -47,12 +47,6 @@ export default function AllProjects() {
   }, []);
 
   const all = projects ?? [];
-  /** 실제로 쓰이고 있는 분류만 — 순서는 PROJECT_CATEGORIES 를 따릅니다 */
-  const usedCategories = useMemo(() => {
-    const present = new Set(all.map((p) => p.category).filter(Boolean) as string[]);
-    return PROJECT_CATEGORIES.filter((c) => present.has(c));
-  }, [all]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (projects ?? []).filter((p) => {
@@ -130,8 +124,8 @@ export default function AllProjects() {
           ))}
         </div>
 
-        {/* 카테고리 — 등록된 것만 보여 줍니다. 빈 카테고리를 눌러 봐야 결과가 없으니까요 */}
-        {usedCategories.length > 0 && (
+        {/* 카테고리 — 프로젝트가 아직 없어도 전체 선택지를 보여 줍니다 */}
+        {PROJECT_CATEGORIES.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
@@ -144,7 +138,7 @@ export default function AllProjects() {
             >
               전체 분류
             </button>
-            {usedCategories.map((c) => (
+            {PROJECT_CATEGORIES.map((c) => (
               <button
                 key={c}
                 type="button"
