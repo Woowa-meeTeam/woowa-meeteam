@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
-import StatsBoard from './components/StatsBoard';
 import Steps from './components/Steps';
 import Onboarding from './components/Onboarding';
 import ProjectForm from './components/ProjectForm';
@@ -95,7 +94,6 @@ function Landing() {
     <>
       <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
       <Hero onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
-      <StatsBoard />
       <ProjectsShowcase
         onRegister={() => navigate('/projects/new')}
         onSelect={(id) => navigate(`/projects/${id}`)}

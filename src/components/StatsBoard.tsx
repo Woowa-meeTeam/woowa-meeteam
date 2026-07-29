@@ -4,6 +4,60 @@ import { api } from '../api';
 import type { Project } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
+const SCRAMBLE_SYMBOLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+
+function ShuffleNumber({ value, delay = 0 }: { value: number; delay?: number }) {
+  const [display, setDisplay] = useState(value === 0 ? '0' : '');
+
+  useEffect(() => {
+    if (value === 0) {
+      setDisplay('0');
+      return;
+    }
+
+    let frame = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const target = String(value);
+    const start = performance.now();
+    const duration = 520;
+
+    const update = (now: number) => {
+      const elapsed = now - start - delay;
+      if (elapsed < 0) {
+        timer = setTimeout(() => {
+          frame = requestAnimationFrame(update);
+        }, 30);
+        return;
+      }
+
+      if (elapsed >= duration) {
+        setDisplay(target);
+        return;
+      }
+
+      setDisplay(
+        Array.from({ length: target.length }, () =>
+          SCRAMBLE_SYMBOLS[Math.floor(Math.random() * SCRAMBLE_SYMBOLS.length)],
+        ).join(''),
+      );
+      timer = setTimeout(() => {
+        frame = requestAnimationFrame(update);
+      }, 30);
+    };
+
+    frame = requestAnimationFrame(update);
+    return () => {
+      cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
+    };
+  }, [delay, value]);
+
+  return (
+    <span className="text-2xl font-bold tabular-nums" aria-label={String(value)}>
+      {display || ' '}
+    </span>
+  );
+}
 
 type Stats = {
   recruiting: number;
@@ -61,11 +115,11 @@ export default function StatsBoard() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.6, ease: easeOut }}
-      className="relative z-20 max-w-6xl mx-auto px-6 pt-4 pb-2"
+      className="relative z-20 w-full max-w-2xl mx-auto mt-8 px-2"
       aria-label="현재 팀 빌딩 현황"
     >
-      <div className="liquid-glass rounded-3xl px-6 py-6 sm:px-8">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div className="text-center">
+        <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
           <h2 className="text-sm font-semibold text-white">지금 팀 빌딩 현황</h2>
           <p className="text-xs text-white/55">
             누가 어디에 지원했는지는 공개하지 않아요. 인원수만 공개합니다.
@@ -73,11 +127,11 @@ export default function StatsBoard() {
         </div>
 
         <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <div key={item.label}>
               <dt className="text-xs text-white/60">{item.label}</dt>
-              <dd className="mt-1 flex items-baseline gap-1">
-                <span className={`text-2xl font-bold tabular-nums ${item.tone}`}>{item.value}</span>
+              <dd className={`mt-1 flex items-baseline justify-center gap-1 ${item.tone}`}>
+                <ShuffleNumber value={item.value} delay={index * 55} />
                 <span className="text-xs text-white/50">{item.unit}</span>
               </dd>
             </div>

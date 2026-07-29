@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { GithubButton, gradientStyle } from './primitives';
+import StatsBoard from './StatsBoard';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
@@ -40,11 +41,13 @@ export default function Hero({
         </span>
       </motion.p>
 
+      <StatsBoard />
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.7, ease: easeOut }}
-        className="mt-10 flex flex-col items-center gap-3"
+        className="mt-8 flex flex-col items-center gap-3"
       >
         {loggedIn ? (
           <button
