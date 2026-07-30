@@ -94,6 +94,30 @@ export type Application = {
   } | null;
 };
 
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELED';
+
+/** 오너가 크루에게 보내는 합류 제안 — 지원(Application)의 반대 방향입니다 */
+export type Invitation = {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  projectOwner: string;
+  coverImage: string | null;
+  field: string;
+  message: string;
+  status: InvitationStatus;
+  createdAt: string;
+  /** 제안을 받은 크루 — 오너가 보낸 목록을 볼 때 씁니다 */
+  crew: {
+    id: string;
+    name: string;
+    fields: string[];
+    skills: string[];
+    avatarGradient: string;
+    avatarUrl?: string | null;
+  } | null;
+};
+
 /** 현재 운영하는 모집 분야. 과거에 있던 기획 · 디자인 · iOS 는 더 이상 쓰지 않습니다. */
 export const FIELDS = ['백엔드', '프론트엔드', '안드로이드'];
 
@@ -530,6 +554,9 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
  * ──────────────────────────────────────────────────────── */
 
 let meCache: { uid: string; promise: Promise<User> } | null = null;
+
+/** invitations 테이블이 있는 환경인지 (마이그레이션 적용 전이면 false) */
+let invitationsAvailable: boolean | null = null;
 
 /** 로그인/로그아웃으로 주체가 바뀌면 캐시를 버립니다. */
 function clearMeCache() {
@@ -1151,6 +1178,104 @@ export const api = {
     const application = applications.find((a) => a.id === id)!;
     return { application, project };
   },
+
+  /**
+   * 이 크루가 이미 팀에 속했는지 (표시 기준 — 지원이 수락되면 참).
+   * 컬럼이 아직 없는 환경에서도 화면이 죽지 않도록 실패는 false 로 봅니다.
+   */
+  async crewHasTeam(crewId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('crew_team_status')
+      .select('teamed')
+      .eq('crew_id', crewId)
+      .single();
+    if (error || !data) return false;
+    return Boolean((data as { teamed: boolean }).teamed);
+  },
+
+  /* ── 팀원 제안 (오너 → 크루) ───────────────────────────── */
+
+  /**
+   * invitations 마이그레이션이 적용됐는지. 적용 전에는 제안 UI 를 감춥니다.
+   * (배포와 SQL 적용 사이에 공백이 있어서, 없는 테이블을 부르는 화면이 나오면 안 돼요)
+   */
+  async invitationsEnabled(): Promise<boolean> {
+    if (invitationsAvailable !== null) return invitationsAvailable;
+    const { error } = await supabase.from('invitations').select('id').limit(1);
+    // 로그인 안 했으면 RLS 로 0건이 올 뿐 에러는 아닙니다. 에러면 테이블이 없는 것.
+    invitationsAvailable = !error;
+    return invitationsAvailable;
+  },
+
+  /** 오너가 크루에게 합류를 제안합니다. 정원·1인1팀 검사는 DB가 합니다. */
+  async sendInvitation(
+    projectId: string,
+    crewId: string,
+    field: string,
+    message: string,
+  ): Promise<void> {
+    const { error } = await supabase.rpc('send_invitation', {
+      p_project_id: projectId,
+      p_crew_id: crewId,
+      p_field: field,
+      p_message: message.trim(),
+    });
+    if (error) throw toApiError(error, '제안을 보내지 못했어요');
+  },
+
+  /** 내가 받은 제안 — 대기 중인 것이 먼저 옵니다 */
+  async myInvitations(): Promise<Invitation[]> {
+    const uid = await currentUserId();
+    const { data, error } = await supabase
+      .from('invitations')
+      .select(INVITATION_SELECT)
+      .eq('crew_id', uid)
+      .order('created_at', { ascending: false });
+    if (error) {
+      // 마이그레이션 적용 전이면 빈 목록으로 둡니다 — 화면이 깨지는 것보다 낫습니다.
+      invitationsAvailable = false;
+      return [];
+    }
+    invitationsAvailable = true;
+    const rows = (data ?? []).map((r) => mapInvitation(r as unknown as InvitationRow));
+    // 대기 중인 제안을 위로 — 답해야 할 것이 먼저 보이게.
+    return rows.sort((a, b) => Number(b.status === 'PENDING') - Number(a.status === 'PENDING'));
+  },
+
+  /** 헤더 뱃지용 — 답하지 않은 제안 수만 셉니다 */
+  async pendingInvitationCount(): Promise<number> {
+    const uid = await currentUserId();
+    const { count, error } = await supabase
+      .from('invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('crew_id', uid)
+      .eq('status', 'PENDING');
+    if (error) return 0;
+    return count ?? 0;
+  },
+
+  /** 받은 제안에 응답합니다. 수락하면 그 자리에서 팀원이 됩니다. */
+  async respondInvitation(id: string, accept: boolean): Promise<void> {
+    const { error } = await supabase.rpc('respond_invitation', { p_id: id, p_accept: accept });
+    if (error) throw toApiError(error, '처리에 실패했어요');
+  },
+
+  /** 오너가 보낸 제안을 거둬들입니다 */
+  async cancelInvitation(id: string): Promise<void> {
+    const { error } = await supabase.rpc('cancel_invitation', { p_id: id });
+    if (error) throw toApiError(error, '취소하지 못했어요');
+  },
+
+  /** 오너가 이 프로젝트로 보낸 제안 목록 */
+  async projectInvitations(projectId: string): Promise<Invitation[]> {
+    const { data, error } = await supabase
+      .from('invitations')
+      .select(INVITATION_SELECT)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+    if (error) throw toApiError(error, '보낸 제안을 불러오지 못했어요');
+    return (data ?? []).map((r) => mapInvitation(r as unknown as InvitationRow));
+  },
 };
 
 type ApplicationRow = {
@@ -1169,6 +1294,57 @@ type ApplicationRow = {
     avatar_url: string | null;
   } | null;
 };
+
+const INVITATION_SELECT = `
+  id, project_id, field, message, status, created_at,
+  project:projects ( title, cover_image, owner:crews!projects_owner_id_fkey ( crew_name ) ),
+  crew:crews!invitations_crew_id_fkey ( id, crew_name, fields, skills, avatar_url )
+`;
+
+type InvitationRow = {
+  id: string;
+  project_id: string;
+  field: string;
+  message: string;
+  status: InvitationStatus;
+  created_at: string;
+  project: {
+    title: string;
+    cover_image: string | null;
+    owner: { crew_name: string | null } | null;
+  } | null;
+  crew: {
+    id: string;
+    crew_name: string | null;
+    fields: string[] | null;
+    skills: string[] | null;
+    avatar_url: string | null;
+  } | null;
+};
+
+function mapInvitation(r: InvitationRow): Invitation {
+  return {
+    id: r.id,
+    projectId: r.project_id,
+    projectTitle: r.project?.title ?? '',
+    projectOwner: r.project?.owner?.crew_name ?? '',
+    coverImage: r.project?.cover_image ?? null,
+    field: r.field,
+    message: r.message,
+    status: r.status,
+    createdAt: r.created_at,
+    crew: r.crew
+      ? {
+          id: r.crew.id,
+          name: r.crew.crew_name ?? '크루',
+          fields: currentFields(r.crew.fields),
+          skills: r.crew.skills ?? [],
+          avatarGradient: gradientFor(r.crew.id),
+          avatarUrl: r.crew.avatar_url,
+        }
+      : null,
+  };
+}
 
 function mapApplication(r: ApplicationRow): Application {
   return {

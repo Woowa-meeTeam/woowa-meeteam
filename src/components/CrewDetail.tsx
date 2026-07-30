@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { UserPlus } from 'lucide-react';
 import { Avatar, GithubLink } from './primitives';
 import { FieldTag } from './FieldFilters';
 import ProjectCard from './ProjectCard';
+import InviteCrewDialog from './InviteCrewDialog';
 import { api } from '../api';
 import type { Project, User } from '../api';
 
@@ -17,6 +19,14 @@ export default function CrewDetail() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // 제안 관련 — 내가 모집 중인 프로젝트의 오너일 때만 열립니다
+  const [me, setMe] = useState<User | null>(null);
+  const [myOpenProjects, setMyOpenProjects] = useState<Project[]>([]);
+  const [hasTeam, setHasTeam] = useState(false);
+  const [inviteReady, setInviteReady] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [sent, setSent] = useState(false);
+
   useEffect(() => {
     Promise.all([api.crew(id), api.projectsByOwner(id)])
       .then(([c, p]) => {
@@ -25,6 +35,25 @@ export default function CrewDetail() {
       })
       .catch((e) => setError(e.message));
   }, [id]);
+
+  useEffect(() => {
+    setSent(false);
+    // 로그인하지 않았거나 제안할 프로젝트가 없으면 조용히 넘어갑니다.
+    Promise.all([
+      api.me().catch(() => null),
+      api.myProjects().catch(() => [] as Project[]),
+      api.crewHasTeam(id),
+      api.invitationsEnabled().catch(() => false),
+    ]).then(([user, mine, teamed, enabled]) => {
+      setMe(user);
+      setMyOpenProjects(mine.filter((p) => p.status === 'RECRUITING'));
+      setHasTeam(teamed);
+      setInviteReady(enabled);
+    });
+  }, [id]);
+
+  const canInvite =
+    inviteReady && !!me && me.id !== id && !hasTeam && myOpenProjects.length > 0 && !sent;
 
   if (error) {
     return (
@@ -107,6 +136,36 @@ export default function CrewDetail() {
                 {crew.bio}
               </p>
             )}
+
+            {/* 팀 상태 — 구직 중인지 한눈에 */}
+            <span
+              className={`mt-5 text-[11px] font-semibold px-3 py-1.5 rounded-full border ${
+                hasTeam
+                  ? 'border-[#2ecc71]/40 text-[#7ee2a8] bg-[#2ecc71]/10'
+                  : 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10'
+              }`}
+            >
+              {hasTeam ? '팀 있음' : '팀 찾는 중'}
+            </span>
+
+            {sent && (
+              <p className="mt-4 text-sm text-[#7ee2a8]">제안을 보냈어요</p>
+            )}
+            {canInvite && (
+              <button
+                type="button"
+                onClick={() => setInviting(true)}
+                className="mt-4 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.99] transition-all"
+              >
+                <UserPlus className="w-4 h-4" />
+                팀원으로 제안하기
+              </button>
+            )}
+            {inviteReady && !!me && me.id !== id && hasTeam && (
+              <p className="mt-4 max-w-xs text-xs text-white/45">
+                이미 팀에 속한 크루라 제안을 보낼 수 없어요
+              </p>
+            )}
           </aside>
         </section>
 
@@ -136,6 +195,18 @@ export default function CrewDetail() {
           )}
         </div>
       </motion.div>
+
+      {inviting && (
+        <InviteCrewDialog
+          crew={crew}
+          projects={myOpenProjects}
+          onClose={() => setInviting(false)}
+          onSent={() => {
+            setInviting(false);
+            setSent(true);
+          }}
+        />
+      )}
     </div>
   );
 }

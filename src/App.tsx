@@ -15,6 +15,7 @@ import FeedbackWidget from './components/FeedbackWidget';
 import ProjectDetail from './components/ProjectDetail';
 import MyPage from './components/MyPage';
 import TeamSpace from './components/TeamSpace';
+import Invitations from './components/Invitations';
 import ApplicantManage from './components/ApplicantManage';
 import Faq from './components/Faq';
 import { api } from './api';
@@ -141,6 +142,7 @@ function AppNavigation() {
     pathname === '/booths' ||
     pathname === '/booths/admin' ||
     pathname === '/my' ||
+    pathname === '/invitations' ||
     pathname === '/faq';
 
   return showNavbar ? <Navbar /> : null;
@@ -191,6 +193,7 @@ export default function App() {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/projects/:id/applicants" element={<ApplicantManage />} />
         <Route path="/my" element={<MyPage />} />
+        <Route path="/invitations" element={<Invitations />} />
         <Route path="/teams/:id" element={<TeamSpace />} />
         <Route path="/faq" element={<FaqRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />

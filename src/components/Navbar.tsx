@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, ShieldCheck, X } from 'lucide-react';
+import { Mail, Menu, ShieldCheck, X } from 'lucide-react';
 import { Avatar, GithubButton, LogoMark } from './primitives';
 import { api } from '../api';
 import type { User } from '../api';
@@ -19,6 +19,7 @@ export default function Navbar({
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [inviteCount, setInviteCount] = useState(0);
 
   useEffect(() => {
     api.me().then(setUser).catch(() => setUser(null));
@@ -27,6 +28,11 @@ export default function Navbar({
       .myTeams()
       .then((teams) => setMyTeamId(teams[0]?.id ?? null))
       .catch(() => setMyTeamId(null));
+    // 답하지 않은 팀원 제안 — 놓치면 팀이 어긋나므로 헤더에서 알립니다
+    api
+      .pendingInvitationCount()
+      .then(setInviteCount)
+      .catch(() => setInviteCount(0));
   }, []);
 
   // 랜딩 밖(프로젝트 탐색·크루 등)에서는 핸들러 없이 그냥 <Navbar /> 로 쓸 수 있게 기본 동작을 둡니다.
@@ -54,6 +60,22 @@ export default function Navbar({
     setMenuOpen(false);
     fn();
   };
+
+  /** 받은 제안 — 답할 것이 있으면 숫자를 띄웁니다 */
+  const inviteBtn = (
+    <button
+      onClick={() => navigate('/invitations')}
+      className="relative rounded-full p-2.5 text-white/70 hover:text-white hover:bg-white/10 active:scale-[0.96] transition-all"
+      aria-label={inviteCount > 0 ? `받은 제안 ${inviteCount}건` : '받은 제안'}
+    >
+      <Mail className="w-5 h-5" />
+      {inviteCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFB020] text-[10px] font-bold text-black flex items-center justify-center">
+          {inviteCount > 9 ? '9+' : inviteCount}
+        </span>
+      )}
+    </button>
+  );
 
   const avatarBtn = (
     <button
@@ -104,11 +126,13 @@ export default function Navbar({
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          {user && inviteBtn}
           {user ? avatarBtn : <GithubButton onClick={handleStart} />}
         </div>
 
         {/* 모바일 */}
         <div className="md:hidden flex items-center gap-2.5">
+          {user && inviteBtn}
           {user ? (
             avatarBtn
           ) : (
@@ -157,6 +181,17 @@ export default function Navbar({
                     className="w-full text-left px-5 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
                   >
                     마이페이지
+                  </button>
+                  <button
+                    onClick={() => go(() => navigate('/invitations'))}
+                    className="w-full text-left px-5 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors flex items-center justify-between"
+                  >
+                    받은 제안
+                    {inviteCount > 0 && (
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFB020] text-[10px] font-bold text-black flex items-center justify-center">
+                        {inviteCount > 9 ? '9+' : inviteCount}
+                      </span>
+                    )}
                   </button>
                   {user.isAdmin && (
                     <>

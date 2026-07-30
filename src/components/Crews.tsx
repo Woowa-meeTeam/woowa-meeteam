@@ -148,11 +148,17 @@ export default function Crews() {
                     <div className="text-base font-semibold text-white truncate">{c.crewName}</div>
                     <span className="text-xs text-white/60">@{c.githubLogin}</span>
                   </div>
-                  {lookingIds.has(c.id) && (
-                    <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
-                      팀 찾는 중
-                    </span>
-                  )}
+                  {/* 두 상태를 다 보여줍니다 — 뱃지가 없으면 '팀 있음'인지 아직
+                      안 불러온 건지 구분이 안 돼요 */}
+                  <span
+                    className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border ${
+                      lookingIds.has(c.id)
+                        ? 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10'
+                        : 'border-[#2ecc71]/35 text-[#7ee2a8] bg-[#2ecc71]/10'
+                    }`}
+                  >
+                    {lookingIds.has(c.id) ? '팀 찾는 중' : '팀 있음'}
+                  </span>
                 </div>
 
                 <div className="mt-auto h-7 flex flex-nowrap items-center gap-1.5 overflow-hidden">
