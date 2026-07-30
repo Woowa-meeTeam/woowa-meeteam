@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Plus, Search } from 'lucide-react';
-import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import FieldFilters, { ALL_FIELDS } from './FieldFilters';
 import ProjectSort, { sortProjects } from './ProjectSort';
@@ -119,8 +118,6 @@ export default function AllProjects() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <Navbar />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

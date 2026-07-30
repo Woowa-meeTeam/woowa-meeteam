@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Pencil, ShieldCheck, Users } from 'lucide-react';
 import { Avatar, CoverFill, GithubLink } from './primitives';
-import Navbar from './Navbar';
 import ProjectCard from './ProjectCard';
 import ProjectSlots from './ProjectSlots';
 import { FieldTag } from './FieldFilters';
@@ -74,8 +73,6 @@ export default function MyPage() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <Navbar />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

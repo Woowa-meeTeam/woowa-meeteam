@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProjectsShowcase from './components/ProjectsShowcase';
@@ -92,7 +92,6 @@ function Landing() {
 
   return (
     <>
-      <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
       <Hero onStart={handleStart} loggedIn={loggedIn} onExplore={explore} />
       <ProjectsShowcase
         onRegister={() => navigate('/projects/new')}
@@ -105,21 +104,10 @@ function Landing() {
 }
 
 function BoothRoute({ admin = false }: { admin?: boolean }) {
-  const navigate = useNavigate();
   const Page = admin ? BoothAdminPage : BoothMapPage;
-
-  const handleStart = async () => {
-    try {
-      const me = await api.me();
-      navigate(me.onboarded ? '/my' : '/onboarding');
-    } catch {
-      await api.login().catch(() => navigate('/onboarding'));
-    }
-  };
 
   return (
     <>
-      <Navbar onStart={handleStart} onMyPage={() => navigate('/my')} />
       <Suspense
         fallback={
           <div className="relative z-20 min-h-screen grid place-items-center">
@@ -136,11 +124,26 @@ function BoothRoute({ admin = false }: { admin?: boolean }) {
 function FaqRoute() {
   return (
     <>
-      <Navbar />
       <Faq />
       <FeedbackWidget />
     </>
   );
+}
+
+/** 탭 전환에도 재마운트되지 않는 공통 헤더입니다. */
+function AppNavigation() {
+  const { pathname } = useLocation();
+  const showNavbar =
+    pathname === '/' ||
+    pathname === '/projects' ||
+    pathname === '/crews' ||
+    pathname.startsWith('/crews/') ||
+    pathname === '/booths' ||
+    pathname === '/booths/admin' ||
+    pathname === '/my' ||
+    pathname === '/faq';
+
+  return showNavbar ? <Navbar /> : null;
 }
 
 export default function App() {
@@ -169,6 +172,8 @@ export default function App() {
         {/* 글씨 가독성을 위해 영상을 충분히 눌러 둡니다 */}
         <div className="absolute inset-0 bg-[#0c0c0c]/75" />
       </div>
+
+      <AppNavigation />
 
       <Routes>
         <Route path="/" element={<Landing />} />

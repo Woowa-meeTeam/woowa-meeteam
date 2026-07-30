@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Search, Users } from 'lucide-react';
 import { Avatar } from './primitives';
-import Navbar from './Navbar';
 import FieldFilters, { FieldTag } from './FieldFilters';
 import { api } from '../api';
 import type { User } from '../api';
@@ -53,8 +52,6 @@ export default function Crews() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <Navbar />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

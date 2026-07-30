@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Avatar, GithubLink } from './primitives';
-import Navbar from './Navbar';
 import { FieldTag } from './FieldFilters';
 import ProjectCard from './ProjectCard';
 import { api } from '../api';
@@ -47,8 +46,6 @@ export default function CrewDetail() {
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
-      <Navbar />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

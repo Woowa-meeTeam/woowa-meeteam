@@ -181,9 +181,11 @@ export function coverSource(cover: string | null | undefined): string {
 export function CoverFill({
   cover,
   fade = true,
+  loading = 'lazy',
 }: {
   cover: string | null;
   fade?: boolean;
+  loading?: 'lazy' | 'eager';
 }) {
   if (!cover) return null;
   const src = coverSource(cover);
@@ -211,6 +213,8 @@ export function CoverFill({
         <img
           src={src}
           alt=""
+          loading={loading}
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: `${position.x}% ${position.y}%` }}
         />

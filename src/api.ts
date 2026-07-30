@@ -305,11 +305,18 @@ const PROJECT_SELECT = `
   owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url, github_login )
 `;
 
+// 목록에서는 summary만 사용하므로 긴 마크다운 본문은 상세 조회 때만 가져옵니다.
+const PROJECT_LIST_SELECT = `
+  id, title, summary, cover_image, prototype_url, deadline, status,
+  category, github_url, notion_url, team_links, team_notice,
+  owner:crews!projects_owner_id_fkey ( id, crew_name, fields, avatar_url, github_login )
+`;
+
 type ProjectRow = {
   id: string;
   title: string;
   summary: string | null;
-  description: string;
+  description?: string;
   cover_image: string | null;
   prototype_url: string | null;
   deadline: string | null;
@@ -371,8 +378,8 @@ function toProject(row: ProjectRow, slots: SlotRow[], members: MemberRow[]): Pro
   return {
     id: row.id,
     title: row.title,
-    desc: row.summary?.trim() || stripMarkdown(row.description).slice(0, 90),
-    description: row.description,
+    desc: row.summary?.trim() || stripMarkdown(row.description ?? '').slice(0, 90),
+    description: row.description ?? row.summary ?? '',
     prototype: row.prototype_url,
     coverImage: row.cover_image,
     summary: row.summary,
@@ -534,7 +541,7 @@ async function loadProjects(): Promise<Project[]> {
   const request = (async () => {
     const { data, error } = await supabase
       .from('projects')
-      .select(PROJECT_SELECT)
+      .select(PROJECT_LIST_SELECT)
       .order('created_at', { ascending: false });
     if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
     return hydrate((data ?? []) as unknown as ProjectRow[]);
