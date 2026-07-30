@@ -7,9 +7,16 @@ import { FieldTag } from './FieldFilters';
 import ProjectCard from './ProjectCard';
 import InviteCrewDialog from './InviteCrewDialog';
 import { api } from '../api';
-import type { Project, User } from '../api';
+import type { CrewTeam, Project, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
+
+/** 프로젝트 상태를 팀 관점의 말로 */
+const TEAM_STATUS_LABEL: Record<string, string> = {
+  RECRUITING: '모집 중',
+  CLOSED: '모집 중단',
+  CONFIRMED: '팀 확정',
+};
 
 export default function CrewDetail() {
   const { id = '' } = useParams();
@@ -23,6 +30,7 @@ export default function CrewDetail() {
   const [me, setMe] = useState<User | null>(null);
   const [myOpenProjects, setMyOpenProjects] = useState<Project[]>([]);
   const [hasTeam, setHasTeam] = useState(false);
+  const [teams, setTeams] = useState<CrewTeam[]>([]);
   const [inviteReady, setInviteReady] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -44,11 +52,13 @@ export default function CrewDetail() {
       api.myProjects().catch(() => [] as Project[]),
       api.crewHasTeam(id),
       api.invitationsEnabled().catch(() => false),
-    ]).then(([user, mine, teamed, enabled]) => {
+      api.crewTeams(id),
+    ]).then(([user, mine, teamed, enabled, affiliations]) => {
       setMe(user);
       setMyOpenProjects(mine.filter((p) => p.status === 'RECRUITING'));
       setHasTeam(teamed);
       setInviteReady(enabled);
+      setTeams(affiliations);
     });
   }, [id]);
 
@@ -137,16 +147,53 @@ export default function CrewDetail() {
               </p>
             )}
 
-            {/* 팀 상태 — 구직 중인지 한눈에 */}
-            <span
-              className={`mt-5 text-[11px] font-semibold px-3 py-1.5 rounded-full border ${
-                hasTeam
-                  ? 'border-[#2ecc71]/40 text-[#7ee2a8] bg-[#2ecc71]/10'
-                  : 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10'
-              }`}
-            >
-              {hasTeam ? '팀 있음' : '팀 찾는 중'}
-            </span>
+            {/* 팀 상태 — 어느 팀인지까지 보여줍니다.
+                오너인 프로젝트와 합류한 팀이 함께 있을 수 있어서 전부 나열해요. */}
+            {teams.length === 0 ? (
+              /* crew_teams 뷰가 아직 없는 환경에서는 목록이 비어 옵니다.
+                 그때 '팀 찾는 중' 으로 단정하면 팀이 있는 크루를 잘못 표시하므로,
+                 참/거짓만 아는 has_team 으로 물러섭니다. */
+              <span
+                className={`mt-5 text-[11px] font-semibold px-3 py-1.5 rounded-full border ${
+                  hasTeam
+                    ? 'border-[#2ecc71]/40 text-[#7ee2a8] bg-[#2ecc71]/10'
+                    : 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10'
+                }`}
+              >
+                {hasTeam ? '팀 있음' : '팀 찾는 중'}
+              </span>
+            ) : (
+              <div className="mt-5 w-full max-w-xs space-y-1.5">
+                {teams.map((t, i) => (
+                  <button
+                    key={t.projectId}
+                    type="button"
+                    onClick={() => navigate(`/projects/${t.projectId}`)}
+                    className={`w-full rounded-2xl border px-3.5 py-2.5 text-left transition-colors hover:bg-white/[0.06] ${
+                      i === 0
+                        ? 'border-[#2ecc71]/35 bg-[#2ecc71]/10'
+                        : 'border-white/10 bg-white/[0.03]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[10px] font-semibold ${
+                          i === 0 ? 'text-[#7ee2a8]' : 'text-white/50'
+                        }`}
+                      >
+                        {t.isOwner ? '오너' : '팀원'}
+                      </span>
+                      <span className="text-[10px] text-white/40">
+                        {TEAM_STATUS_LABEL[t.projectStatus] ?? ''}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 truncate text-sm font-medium text-white">
+                      {t.projectTitle}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {sent && (
               <p className="mt-4 text-sm text-[#7ee2a8]">제안을 보냈어요</p>

@@ -5,7 +5,7 @@ import { Search, Users } from 'lucide-react';
 import { Avatar } from './primitives';
 import FieldFilters, { FieldTag } from './FieldFilters';
 import { api } from '../api';
-import type { User } from '../api';
+import type { CrewTeam, User } from '../api';
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 const HANGUL_INITIALS = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
@@ -24,6 +24,7 @@ export default function Crews() {
   const navigate = useNavigate();
   const [crews, setCrews] = useState<User[] | null>(null);
   const [lookingIds, setLookingIds] = useState<Set<string>>(new Set());
+  const [teams, setTeams] = useState<Map<string, CrewTeam>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [field, setField] = useState<string | null>(null);
@@ -31,12 +32,17 @@ export default function Crews() {
 
   useEffect(() => {
     Promise.all([api.crews(), api.crewsLookingForTeam().catch(() => [] as User[])])
-      .then(([all, looking]) => {
+      .then(async ([all, looking]) => {
         setCrews(all);
         setLookingIds(new Set(looking.map((c) => c.id)));
+        // 팀이 있는 크루의 대표 팀만 한 번에 — 카드마다 부르면 N+1 이 됩니다.
+        const lookingSet = new Set(looking.map((c) => c.id));
+        setTeams(await api.primaryTeams(all.filter((c) => !lookingSet.has(c.id)).map((c) => c.id)));
       })
       .catch((e) => setError(e.message));
   }, []);
+
+  const teamOf = (crewId: string) => teams.get(crewId);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filtered =
@@ -148,17 +154,20 @@ export default function Crews() {
                     <div className="text-base font-semibold text-white truncate">{c.crewName}</div>
                     <span className="text-xs text-white/60">@{c.githubLogin}</span>
                   </div>
-                  {/* 두 상태를 다 보여줍니다 — 뱃지가 없으면 '팀 있음'인지 아직
-                      안 불러온 건지 구분이 안 돼요 */}
-                  <span
-                    className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border ${
-                      lookingIds.has(c.id)
-                        ? 'border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10'
-                        : 'border-[#2ecc71]/35 text-[#7ee2a8] bg-[#2ecc71]/10'
-                    }`}
-                  >
-                    {lookingIds.has(c.id) ? '팀 찾는 중' : '팀 있음'}
-                  </span>
+                  {/* 팀이 있으면 어느 팀인지까지 — 이름만 보이면 확인하러 들어가야 해요.
+                      오너/팀원을 겸한 크루는 대표 팀 하나만 보이고, 상세에서 전부 봅니다. */}
+                  {lookingIds.has(c.id) ? (
+                    <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border border-[#FFB020]/40 text-[#ffd27d] bg-[#FFB020]/10">
+                      팀 찾는 중
+                    </span>
+                  ) : (
+                    <span
+                      title={teamOf(c.id)?.projectTitle}
+                      className="flex-shrink-0 max-w-[104px] truncate text-[10px] font-semibold px-2 py-1 rounded-full border border-[#2ecc71]/35 text-[#7ee2a8] bg-[#2ecc71]/10"
+                    >
+                      {teamOf(c.id)?.projectTitle ?? '팀 있음'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-auto h-7 flex flex-nowrap items-center gap-1.5 overflow-hidden">

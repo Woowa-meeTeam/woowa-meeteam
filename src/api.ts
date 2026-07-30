@@ -94,6 +94,14 @@ export type Application = {
   } | null;
 };
 
+/** 크루가 속한 팀 하나 — 오너로든 팀원으로든 */
+export type CrewTeam = {
+  projectId: string;
+  projectTitle: string;
+  projectStatus: ProjectStatus;
+  isOwner: boolean;
+};
+
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELED';
 
 /** 오너가 크루에게 보내는 합류 제안 — 지원(Application)의 반대 방향입니다 */
@@ -1180,6 +1188,39 @@ export const api = {
   },
 
   /**
+   * 이 크루가 속한 팀 전부 — 오너인 프로젝트와 수락되어 합류한 팀이 함께 옵니다.
+   * 대표 팀이 먼저 오도록 우선순위(rank) 순으로 정렬해서 돌려줍니다.
+   */
+  async crewTeams(crewId: string): Promise<CrewTeam[]> {
+    const { data, error } = await supabase
+      .from('crew_teams')
+      .select('project_id, project_title, project_status, is_owner, rank')
+      .eq('crew_id', crewId)
+      .order('rank');
+    if (error) return [];
+    return (data ?? []).map((r) => toCrewTeam(r as unknown as CrewTeamRow));
+  },
+
+  /**
+   * 여러 크루의 대표 팀을 한 번에 — 크루 목록에서 N+1 을 피합니다.
+   * 대표 팀은 DB 가 고릅니다 (확정 팀 > 모집 중인 내 팀 > 합류한 팀 > 접어 둔 내 프로젝트).
+   */
+  async primaryTeams(crewIds: string[]): Promise<Map<string, CrewTeam>> {
+    if (crewIds.length === 0) return new Map();
+    const { data, error } = await supabase
+      .from('crew_primary_team')
+      .select('crew_id, project_id, project_title, project_status, is_owner')
+      .in('crew_id', crewIds);
+    if (error) return new Map();
+    return new Map(
+      (data ?? []).map((r) => {
+        const row = r as unknown as CrewTeamRow & { crew_id: string };
+        return [row.crew_id, toCrewTeam(row)];
+      }),
+    );
+  },
+
+  /**
    * 이 크루가 이미 팀에 속했는지 (표시 기준 — 지원이 수락되면 참).
    * 컬럼이 아직 없는 환경에서도 화면이 죽지 않도록 실패는 false 로 봅니다.
    */
@@ -1294,6 +1335,20 @@ type ApplicationRow = {
     avatar_url: string | null;
   } | null;
 };
+
+type CrewTeamRow = {
+  project_id: string;
+  project_title: string;
+  project_status: string;
+  is_owner: boolean;
+};
+
+const toCrewTeam = (r: CrewTeamRow): CrewTeam => ({
+  projectId: r.project_id,
+  projectTitle: r.project_title,
+  projectStatus: r.project_status as ProjectStatus,
+  isOwner: r.is_owner,
+});
 
 const INVITATION_SELECT = `
   id, project_id, field, message, status, created_at,
