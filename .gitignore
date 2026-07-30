@@ -5,6 +5,10 @@ dist
 .env
 .env.local
 
+# 데이터 스냅샷 — 크루명·GitHub 아이디·지원 메시지·제보 같은 개인정보가 들어 있습니다.
+# 저장소에 올리지 마세요 (scripts/snapshot.sh 산출물).
+data-archive/
+
 # 빌드 산출물 (tsc -b)
 *.tsbuildinfo
 vite.config.js
