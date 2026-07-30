@@ -42,6 +42,9 @@ const EMPTY_FILTERS: Filters = {
 
 const FILTERS_KEY = 'meeteam:projects:filters';
 
+/** 한 번에 그릴 카드 수 — 커버 이미지 전송량과 직결됩니다 */
+const PAGE = 12;
+
 /**
  * 상세나 크루를 보고 돌아왔을 때 고르던 조건이 남아 있도록 탭 세션에 담아 둡니다.
  * 목록 밖으로 나갔다 오는 길이 여러 갈래(닫기·뒤로가기·크루 경유)라
@@ -115,6 +118,17 @@ export default function AllProjects() {
     });
     return sortProjects(list, sort);
   }, [projects, query, field, status, category, sort]);
+
+  // 카드마다 커버 이미지가 붙어서, 한 번에 다 그리면 스크롤만으로 커버 전체가 내려갑니다.
+  // 눈에 보이는 만큼만 그리고 나머지는 요청이 있을 때 이어 붙입니다.
+  const [shown, setShown] = useState(PAGE);
+  // 조건이 바뀌면 목록이 통째로 달라지므로 처음부터 다시 셉니다.
+  useEffect(() => {
+    setShown(PAGE);
+  }, [query, field, status, category, sort]);
+
+  const visible = filtered.slice(0, shown);
+  const remaining = filtered.length - visible.length;
 
   return (
     <div className="relative z-20 min-h-screen flex flex-col">
@@ -239,16 +253,30 @@ export default function AllProjects() {
         )}
 
         {projects && filtered.length > 0 && (
-          <div className="project-card-grid mt-6">
-            {filtered.map((p, i) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                index={i}
-                onClick={() => navigate(`/projects/${p.id}`)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="project-card-grid mt-6">
+              {visible.map((p, i) => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  index={i}
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                />
+              ))}
+            </div>
+
+            {remaining > 0 && (
+              <div className="mt-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShown((n) => n + PAGE)}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white/80 hover:bg-white/[0.08] hover:text-white active:scale-[0.99] transition-all"
+                >
+                  {remaining}개 더 보기
+                </button>
+              </div>
+            )}
+          </>
         )}
       </motion.div>
     </div>

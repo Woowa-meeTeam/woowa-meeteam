@@ -8,6 +8,9 @@ import type { SortKey } from './ProjectSort';
 import { api } from '../api';
 import type { Project } from '../api';
 
+/** 랜딩에 그릴 카드 수 — 커버 이미지 전송량과 직결됩니다 */
+const VISIBLE = 6;
+
 type Props = {
   onRegister?: () => void;
   onSelect?: (id: string) => void;
@@ -26,7 +29,13 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
   }, []);
 
   const recruiting = projects?.filter((p) => !p.closed).length ?? 0;
-  const sorted = useMemo(() => sortProjects(projects ?? [], sort), [projects, sort]);
+  // 랜딩은 맛보기입니다. 카드마다 커버 이미지가 붙으므로 여기서 전량을 그리면
+  // 스크롤 한 번에 커버 전체가 내려가 전송량이 그대로 요금이 됩니다. 전체는 /projects 로.
+  const sorted = useMemo(
+    () => sortProjects(projects ?? [], sort).slice(0, VISIBLE),
+    [projects, sort],
+  );
+  const hidden = (projects?.length ?? 0) - sorted.length;
 
   return (
     <section id="projects" className="relative z-20 max-w-6xl mx-auto px-6 py-16 md:py-24 scroll-mt-20">
@@ -96,6 +105,17 @@ export default function ProjectsShowcase({ onRegister, onSelect }: Props) {
               animateOnView
             />
           ))}
+        </div>
+      )}
+
+      {hidden > 0 && (
+        <div className="mt-8 text-center">
+          <a
+            href="/projects"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white/80 hover:bg-white/[0.08] hover:text-white transition-colors"
+          >
+            프로젝트 {hidden}개 더 보기
+          </a>
         </div>
       )}
     </section>

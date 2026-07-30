@@ -299,6 +299,16 @@ const toUser = (c: CrewRow): User => ({
   onboarded: c.onboarded,
 });
 
+/* 본인 프로필 — is_admin 은 관리자 메뉴 노출 판단에 필요합니다(본인 값이라 무방). */
+const CREW_SELF_SELECT =
+  'id, github_login, crew_name, fields, skills, avatar_url, bio, onboarded, is_admin';
+
+/* 공개 목록 — is_admin 은 뺍니다.
+ * crews 의 RLS 가 `using (true)` 라 anon 도 읽을 수 있는데, 여기에 is_admin 이 섞이면
+ * 번들에 공개된 anon 키만으로 "관리자가 누구인지" 전원 열거가 됩니다. */
+const CREW_PUBLIC_SELECT =
+  'id, github_login, crew_name, fields, skills, avatar_url, bio, onboarded';
+
 const PROJECT_SELECT = `
   id, title, summary, description, cover_image, prototype_url, deadline, status,
   category, github_url, notion_url, team_links, team_notice,
@@ -512,6 +522,54 @@ async function hydrate(rows: ProjectRow[]): Promise<Project[]> {
   });
 }
 
+/* ── 로그인 크루 ────────────────────────────────────────────
+ * supabase.auth.getUser() 는 호출마다 Auth 서버로 나가는 네트워크 요청입니다.
+ * 화면 하나에서 me/myProjects/myTeams/myApplications 가 각자 부르면 같은 값을
+ * 얻으려고 왕복을 5번 하게 됩니다. 세션(로컬)에서 id 를 읽고 프로필은 캐시합니다.
+ * 권한은 어차피 각 요청의 JWT 와 DB RLS 가 판단하므로 검증이 약해지지 않습니다.
+ * ──────────────────────────────────────────────────────── */
+
+let meCache: { uid: string; promise: Promise<User> } | null = null;
+
+/** 로그인/로그아웃으로 주체가 바뀌면 캐시를 버립니다. */
+function clearMeCache() {
+  meCache = null;
+}
+supabase.auth.onAuthStateChange(clearMeCache);
+
+/** 현재 세션의 크루 id — 네트워크를 쓰지 않습니다. */
+async function currentUserId(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const uid = data.session?.user.id;
+  if (!uid) throw new ApiError(401, '로그인이 필요해요');
+  return uid;
+}
+
+/** 현재 로그인한 크루 프로필. 같은 사용자면 요청을 한 번만 보냅니다. */
+async function currentUser(): Promise<User> {
+  const uid = await currentUserId();
+  const cached = meCache;
+  if (cached && cached.uid === uid) return cached.promise;
+
+  const promise = (async () => {
+    const { data, error } = await supabase
+      .from('crews')
+      .select(CREW_SELF_SELECT)
+      .eq('id', uid)
+      .single();
+    if (error || !data) throw new ApiError(401, '프로필을 불러오지 못했어요');
+    return toUser(data as CrewRow);
+  })();
+
+  const entry = { uid, promise };
+  meCache = entry;
+  // 실패는 캐시하지 않습니다 — 다음 호출이 다시 시도하게.
+  promise.catch(() => {
+    if (meCache === entry) meCache = null;
+  });
+  return promise;
+}
+
 /* ── API ───────────────────────────────────────────────────── */
 
 /**
@@ -571,15 +629,7 @@ export const api = {
 
   /** 로그인한 크루 프로필. 미로그인이면 401 */
   async me(): Promise<User> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
-    const { data, error } = await supabase
-      .from('crews')
-      .select('*')
-      .eq('id', auth.user.id)
-      .single();
-    if (error || !data) throw new ApiError(401, '프로필을 불러오지 못했어요');
-    return toUser(data as CrewRow);
+    return currentUser();
   },
 
   /** 프로필 저장 — 온보딩/부분 수정 공용. 준 필드만 갱신합니다 (FR-ONB, FR-MY-01) */
@@ -590,8 +640,7 @@ export const api = {
     bio?: string | null;
     onboarded?: boolean;
   }): Promise<User> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
 
     const patch: Record<string, unknown> = {};
     if (body.crewName !== undefined) patch.crew_name = body.crewName.trim();
@@ -603,7 +652,7 @@ export const api = {
     const { data, error } = await supabase
       .from('crews')
       .update(patch)
-      .eq('id', auth.user.id)
+      .eq('id', uid)
       .select()
       .single();
     if (error) throw toApiError(error, '프로필 저장에 실패했어요');
@@ -617,15 +666,21 @@ export const api = {
       const { error: promoteError } = await supabase
         .from('crews')
         .update({ onboarded: true })
-        .eq('id', auth.user.id);
+        .eq('id', uid);
       if (!promoteError) user.onboarded = true;
     }
+    // 방금 바꾼 값이 다음 me() 에 반영되도록 캐시를 버립니다.
+    clearMeCache();
     return user;
   },
 
   /** 크루 한 명 상세 */
   async crew(id: string): Promise<User> {
-    const { data, error } = await supabase.from('crews').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+      .from('crews')
+      .select(CREW_PUBLIC_SELECT)
+      .eq('id', id)
+      .single();
     if (error || !data) throw new ApiError(404, '크루를 찾을 수 없어요');
     return toUser(data as CrewRow);
   },
@@ -645,10 +700,9 @@ export const api = {
 
   /** 불편사항 · 개선 · 기능 제안 보내기 */
   async sendFeedback(body: { kind: FeedbackKind; message: string }): Promise<void> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     const { error } = await supabase.from('feedbacks').insert({
-      author_id: auth.user.id,
+      author_id: uid,
       kind: body.kind,
       message: body.message.trim(),
     });
@@ -715,7 +769,7 @@ export const api = {
   async crews(): Promise<User[]> {
     const { data, error } = await supabase
       .from('crews')
-      .select('*')
+      .select(CREW_PUBLIC_SELECT)
       .eq('onboarded', true)
       .order('created_at', { ascending: false });
     if (error) throw toApiError(error, '크루를 불러오지 못했어요');
@@ -727,12 +781,11 @@ export const api = {
   },
 
   async myProjects(): Promise<Project[]> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     const { data, error } = await supabase
       .from('projects')
       .select(PROJECT_SELECT)
-      .eq('owner_id', auth.user.id)
+      .eq('owner_id', uid)
       .order('created_at', { ascending: false });
     if (error) throw toApiError(error, '프로젝트를 불러오지 못했어요');
     return hydrate((data ?? []) as unknown as ProjectRow[]);
@@ -751,10 +804,9 @@ export const api = {
 
   /** 커버 이미지를 Storage 에 올리고 공개 URL 을 돌려줍니다 (base64 대신) */
   async uploadCover(file: File): Promise<string> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     const ext = file.name.split('.').pop() ?? 'png';
-    const path = `${auth.user.id}/${crypto.randomUUID()}.${ext}`;
+    const path = `${uid}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
       .from('project-covers')
       .upload(path, file, { cacheControl: '31536000', upsert: false });
@@ -855,18 +907,17 @@ export const api = {
 
   /** 좋아요 · 북마크 토글 (익명 카운트) */
   async toggleReaction(projectId: string, kind: 'LIKE' | 'BOOKMARK', on: boolean) {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     if (on) {
       const { error } = await supabase
         .from('project_reactions')
-        .insert({ project_id: projectId, crew_id: auth.user.id, kind });
+        .insert({ project_id: projectId, crew_id: uid, kind });
       if (error && error.code !== '23505') throw toApiError(error, '처리에 실패했어요');
     } else {
       const { error } = await supabase
         .from('project_reactions')
         .delete()
-        .match({ project_id: projectId, crew_id: auth.user.id, kind });
+        .match({ project_id: projectId, crew_id: uid, kind });
       if (error) throw toApiError(error, '처리에 실패했어요');
     }
   },
@@ -963,9 +1014,7 @@ export const api = {
 
   /** 내가 속한 확정된 팀 (오너이거나 수락된 멤버) */
   async myTeams(): Promise<Project[]> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
-    const uid = auth.user.id;
+    const uid = await currentUserId();
 
     // 내가 오너인 확정 팀
     const owned = await supabase
@@ -1000,7 +1049,7 @@ export const api = {
   /** 아직 확정된 팀이 없는 크루 (도움이 필요한 크루) */
   async crewsLookingForTeam(): Promise<User[]> {
     const [crews, status] = await Promise.all([
-      supabase.from('crews').select('*').eq('onboarded', true),
+      supabase.from('crews').select(CREW_PUBLIC_SELECT).eq('onboarded', true),
       supabase.from('crew_team_status').select('*'),
     ]);
     if (crews.error) throw toApiError(crews.error, '크루를 불러오지 못했어요');
@@ -1014,13 +1063,12 @@ export const api = {
 
   /** 지원 (FR-APP) — 중복/본인/마감 차단은 DB가 담당 */
   async apply(projectId: string, body: { field: string; message: string }): Promise<Application> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     const { data, error } = await supabase
       .from('applications')
       .insert({
         project_id: projectId,
-        applicant_id: auth.user.id,
+        applicant_id: uid,
         field: body.field,
         message: body.message.trim(),
       })
@@ -1039,8 +1087,7 @@ export const api = {
   },
 
   async myApplications(): Promise<Application[]> {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) throw new ApiError(401, '로그인이 필요해요');
+    const uid = await currentUserId();
     const { data, error } = await supabase
       .from('applications')
       .select(
@@ -1048,7 +1095,7 @@ export const api = {
          project:projects ( title, owner:crews!projects_owner_id_fkey ( crew_name ) ),
          applicant:crews!applications_applicant_id_fkey ( id, crew_name, fields, skills, avatar_url )`,
       )
-      .eq('applicant_id', auth.user.id)
+      .eq('applicant_id', uid)
       .neq('status', 'CANCELED')
       .order('created_at', { ascending: false });
     if (error) throw toApiError(error, '지원 내역을 불러오지 못했어요');
